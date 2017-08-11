@@ -1429,7 +1429,13 @@ build_lua() {
 }
 
 build_libcurl() {
-  generic_download_and_make_and_install https://curl.haxx.se/download/curl-7.46.0.tar.gz
+  download_and_unpack_file https://curl.haxx.se/download/curl-7.54.1.tar.gz
+  cd curl-7.54.1
+    export PKG_CONFIG="pkg-config --static" # Automatically detect all GnuTLS's dependencies.
+    generic_configure "--without-ssl --with-gnutls --without-ca-bundle --with-ca-fallback" # Use GnuTLS's built-in CA store instead of a separate 'ca-bundle.crt'.
+    do_make # 'curl.exe' only. Don't install.
+    unset PKG_CONFIG
+  cd ..
 }
 
 build_libhdhomerun() {
@@ -1805,6 +1811,7 @@ build_dependencies() {
   #  build_openssl-1.0.2 # Nonfree alternative to GnuTLS. 'build_openssl-1.0.2 "dllonly"' to build shared libraries only.
   #  build_openssl-1.1.0 # Nonfree alternative to GnuTLS. Can't be used with LibRTMP. 'build_openssl-1.1.0 "dllonly"' to build shared libraries only.
   #fi
+  #build_libcurl # Uses GnuTLS/OpenSSL, zlib and dlfcn. Only for building 'curl.exe'.
   build_libogg # Uses dlfcn.
   build_libvorbis # Needs libogg >= 1.0. Uses dlfcn.
   build_libopus # Uses dlfcn.
