@@ -35,7 +35,7 @@ set_box_memory_size_bytes() {
 check_missing_packages () {
 
   # zeranoe's build scripts use wget, though we don't here...
-  local check_packages=('curl' 'pkg-config' 'make' 'git' 'svn' 'cmake' 'gcc' 'autoconf' 'automake' 'yasm' 'cvs' 'flex' 'bison' 'makeinfo' 'g++' 'ed' 'hg' 'pax' 'unzip' 'patch' 'wget' 'xz' 'nasm')
+  local check_packages=('curl' 'pkg-config' 'make' 'git' 'svn' 'cmake' 'gcc' 'autoconf' 'automake' 'yasm' 'cvs' 'flex' 'bison' 'makeinfo' 'g++' 'ed' 'hg' 'pax' 'unzip' 'patch' 'wget' 'xz' 'nasm' 'gperf' 'autogen')
   # libtool check is wonky...
   if [[ $OSTYPE == darwin* ]]; then
     check_packages+=(glibtoolize) # homebrew special :|
@@ -51,9 +51,9 @@ check_missing_packages () {
     clear
     echo "Could not find the following execs (svn is actually package subversion, makeinfo is actually package texinfo, hg is actually package mercurial if you're missing them): ${missing_packages[@]}"
     echo 'Install the missing packages before running this script.'
-    echo "for ubuntu: $ sudo apt-get install subversion curl texinfo g++ bison flex cvs yasm automake libtool autoconf gcc cmake git make pkg-config zlib1g-dev mercurial unzip pax nasm -y"
+    echo "for ubuntu: $ sudo apt-get install subversion curl texinfo g++ bison flex cvs yasm automake libtool autoconf gcc cmake git make pkg-config zlib1g-dev mercurial unzip pax nasm gperf autogen -y"
     echo "for gentoo (a non ubuntu distro): same as above, but no g++, no gcc, git is dev-vcs/git, zlib1g-dev is zlib, pkg-config is dev-util/pkgconfig, add ed..."
-    echo "for OS X (homebrew): brew install wget cvs hg yasm automake autoconf cmake hg libtool xz pkg-config nasm"
+    echo "for OS X (homebrew): brew install wget cvs hg yasm autogen automake autoconf cmake hg libtool xz pkg-config nasm"
     echo "for debian: same as ubuntu, but also add libtool-bin and ed"
     exit 1
   fi
@@ -180,10 +180,7 @@ install_cross_compiler() {
     echo ""
 
     # --disable-shared allows c++ to be distributed at all...which seemed necessary for some random dependency which happens to use/require c++...
-    #local zeranoe_script_name=mingw-w64-build-3.6.7.local
     local zeranoe_script_name=mingw-w64-build-r22.local # https://files.1f0.de/mingw/scripts/
-    # add --mingw-w64-ver=git for updated tuner.h [dshow dtv] at least not present in 4.0.6 TODO bump to v 5 when released, if released
-    # actually git make "faster" builds for some reason, so leave for now, known working commit: d9ce1abe40efb835609e646b1533acab4a404d03
     local zeranoe_script_options="--default-configure --cpu-count=$gcc_cpu_count --pthreads-w32-ver=2-9-1 --disable-shared --clean-build --verbose"
     if [[ ($compiler_flavors == "win32" || $compiler_flavors == "multi") && ! -f ../$win32_gcc ]]; then
       echo "Building win32 cross compiler..."
@@ -520,7 +517,7 @@ build_zlib() {
       sed -i.bak "/man3dir/d" Makefile.in
     fi
     do_configure "--prefix=$mingw_w64_x86_64_prefix --static"
-    #do_make_and_make_install "$make_prefix_options ARFLAGS=rcs" # What's 'ARFLAGS=rcs' needed for?
+    #do_make_and_make_install "$make_prefix_options ARFLAGS=rcs" # ARFLAGS avoid failure on OS X.
     do_make_and_make_install "$make_prefix_options"
   cd ..
 }
@@ -862,7 +859,7 @@ build_libsndfile() {
     if [ "$1" = "install-libgsm" ]; then
       if [[ ! -f $mingw_w64_x86_64_prefix/lib/libgsm.a ]]; then
         install -m644 src/GSM610/.libs/libgsm.a $mingw_w64_x86_64_prefix/lib/libgsm.a
-        install -m644 -D src/GSM610/gsm.h $mingw_w64_x86_64_prefix/include/gsm.h
+        install -m644 src/GSM610/gsm.h $mingw_w64_x86_64_prefix/include/gsm.h
       else
         echo "already installed GSM 6.10 ..."
       fi
@@ -873,7 +870,6 @@ build_libsndfile() {
 build_lame() {
   do_git_checkout https://github.com/rbrito/lame.git
   cd lame_git
-    #apply_patch file://$patch_dir/lame3.patch # Needed?
     if [[ ! -f Makefile.in.bak ]]; then # Library only.
       sed -i.bak "/^SUBDIRS/s/ frontend//;/^SUBDIRS/s/ doc//" Makefile.in
     fi
@@ -1005,10 +1001,7 @@ build_libflite() {
       #sed -i.bak "/define const/i\#include <windows.h>" tools/find_sts_main.c # Needed for x86_64? Untested.
       sed -i.bak "128,134d" main/Makefile # Library only.
     fi
-    generic_configure
-    cpu_count=1 # can't handle it :|
-    do_make_and_make_install
-    cpu_count=$original_cpu_count
+    generic_configure_make_install
   cd ..
 }
 
@@ -1025,7 +1018,7 @@ build_libsnappy() {
 build_vamp_plugin() {
   download_and_unpack_file https://code.soundsoftware.ac.uk/attachments/download/2206/vamp-plugin-sdk-2.7.1.tar.gz
   cd vamp-plugin-sdk-2.7.1
-    apply_patch file://$patch_dir/vamp-plugin-sdk-2.7.1_static-lib.diff
+    apply_patch file://$patch_dir/vamp-plugin-sdk-2.7.1_static-lib.diff # Create install-static target.
     if [[ ! -f configure.bak ]]; then # Fix for "'M_PI' was not declared in this scope" (see https://stackoverflow.com/a/29264536).
       sed -i.bak "s/c++98/gnu++98/" configure
     fi
@@ -1059,7 +1052,7 @@ build_libsamplerate() {
 build_librubberband() {
   do_git_checkout https://github.com/breakfastquay/rubberband.git
   cd rubberband_git
-    apply_patch file://$patch_dir/rubberband_git_static-lib.diff
+    apply_patch file://$patch_dir/rubberband_git_static-lib.diff # Create install-static target.
     do_configure "--host=$host_target --prefix=$mingw_w64_x86_64_prefix"
     do_make "install-static" # No need for 'do_make_install', because 'install-static' already has install-instructions.
   cd ..

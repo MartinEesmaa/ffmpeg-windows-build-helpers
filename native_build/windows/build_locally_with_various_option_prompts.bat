@@ -17,34 +17,32 @@ IF NOT EXIST ffmpeg_local_builds\cygwin_local_install (
 	ECHO Downloading Cygwin setup executable.
 	ECHO Keep an eye on this window for error warning messages from the Cygwin install. Some of them are expected.
 	REM setup exe name either setup-x86_64.exe or setup-x86.exe 64 bit "blew up" uname unrecognized on libflite/libtheora or something <sigh>
-	FOR /F "tokens=4,5 delims=[.XP " %%A IN ('VER') DO (
-		IF %%A.%%B==5.1 (
-			powershell -command "$clnt = new-object System.Net.WebClient; $clnt.DownloadFile(\"http://cygwin-xp.portfolis.net/setup/setup-x86.exe\", \"setup-x86.exe\")"
-			REM forced to hard select a mirror here apparently...
-			START /wait setup-x86.exe ^
-			-X ^
-			--quiet-mode ^
-			--no-admin ^
-			--no-startmenu ^
-			--no-shortcuts ^
-			--no-desktop ^
-			--site http://cygwin-xp.portfolis.net/cygwin ^
-			--root !cd! ^
-			--packages ^
-			ed,curl,libcurl4,wget,subversion,texinfo,gcc-g++,bison,flex,cvs,yasm,automake,libtool,autoconf,gcc-core,cmake,git,make,pkg-config,zlib1g-dev,mercurial,unzip,pax,ncurses,patch,gettext-devel,nasm,p7zip,gperf
-		) ELSE (
-			powershell -command "$clnt = new-object System.Net.WebClient; $clnt.DownloadFile(\"https://www.cygwin.com/setup-x86.exe\", \"setup-x86.exe\")"
-			START /wait setup-x86.exe ^
-			--quiet-mode ^
-			--no-admin ^
-			--no-startmenu ^
-			--no-shortcuts ^
-			--no-desktop ^
-			--site http://mirrors.xmission.com/cygwin/ ^
-			--root !cd! ^
-			--packages ^
-			ed,curl,libcurl4,wget,subversion,texinfo,gcc-g++,bison,flex,cvs,yasm,automake,libtool,autoconf,gcc-core,cmake,git,make,pkg-config,zlib1g-dev,mercurial,unzip,pax,ncurses,patch,gettext-devel,nasm,p7zip,gperf
-		)
+	IF "%OS%"=="Windows_NT" (
+		powershell -command "$clnt = new-object System.Net.WebClient; $clnt.DownloadFile(\"http://cygwin-xp.portfolis.net/setup/setup-x86.exe\", \"setup-x86.exe\")"
+		REM forced to hard select a mirror here apparently...
+		START /wait setup-x86.exe ^
+		-X ^
+		--quiet-mode ^
+		--no-admin ^
+		--no-startmenu ^
+		--no-shortcuts ^
+		--no-desktop ^
+		--site http://cygwin-xp.portfolis.net/cygwin ^
+		--root !cd! ^
+		--packages ^
+		ed,curl,libcurl4,wget,subversion,texinfo,gcc-g++,bison,flex,cvs,yasm,automake,libtool,autoconf,gcc-core,cmake,git,make,pkg-config,zlib1g-dev,mercurial,unzip,pax,ncurses,patch,gettext-devel,nasm,p7zip,gperf,autogen
+	) ELSE (
+		powershell -command "$clnt = new-object System.Net.WebClient; $clnt.DownloadFile(\"https://www.cygwin.com/setup-x86.exe\", \"setup-x86.exe\")"
+		START /wait setup-x86.exe ^
+		--quiet-mode ^
+		--no-admin ^
+		--no-startmenu ^
+		--no-shortcuts ^
+		--no-desktop ^
+		--site http://mirrors.xmission.com/cygwin/ ^
+		--root !cd! ^
+		--packages ^
+		ed,curl,libcurl4,wget,subversion,texinfo,gcc-g++,bison,flex,cvs,yasm,automake,libtool,autoconf,gcc-core,cmake,git,make,pkg-config,zlib1g-dev,mercurial,unzip,pax,ncurses,patch,gettext-devel,nasm,p7zip,gperf,autogen
 	)
 	REM wget for the initial script download as well as zeranoe's uses it
 	REM curl is used in our script all over
