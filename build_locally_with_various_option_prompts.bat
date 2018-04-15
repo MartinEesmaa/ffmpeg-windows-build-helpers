@@ -9,78 +9,51 @@ ECHO on how to run it again with more advanced options.
 ECHO.
 ECHO Starting Cygwin install/update.
 ECHO.
+CD ffmpeg_local_builds
 SETLOCAL ENABLEDELAYEDEXPANSION
-IF NOT EXIST ffmpeg_local_builds\cygwin_local_install (
-	MKDIR ffmpeg_local_builds\cygwin_local_install
-	REM cd to it so that Cygwin install, logs, etc. go there
-	CD ffmpeg_local_builds\cygwin_local_install
+IF NOT EXIST cygwin_local_install (
+	MKDIR cygwin_local_install
+	CD cygwin_local_install
 	ECHO Downloading Cygwin setup executable.
 	ECHO Keep an eye on this window for error warning messages from the Cygwin install. Some of them are expected.
-	REM setup exe name either setup-x86_64.exe or setup-x86.exe 64 bit "blew up" uname unrecognized on libflite/libtheora or something <sigh>
-	IF "%OS%"=="Windows_NT" (
-		powershell -command "$clnt = new-object System.Net.WebClient; $clnt.DownloadFile(\"http://cygwin-xp.portfolis.net/setup/setup-x86.exe\", \"setup-x86.exe\")"
-		REM forced to hard select a mirror here apparently...
-		START /wait setup-x86.exe ^
-		-X ^
-		--quiet-mode ^
-		--no-admin ^
-		--no-startmenu ^
-		--no-shortcuts ^
-		--no-desktop ^
-		--site http://cygwin-xp.portfolis.net/cygwin ^
-		--root !cd! ^
-		--packages ^
-		ed,curl,libcurl4,wget,subversion,texinfo,gcc-g++,bison,flex,cvs,yasm,automake,libtool,autoconf,gcc-core,cmake,git,make,pkg-config,zlib1g-dev,mercurial,unzip,pax,ncurses,patch,gettext-devel,nasm,p7zip,gperf,autogen
-	) ELSE (
-		powershell -command "$clnt = new-object System.Net.WebClient; $clnt.DownloadFile(\"https://www.cygwin.com/setup-x86.exe\", \"setup-x86.exe\")"
-		START /wait setup-x86.exe ^
-		--quiet-mode ^
-		--no-admin ^
-		--no-startmenu ^
-		--no-shortcuts ^
-		--no-desktop ^
-		--site http://mirrors.xmission.com/cygwin/ ^
-		--root !cd! ^
-		--packages ^
-		ed,curl,libcurl4,wget,subversion,texinfo,gcc-g++,bison,flex,cvs,yasm,automake,libtool,autoconf,gcc-core,cmake,git,make,pkg-config,zlib1g-dev,mercurial,unzip,pax,ncurses,patch,gettext-devel,nasm,p7zip,gperf,autogen
-	)
+	powershell -command "$clnt = new-object System.Net.WebClient; $clnt.DownloadFile(\"http://cygwin-xp.portfolis.net/setup/setup-x86.exe\", \"setup-x86.exe\")"
+	START /wait setup-x86.exe ^
+	-X ^
+	--quiet-mode ^
+	--no-admin ^
+	--no-startmenu ^
+	--no-shortcuts ^
+	--no-desktop ^
+	--site http://cygwin-xp.portfolis.net/cygwin ^
+	--root !cd! ^
+	--packages autoconf,autogen,automake,bison,cmake,cvs,curl,ed,flex,gcc-core,gcc-g++,gettext-devel,git,gperf,libcurl4,libtool,make,mercurial,nasm,ncurses,p7zip,patch,pax,pkg-config,subversion,texinfo,unzip,wget,yasm,zlib1g-dev
 	REM wget for the initial script download as well as zeranoe's uses it
 	REM curl is used in our script all over
 	REM libcurl4 is apparently required so that updating curl doesn't bwork it, reported as a bug to cygwin :|
 	REM ncurses for the "clear" command yikes!
 	REM gettext-dev is for 64 bit cygwin which doesn't install it but binutils links against it and needs it...
 	ECHO Done installing Cygwin.
-	CD ..\..
+	CD ..
 ) ELSE (
 	ECHO Cygwin already installed.
 )
-ECHO.
-REM want wget etc. so override path here by prepending. Probably need/want to do this anyway...
-REM since we're messing with the PATH
-SET PATH=%cd%\ffmpeg_local_builds\cygwin_local_install\bin;%PATH%
-
-CD ffmpeg_local_builds
-
-IF NOT EXIST cross_compile_ffmpeg.sh (
-	.\cygwin_local_install\bin\bash.exe -c "wget https://raw.githubusercontent.com/Reino17/ffmpeg-windows-build-helpers/master/cross_compile_ffmpeg.sh -O cross_compile_ffmpeg.sh"
-	.\cygwin_local_install\bin\bash.exe -c "chmod u+x ./cross_compile_ffmpeg.sh"
-) ELSE (
-	SET /P "update=Would you like to update the current 'cross_compile_ffmpeg.sh' [Y/n]?"
-	IF /I NOT "!update!"=="n" (
-		.\cygwin_local_install\bin\bash.exe -c "wget https://raw.githubusercontent.com/Reino17/ffmpeg-windows-build-helpers/master/cross_compile_ffmpeg.sh -O cross_compile_ffmpeg.sh"
-		.\cygwin_local_install\bin\bash.exe -c "chmod u+x ./cross_compile_ffmpeg.sh"
-	)
-)
-ECHO.
-.\cygwin_local_install\bin\bash.exe -c "./cross_compile_ffmpeg.sh %1 %2 %3 %4 %5 %6 %7 %8 %9"
-
-CD ..
 ENDLOCAL
+SET PATH=%cd%\cygwin_local_install\bin;%PATH%
+
+ECHO.
+SET /P "static=Would you like to build static FFmpeg binaries [Y/n]?"
+ECHO.
+IF /I "%static%"=="n" (
+	bash.exe -c "./cross_compile_ffmpeg.sh --build-ffmpeg-static=n %2 %3 %4 %5 %6 %7 %8 %9"
+) ELSE (
+	bash.exe -c "./cross_compile_ffmpeg.sh %1 %2 %3 %4 %5 %6 %7 %8 %9"
+)
+
 ECHO.
 ECHO Done with local build. Check output above to see if successfull.
 ECHO If not successful, then you could try to rerun the script. It "should" pick up where it left off.
 ECHO.
-ECHO If you want more advanced configuration (like building mplayer or mp4box, 10-bit, etc.), then open '%cd%\ffmpeg_local_builds\cygwin_local_install\cygwin.bat' (which sets up the path for you). Then cd to '%cd%\ffmpeg_local_builds' and run the script manually yourself with -h, like:
-ECHO $ cd /cygdrive/c/.../ffmpeg_local_builds
+ECHO If you want more advanced configuration, then open '%cd%\cygwin_local_install\cygwin.bat' (which sets up the path for you). Then cd to '%cd%' and run the script manually yourself with -h, like:
+ECHO $ cd /cygdrive/.../ffmpeg_local_builds
 ECHO $ ./cross_compile_ffmpeg.sh -h
 PAUSE
