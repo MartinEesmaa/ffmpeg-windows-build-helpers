@@ -207,11 +207,7 @@ do_git_checkout() {
 }
 
 get_small_touchfile_name() { # have to call with assignment like a=$(get_small...)
-  local beginning="$1"
-  local extra_stuff="$2"
-  local touch_name="${beginning}_$(echo -- $extra_stuff $CFLAGS $LDFLAGS | /usr/bin/env md5sum)" # md5sum to make it smaller, cflags to force rebuild if changes
-  touch_name=$(echo "$touch_name" | sed "s/ //g") # md5sum introduces spaces, remove them
-  echo "$touch_name" # bash cruddy return system LOL
+  echo "$1_$(echo -- $2 $CFLAGS $LDFLAGS | /usr/bin/env md5sum | sed "s/ //g")" # md5sum to make it smaller, cflags to force rebuild if changes and sed to remove spaces that md5sum introduced.
 }
 
 do_configure() {
