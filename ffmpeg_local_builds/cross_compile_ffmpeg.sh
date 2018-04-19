@@ -164,50 +164,44 @@ do_svn_checkout() {
 }
 
 do_git_checkout() {
-  local repo_url="$1"
-  local to_dir="$2"
-  if [[ -z $to_dir ]]; then
-    to_dir=$(basename $repo_url | sed s/\.git/_git/) # http://y/abc.git -> abc_git
-  fi
-  local desired_branch="$3"
-  if [ ! -d $to_dir ]; then
-    echo "Downloading (via git clone) $to_dir from $repo_url."
-    rm -fr $to_dir.tmp # just in case it was interrupted previously...
-    git clone $repo_url $to_dir.tmp || exit 1
-    # prevent partial checkouts by renaming it only after success
-    mv $to_dir.tmp $to_dir
-    echo "done git cloning to $to_dir."
-    cd $to_dir
+  if [[ $2 ]]; then
+    local dir="$2"
   else
-    cd $to_dir
+    local dir=$(basename $1 | sed s/\.git/_git/) # http://y/abc.git -> abc_git
+  fi
+  if [ ! -d $dir ]; then
+    echo "Downloading (via git clone) $dir from $1."
+    rm -fr $dir.tmp # just in case it was interrupted previously...
+    git clone $1 $dir.tmp || exit 1
+    # prevent partial checkouts by renaming it only after success
+    mv $dir.tmp $dir
+    echo "Done git cloning to $dir."
+    cd $dir
+  else
+    cd $dir
     if [[ $git_get_latest = "y" ]]; then
       git fetch # need this no matter what
     else
-      echo "not doing git get latest pull for latest code $to_dir."
+      echo "Not doing git get latest pull for latest code $dir."
     fi
   fi
 
-  old_git_version=`git rev-parse HEAD`
-
-  if [[ -z $desired_branch ]]; then
-    echo "Doing git checkout master."
-    git checkout -f master || exit 1 # in case they were on some other branch before [ex: going between ffmpeg release tags]. # Checkout even if the working tree differs from HEAD.
-    if [[ $git_get_latest = "y" ]]; then
-      echo "Updating to latest $to_dir git version [origin/master]."
-      git merge origin/master || exit 1
+  if [[ $3 ]]; then
+    echo "Doing git checkout $3."
+    git checkout "$3" || exit 1
+    git merge "$3" || exit 1 # get incoming changes to a branch
+  else
+    if [[ $(git rev-parse HEAD) != $(git ls-remote -h $1 master | sed "s/\s.*//") ]]; then
+      if [[ $git_get_latest = "y" ]]; then
+        echo "Got upstream changes. Updating $dir to latest git version 'origin/master'."
+        git reset --hard # Return files to their original state.
+        git clean -fdx # Clean the working tree; build- as well as untracked files.
+        git checkout master || exit 1
+        git merge origin/master || exit 1
+      fi
+    else
+      echo "Got no code changes. Local $dir repo is up-to-date."
     fi
-  else
-    echo "Doing git checkout $desired_branch."
-    git checkout "$desired_branch" || exit 1
-    git merge "$desired_branch" || exit 1 # get incoming changes to a branch
-  fi
-
-  new_git_version=`git rev-parse HEAD`
-  if [[ "$old_git_version" != "$new_git_version" ]]; then
-    echo "Got upstream changes, forcing re-configure."
-    git clean -f # Throw away local changes; 'already_*' and bak-files for instance.
-  else
-    echo "Got no code changes, not forcing reconfigure for that."
   fi
   cd ..
 }
