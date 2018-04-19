@@ -283,20 +283,22 @@ do_make_install() {
 }
 
 do_cmake() {
-  extra_args="$1"
-  local touch_name=$(get_small_touchfile_name already_ran_cmake "$extra_args")
-  if [ ! -f $touch_name ]; then
+  if [[ $2 ]]; then
+    local dir="$2"
+  else
+    local dir=$(pwd)
+  fi
+  local name=$(get_small_touchfile_name already_ran_cmake "$1")
+  if [ ! -f $name ]; then
     rm -f already_* # reset so that make will run again if option just changed
-    local cur_dir2=$(pwd)
-    echo "Doing cmake in $cur_dir2 with PATH=$mingw_bin_path:\$PATH with extra_args=$extra_args like this:"
-    echo "cmake –G”Unix Makefiles” . -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB=${cross_prefix}ranlib -DCMAKE_C_COMPILER=${cross_prefix}gcc -DCMAKE_CXX_COMPILER=${cross_prefix}g++ -DCMAKE_RC_COMPILER=${cross_prefix}windres -DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix $extra_args"
-    cmake –G”Unix Makefiles” . -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB=${cross_prefix}ranlib -DCMAKE_C_COMPILER=${cross_prefix}gcc -DCMAKE_CXX_COMPILER=${cross_prefix}g++ -DCMAKE_RC_COMPILER=${cross_prefix}windres -DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix $extra_args || exit 1
-    touch $touch_name || exit 1
+    echo "Doing cmake in $(basename $dir) as cmake –G”Unix Makefiles” $dir -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB=${cross_prefix}ranlib.exe -DCMAKE_C_COMPILER=${cross_prefix}gcc.exe -DCMAKE_CXX_COMPILER=${cross_prefix}g++.exe -DCMAKE_RC_COMPILER=${cross_prefix}windres.exe -DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix $1."
+    cmake –G”Unix Makefiles” $dir -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB=${cross_prefix}ranlib.exe -DCMAKE_C_COMPILER=${cross_prefix}gcc.exe -DCMAKE_CXX_COMPILER=${cross_prefix}g++.exe -DCMAKE_RC_COMPILER=${cross_prefix}windres.exe -DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix $1 || exit 1
+    touch $name || exit 1
   fi
 }
 
 do_cmake_and_install() {
-  do_cmake "$1"
+  do_cmake "$1" "$2"
   do_make_and_make_install
 }
 
