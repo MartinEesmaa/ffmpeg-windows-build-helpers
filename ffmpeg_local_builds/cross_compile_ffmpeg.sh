@@ -264,9 +264,8 @@ do_make() {
 }
 
 do_make_and_make_install() {
-  local extra_make_options="$1"
-  do_make "$extra_make_options"
-  do_make_install "$extra_make_options"
+  do_make "$1"
+  do_make_install "$1"
 }
 
 do_make_install() {
