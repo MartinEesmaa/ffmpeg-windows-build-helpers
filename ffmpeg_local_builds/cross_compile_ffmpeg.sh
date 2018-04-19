@@ -269,18 +269,16 @@ do_make_and_make_install() {
 }
 
 do_make_install() {
-  local extra_make_install_options="$1"
-  local override_make_install_options="$2" # startingly, some need/use something different than just 'make install'
-  if [[ -z $override_make_install_options ]]; then
-    local make_install_options="install $extra_make_install_options"
+  if [[ $2 ]]; then
+    local make_install_options="$2 $1" # startingly, some need/use something different than just 'make install'
   else
-    local make_install_options="$override_make_install_options $extra_make_install_options"
+    local make_install_options="install $1"
   fi
-  local touch_name=$(get_small_touchfile_name already_ran_make_install "$make_install_options")
-  if [ ! -f $touch_name ]; then
-    echo "Installing $(pwd) as $ PATH=$mingw_bin_path:\$PATH make $make_install_options."
+  local name=$(get_small_touchfile_name already_ran_make_install "$make_install_options")
+  if [ ! -f $name ]; then
+    echo "Installing $(basename $(pwd)) as make $make_install_options."
     nice make $make_install_options || exit 1
-    touch $touch_name || exit 1
+    touch $name || exit 1
   fi
 }
 
