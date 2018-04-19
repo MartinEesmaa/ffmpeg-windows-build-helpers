@@ -211,34 +211,38 @@ get_small_touchfile_name() { # have to call with assignment like a=$(get_small..
 }
 
 do_configure() {
-  local configure_options="$1"
-  local configure_name="$2"
-  if [[ "$configure_name" = "" ]]; then
-    configure_name="./configure"
+  if [[ $2 ]]; then
+    local configure_name="$2"
+  else
+    local configure_name="./configure"
   fi
-  local cur_dir2=$(pwd)
-  local english_name=$(basename $cur_dir2)
-  local touch_name=$(get_small_touchfile_name already_configured "$configure_options $configure_name")
-  if [ ! -f "$touch_name" ]; then
-    # make uninstall # does weird things when run under ffmpeg src so disabled for now...
-
-    echo "Configuring $english_name ($PWD) as $ PKG_CONFIG_PATH=$PKG_CONFIG_PATH PATH=$mingw_bin_path:\$PATH $configure_name $configure_options." # say it now in case bootstrap fails etc.
-    if [ -f bootstrap ]; then
-      ./bootstrap # some need this to create ./configure :|
+  local name=$(get_small_touchfile_name already_configured "$1 $configure_name")
+  if [ ! -f "$name" ]; then # This is to generate 'configure', 'Makefile.in' and some other files.
+    if [ ! -f $configure_name ] && [ -f autogen.sh ]; then
+      ./autogen.sh
     fi
-    if [[ ! -f $configure_name && -f bootstrap.sh ]]; then # fftw wants to only run this if no configure :|
+    if [ ! -f $configure_name ] && [ -f autobuild ]; then
+      ./autobuild
+    fi
+    if [ ! -f $configure_name ] && [ -f buildconf ]; then
+      ./buildconf
+    fi
+    if [ ! -f $configure_name ] && [ -f bootstrap ]; then
+      ./bootstrap
+    fi
+    if [ ! -f $configure_name ] && [ -f bootstrap.sh ]; then
       ./bootstrap.sh
     fi
-    if [[ ! -f $configure_name ]]; then
-      autoreconf -fiv # a handful of them require this to create ./configure :|
+    if [ ! -f $configure_name ]; then
+      autoreconf -fiv
     fi
-    rm -f already_* # reset
-    "$configure_name" $configure_options || exit 1 # not nice on purpose, so that if some other script is running as nice, this one will get priority :)
-    touch -- "$touch_name"
+    echo "Configuring $(basename $(pwd)) as $configure_name $1."
+    "$configure_name" $1 || exit 1 # not nice on purpose, so that if some other script is running as nice, this one will get priority :)
+    touch -- "$name"
     echo "Doing preventative make clean."
     nice make clean -j $cpu_count # sometimes useful when files change, etc.
   #else
-  #  echo "Already configured $(basename $cur_dir2)."
+  #  echo "Already configured $(basename $(pwd))."
   fi
 }
 
