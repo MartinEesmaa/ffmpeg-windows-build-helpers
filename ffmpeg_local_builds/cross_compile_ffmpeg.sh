@@ -145,20 +145,18 @@ install_cross_compiler() {
 }
 
 do_svn_checkout() {
-  repo_url="$1"
-  to_dir="$2"
-  desired_revision="$3"
-  if [ ! -d $to_dir ]; then
-    echo "Downloading (via svn checkout) $to_dir from $repo_url."
-    if [[ -z "$desired_revision" ]]; then
-      svn checkout $repo_url $to_dir.tmp  --non-interactive --trust-server-cert || exit 1
+  local dir="$2"
+  if [ ! -d $dir ]; then
+    echo "Downloading (via svn checkout) $dir from $1."
+    if [[ $3 ]]; then
+      svn checkout -r $3 $1 $dir.tmp || exit 1
     else
-      svn checkout -r $desired_revision $repo_url $to_dir.tmp || exit 1
+      svn checkout $1 $dir.tmp --non-interactive --trust-server-cert || exit 1
     fi
-    mv $to_dir.tmp $to_dir
+    mv $dir.tmp $dir
   else
-    cd $to_dir
-    echo "Not updating svn $to_dir, because svn repo's aren't updated frequently enough."
+    cd $dir
+    echo "Not updating svn $dir, because svn repo's aren't updated frequently enough."
     # XXX accomodate for desired revision here if I ever uncomment the next line...
     # svn up
     cd ..
