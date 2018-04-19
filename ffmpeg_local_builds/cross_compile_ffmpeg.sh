@@ -248,20 +248,18 @@ do_configure() {
 
 do_make() {
   local extra_make_options="$1 -j $cpu_count"
-  local cur_dir2=$(pwd)
-  local touch_name=$(get_small_touchfile_name already_ran_make "$extra_make_options" )
-
-  if [ ! -f $touch_name ]; then
+  local name=$(get_small_touchfile_name already_ran_make "$extra_make_options" )
+  if [ ! -f $name ]; then
     echo
-    echo "Doing make in $cur_dir2 as $ PATH=$mingw_bin_path:\$PATH make $extra_make_options."
+    echo "Doing make in $(basename $(pwd)) as make $extra_make_options."
     echo
     if [ ! -f configure ]; then
       nice make clean -j $cpu_count # just in case helpful if old junk left around and this is a 're make' and wasn't cleaned at reconfigure time
     fi
     nice make $extra_make_options || exit 1
-    touch $touch_name || exit 1 # only touch if the build was OK
+    touch $name || exit 1 # only touch if the build was OK
   else
-    echo "Already made $(basename "$cur_dir2")."
+    echo "Already made $(basename $(pwd))."
   fi
 }
 
