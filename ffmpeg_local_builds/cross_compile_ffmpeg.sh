@@ -33,20 +33,11 @@ set_box_memory_size_bytes() {
 }
 
 check_missing_packages () {
-
   # zeranoe's build scripts use wget, though we don't here...
-  local check_packages=('curl' 'pkg-config' 'make' 'git' 'svn' 'cmake' 'gcc' 'autoconf' 'automake' 'yasm' 'cvs' 'flex' 'bison' 'makeinfo' 'g++' 'ed' 'hg' 'pax' 'unzip' 'patch' 'wget' 'xz' 'nasm' 'gperf' 'autogen')
-  # libtool check is wonky...
-  if [[ $OSTYPE == darwin* ]]; then
-    check_packages+=(glibtoolize) # homebrew special :|
-  else
-    check_packages+=(libtoolize) # the rest of the world
-  fi
-
+  local check_packages=('7z' 'autoconf' 'autogen' 'automake' 'bison' 'bzip2' 'cmake' 'curl' 'cvs' 'ed' 'flex' 'g++' 'gcc' 'git' 'gperf' 'hg' 'libtool' 'libtoolize' 'make' 'makeinfo' 'patch' 'pax' 'pkg-config' 'svn' 'unzip' 'wget' 'xz' 'yasm')
   for package in "${check_packages[@]}"; do
     type -P "$package" >/dev/null || missing_packages=("$package" "${missing_packages[@]}")
   done
-
   if [[ -n "${missing_packages[@]}" ]]; then
     clear
     echo "Could not find the following execs (svn is actually package subversion, makeinfo is actually package texinfo, hg is actually package mercurial if you're missing them): ${missing_packages[@]}"
@@ -60,9 +51,7 @@ check_missing_packages () {
 
   local out=`cmake --version` # like cmake version 2.8.7
   local version_have=`echo "$out" | cut -d " " -f 3`
-
   function version { echo "$@" | awk -F. '{ printf("%d%03d%03d%03d\n", $1,$2,$3,$4); }'; }
-
   if [[ $(version $version_have)  < $(version '2.8.12') ]]; then
     echo "your cmake version is too old $version_have wanted 2.8.12"
     exit 1
@@ -79,7 +68,6 @@ check_missing_packages () {
     echo "your yasm version is too old $yasm_version wanted 1.2.0"
     exit 1
   fi
-
 }
 
 
@@ -102,10 +90,6 @@ EOL
   fi
   mkdir -p "$cur_dir"
   cd "$cur_dir"
-  if [[ ! $build_ffmpeg_static ]]; then
-    yes_no_sel "Would you like to build static- or shared FFmpeg binaries [Y/n]?" "y"
-    build_ffmpeg_static="$user_input"
-  fi
   if [[ $disable_nonfree = "y" ]]; then
     non_free="n"
   else
@@ -119,106 +103,54 @@ The resultant binary may not be distributable, but can be useful for in-house us
   fi
 }
 
-pick_compiler_flavors() {
-  while [[ "$compiler_flavors" != [1-4] ]]; do
-    if [[ -n "${unknown_opts[@]}" ]]; then
-      echo -n 'Unknown option(s)'
-      for unknown_opt in "${unknown_opts[@]}"; do
-        echo -n " '$unknown_opt'"
-      done
-      echo ', ignored.'; echo
-    fi
-    cat <<'EOF'
-What version of MinGW-w64 would you like to build or update?
-  1. Both Win32 and Win64
-  2. Win32 (32-bit only)
-  3. Win64 (64-bit only)
-  4. Exit
-EOF
-    echo -n 'Input your choice [1-4]: '
-    read compiler_flavors
-  done
-  case "$compiler_flavors" in
-  1 ) compiler_flavors=multi ;;
-  2 ) compiler_flavors=win32 ;;
-  3 ) compiler_flavors=win64 ;;
-  4 ) echo "exiting"; exit 0 ;;
-  * ) clear;  echo 'Your choice was not valid, please try again.'; echo ;;
-  esac
-}
-
 # made into a method so I don't/don't have to download this script every time if only doing just 32 or just6 64 bit builds...
 download_gcc_build_script() {
-    local zeranoe_script_name=$1
-    rm -f $zeranoe_script_name || exit 1
-    curl -4 file://$patch_dir/$zeranoe_script_name -O --fail || exit 1
-    chmod u+x $zeranoe_script_name
+  local zeranoe_script_name=$1
+  rm -f $zeranoe_script_name || exit 1
+  curl -4 file://$patch_dir/$zeranoe_script_name -O --fail || exit 1
+  chmod u+x $zeranoe_script_name
 }
 
 install_cross_compiler() {
   local win32_gcc="cross_compilers/mingw-w64-i686/bin/i686-w64-mingw32-gcc"
-  local win64_gcc="cross_compilers/mingw-w64-x86_64/bin/x86_64-w64-mingw32-gcc"
-  if [[ -f $win32_gcc && -f $win64_gcc ]]; then
-   echo "MinGW-w64 compilers both already installed, not re-installing..."
-   if [[ -z $compiler_flavors ]]; then
-     echo "selecting multi build (both win32 and win64)...since both cross compilers are present assuming you want both..."
-     compiler_flavors=multi
-   fi
-   return # early exit just assume they want both, don't even prompt :)
-  fi
+  if [[ -f $win32_gcc ]]; then
+    echo "MinGW-w64 compilers for Win32 already installed, not re-installing."
+  else
+    mkdir -p cross_compilers
+    cd cross_compilers
+      unset CFLAGS # don't want these "windows target" settings used the compiler itself since it creates executables to run on the local box (we have a parameter allowing them to set them for the script "all builds" basically)
+      # pthreads version to avoid having to use cvs for it
+      echo "Starting to download and build cross compile version of gcc [requires working internet access] with thread count $gcc_cpu_count."
+      echo
 
-  if [[ -z $compiler_flavors ]]; then
-    pick_compiler_flavors
-  fi
-
-  mkdir -p cross_compilers
-  cd cross_compilers
-
-    unset CFLAGS # don't want these "windows target" settings used the compiler itself since it creates executables to run on the local box (we have a parameter allowing them to set them for the script "all builds" basically)
-    # pthreads version to avoid having to use cvs for it
-    echo "Starting to download and build cross compile version of gcc [requires working internet access] with thread count $gcc_cpu_count..."
-    echo ""
-
-    # --disable-shared allows c++ to be distributed at all...which seemed necessary for some random dependency which happens to use/require c++...
-    local zeranoe_script_name=mingw-w64-build-r22.local # https://files.1f0.de/mingw/scripts/
-    local zeranoe_script_options="--default-configure --cpu-count=$gcc_cpu_count --pthreads-w32-ver=2-9-1 --disable-shared --clean-build --verbose"
-    if [[ ($compiler_flavors == "win32" || $compiler_flavors == "multi") && ! -f ../$win32_gcc ]]; then
-      echo "Building win32 cross compiler..."
+      # --disable-shared allows c++ to be distributed at all...which seemed necessary for some random dependency which happens to use/require c++...
+      local zeranoe_script_name=mingw-w64-build-r22.local # https://files.1f0.de/mingw/scripts/
+      local zeranoe_script_options="--default-configure --cpu-count=$gcc_cpu_count --pthreads-w32-ver=2-9-1 --disable-shared --clean-build --verbose"
+      echo "Building win32 cross compiler."
       download_gcc_build_script $zeranoe_script_name
       if [[ `uname` =~ "5.1" ]]; then # Avoid using secure API functions for compatibility with msvcrt.dll on Windows XP.
         sed -i "s/ --enable-secure-api//" $zeranoe_script_name
       fi
       nice ./$zeranoe_script_name $zeranoe_script_options --build-type=win32 || exit 1
       if [[ ! -f ../$win32_gcc ]]; then
-        echo "Failure building 32 bit gcc? Recommend nuke sandbox (rm -fr sandbox) and start over..."
+        echo "Failure building 32 bit gcc? Recommend nuke sandbox (rm -fr sandbox) and start over."
         exit 1
       fi
-    fi
-    if [[ ($compiler_flavors == "win64" || $compiler_flavors == "multi") && ! -f ../$win64_gcc ]]; then
-      echo "Building win64 x86_64 cross compiler..."
-      download_gcc_build_script $zeranoe_script_name
-      nice ./$zeranoe_script_name $zeranoe_script_options --build-type=win64 || exit 1
-      if [[ ! -f ../$win64_gcc ]]; then
-        echo "Failure building 64 bit gcc? Recommend nuke sandbox (rm -fr sandbox) and start over..."
-        exit 1
-      fi
-    fi
 
-    rm -f build.log # left over stuff...
-    reset_cflags
-  cd ..
-  echo "Done building (or already built) MinGW-w64 cross-compiler(s) successfully..."
-  echo `date` # so they can see how long it took :)
+      rm -f build.log # left over stuff...
+      reset_cflags
+    cd ..
+    echo "Done building (or already built) MinGW-w64 cross-compiler(s) successfully."
+    echo `date` # so they can see how long it took :)
+  fi
 }
-
-# helper methods for downloading and building projects that can take generic input
 
 do_svn_checkout() {
   repo_url="$1"
   to_dir="$2"
   desired_revision="$3"
   if [ ! -d $to_dir ]; then
-    echo "svn checking out to $to_dir"
+    echo "Downloading (via svn checkout) $to_dir from $repo_url."
     if [[ -z "$desired_revision" ]]; then
       svn checkout $repo_url $to_dir.tmp  --non-interactive --trust-server-cert || exit 1
     else
@@ -227,7 +159,7 @@ do_svn_checkout() {
     mv $to_dir.tmp $to_dir
   else
     cd $to_dir
-    echo "not svn Updating $to_dir since usually svn repo's aren't updated frequently enough..."
+    echo "Not updating svn $to_dir, because svn repo's aren't updated frequently enough."
     # XXX accomodate for desired revision here if I ever uncomment the next line...
     # svn up
     cd ..
@@ -242,43 +174,43 @@ do_git_checkout() {
   fi
   local desired_branch="$3"
   if [ ! -d $to_dir ]; then
-    echo "Downloading (via git clone) $to_dir from $repo_url"
+    echo "Downloading (via git clone) $to_dir from $repo_url."
     rm -fr $to_dir.tmp # just in case it was interrupted previously...
     git clone $repo_url $to_dir.tmp || exit 1
     # prevent partial checkouts by renaming it only after success
     mv $to_dir.tmp $to_dir
-    echo "done git cloning to $to_dir"
+    echo "done git cloning to $to_dir."
     cd $to_dir
   else
     cd $to_dir
     if [[ $git_get_latest = "y" ]]; then
       git fetch # need this no matter what
     else
-      echo "not doing git get latest pull for latest code $to_dir"
+      echo "not doing git get latest pull for latest code $to_dir."
     fi
   fi
 
   old_git_version=`git rev-parse HEAD`
 
   if [[ -z $desired_branch ]]; then
-    echo "doing git checkout master"
+    echo "Doing git checkout master."
     git checkout -f master || exit 1 # in case they were on some other branch before [ex: going between ffmpeg release tags]. # Checkout even if the working tree differs from HEAD.
     if [[ $git_get_latest = "y" ]]; then
-      echo "Updating to latest $to_dir git version [origin/master]..."
+      echo "Updating to latest $to_dir git version [origin/master]."
       git merge origin/master || exit 1
     fi
   else
-    echo "doing git checkout $desired_branch"
+    echo "Doing git checkout $desired_branch."
     git checkout "$desired_branch" || exit 1
     git merge "$desired_branch" || exit 1 # get incoming changes to a branch
   fi
 
   new_git_version=`git rev-parse HEAD`
   if [[ "$old_git_version" != "$new_git_version" ]]; then
-    echo "got upstream changes, forcing re-configure."
+    echo "Got upstream changes, forcing re-configure."
     git clean -f # Throw away local changes; 'already_*' and bak-files for instance.
   else
-    echo "got no code changes, not forcing reconfigure for that..."
+    echo "Got no code changes, not forcing reconfigure for that."
   fi
   cd ..
 }
@@ -303,7 +235,7 @@ do_configure() {
   if [ ! -f "$touch_name" ]; then
     # make uninstall # does weird things when run under ffmpeg src so disabled for now...
 
-    echo "configuring $english_name ($PWD) as $ PKG_CONFIG_PATH=$PKG_CONFIG_PATH PATH=$mingw_bin_path:\$PATH $configure_name $configure_options" # say it now in case bootstrap fails etc.
+    echo "Configuring $english_name ($PWD) as $ PKG_CONFIG_PATH=$PKG_CONFIG_PATH PATH=$mingw_bin_path:\$PATH $configure_name $configure_options." # say it now in case bootstrap fails etc.
     if [ -f bootstrap ]; then
       ./bootstrap # some need this to create ./configure :|
     fi
@@ -316,10 +248,10 @@ do_configure() {
     rm -f already_* # reset
     "$configure_name" $configure_options || exit 1 # not nice on purpose, so that if some other script is running as nice, this one will get priority :)
     touch -- "$touch_name"
-    echo "doing preventative make clean"
+    echo "Doing preventative make clean."
     nice make clean -j $cpu_count # sometimes useful when files change, etc.
   #else
-  #  echo "already configured $(basename $cur_dir2)"
+  #  echo "Already configured $(basename $cur_dir2)."
   fi
 }
 
@@ -330,7 +262,7 @@ do_make() {
 
   if [ ! -f $touch_name ]; then
     echo
-    echo "making $cur_dir2 as $ PATH=$mingw_bin_path:\$PATH make $extra_make_options"
+    echo "Doing make in $cur_dir2 as $ PATH=$mingw_bin_path:\$PATH make $extra_make_options."
     echo
     if [ ! -f configure ]; then
       nice make clean -j $cpu_count # just in case helpful if old junk left around and this is a 're make' and wasn't cleaned at reconfigure time
@@ -338,7 +270,7 @@ do_make() {
     nice make $extra_make_options || exit 1
     touch $touch_name || exit 1 # only touch if the build was OK
   else
-    echo "already made $(basename "$cur_dir2") ..."
+    echo "Already made $(basename "$cur_dir2")."
   fi
 }
 
@@ -358,7 +290,7 @@ do_make_install() {
   fi
   local touch_name=$(get_small_touchfile_name already_ran_make_install "$make_install_options")
   if [ ! -f $touch_name ]; then
-    echo "make installing $(pwd) as $ PATH=$mingw_bin_path:\$PATH make $make_install_options"
+    echo "Installing $(pwd) as $ PATH=$mingw_bin_path:\$PATH make $make_install_options."
     nice make $make_install_options || exit 1
     touch $touch_name || exit 1
   fi
@@ -367,12 +299,11 @@ do_make_install() {
 do_cmake() {
   extra_args="$1"
   local touch_name=$(get_small_touchfile_name already_ran_cmake "$extra_args")
-
   if [ ! -f $touch_name ]; then
     rm -f already_* # reset so that make will run again if option just changed
     local cur_dir2=$(pwd)
-    echo doing cmake in $cur_dir2 with PATH=$mingw_bin_path:\$PATH with extra_args=$extra_args like this:
-    echo cmake –G”Unix Makefiles” . -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB=${cross_prefix}ranlib -DCMAKE_C_COMPILER=${cross_prefix}gcc -DCMAKE_CXX_COMPILER=${cross_prefix}g++ -DCMAKE_RC_COMPILER=${cross_prefix}windres -DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix $extra_args
+    echo "Doing cmake in $cur_dir2 with PATH=$mingw_bin_path:\$PATH with extra_args=$extra_args like this:"
+    echo "cmake –G”Unix Makefiles” . -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB=${cross_prefix}ranlib -DCMAKE_C_COMPILER=${cross_prefix}gcc -DCMAKE_CXX_COMPILER=${cross_prefix}g++ -DCMAKE_RC_COMPILER=${cross_prefix}windres -DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix $extra_args"
     cmake –G”Unix Makefiles” . -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB=${cross_prefix}ranlib -DCMAKE_C_COMPILER=${cross_prefix}gcc -DCMAKE_CXX_COMPILER=${cross_prefix}g++ -DCMAKE_RC_COMPILER=${cross_prefix}windres -DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix $extra_args || exit 1
     touch $touch_name || exit 1
   fi
@@ -396,16 +327,15 @@ apply_patch() {
       rm $patch_name || exit 1 # remove old version in case it has been since updated on the server...
     fi
     curl -4 --retry 5 $url -O --fail || exit 1
-    echo "applying patch $patch_name"
+    echo "Applying patch '$patch_name'."
     patch $patch_type < "$patch_name" || exit 1
     touch $patch_done_name || exit 1
     rm -f already_ran* # if it's a new patch, reset everything too, in case it's really really really new
   #else
-    #echo "patch $patch_name already applied"
+    #echo "Patch '$patch_name' already applied."
   fi
 }
 
-# takes a url, output_dir as params, output_dir optional
 download_and_unpack_file() {
   url="$1"
   output_name=$(basename $url)
@@ -418,13 +348,11 @@ download_and_unpack_file() {
     if [[ -f $output_name ]]; then
       rm $output_name || exit 1
     fi
-
     #  From man curl
     #  -4, --ipv4
     #  If curl is capable of resolving an address to multiple IP versions (which it is if it is  IPv6-capable),
     #  this option tells curl to resolve names to IPv4 addresses only.
     #  avoid a "network unreachable" error in certain [broken Ubuntu] configurations a user ran into once
-
     curl -4 "$url" --retry 50 -O -L --fail || exit 1 # -L means "allow redirection" or some odd :|
     tar -xf "$output_name" || unzip "$output_name" || exit 1
     touch "$output_dir/unpacked.successfully" || exit 1
@@ -437,7 +365,6 @@ generic_configure() {
   do_configure "--host=$host_target --prefix=$mingw_w64_x86_64_prefix --disable-shared --enable-static $extra_configure_options"
 }
 
-# params: url, optional "english name it will unpack to"
 generic_download_and_make_and_install() {
   local url="$1"
   local english_name="$2"
@@ -544,16 +471,6 @@ build_sdl2() {
     if [[ ! -f $mingw_bin_path/$host_target-sdl2-config ]]; then
       mv "$mingw_bin_path/sdl2-config" "$mingw_bin_path/$host_target-sdl2-config" # At the moment FFmpeg's 'configure' doesn't use 'sdl2-config', because it gives priority to 'sdl2.pc', but when it does, it expects 'i686-w64-mingw32-sdl2-config' in 'cross_compilers/mingw-w64-i686/bin'.
     fi
-  cd ..
-}
-
-build_intel_quicksync_mfx() { # i.e. qsv
-  do_git_checkout https://github.com/lu-zero/mfx_dispatch.git # lu-zero??
-  cd mfx_dispatch_git
-    if [[ ! -f "configure" ]]; then
-      autoreconf -fiv || exit 1
-    fi
-    generic_configure_make_install
   cd ..
 }
 
@@ -1363,71 +1280,6 @@ build_libx264() {
   cd ..
 }
 
-build_lsmash() { # an MP4 library
-  do_git_checkout https://github.com/l-smash/l-smash.git l-smash
-  cd l-smash
-    do_configure "--prefix=$mingw_w64_x86_64_prefix --cross-prefix=$cross_prefix"
-    do_make_and_make_install
-  cd ..
-}
-
-build_libdvdread() {
-  build_libdvdcss
-  download_and_unpack_file http://dvdnav.mplayerhq.hu/releases/libdvdread-4.9.9.tar.xz # last revision before 5.X series so still works with MPlayer
-  cd libdvdread-4.9.9
-    # XXXX better CFLAGS here...
-    generic_configure "CFLAGS=-DHAVE_DVDCSS_DVDCSS_H LDFLAGS=-ldvdcss --enable-dlfcn" # vlc patch: "--enable-libdvdcss" # XXX ask how I'm *supposed* to do this to the dvdread peeps [svn?]
-    #apply_patch file://$patch_dir/dvdread-win32.patch # has been reported to them...
-    do_make_and_make_install
-    sed -i.bak 's/-ldvdread.*/-ldvdread -ldvdcss/' "$PKG_CONFIG_PATH/dvdread.pc"
-  cd ..
-}
-
-build_libdvdnav() {
-  download_and_unpack_file http://dvdnav.mplayerhq.hu/releases/libdvdnav-4.2.1.tar.xz # 4.2.1. latest revision before 5.x series [?]
-  cd libdvdnav-4.2.1
-    if [[ ! -f ./configure ]]; then
-      ./autogen.sh
-    fi
-    generic_configure_make_install
-    sed -i.bak 's/-ldvdnav.*/-ldvdnav -ldvdread -ldvdcss -lpsapi/' "$PKG_CONFIG_PATH/dvdnav.pc" # psapi for dlfcn ... [hrm?]
-  cd ..
-}
-
-build_libdvdcss() {
-  generic_download_and_make_and_install https://download.videolan.org/pub/videolan/libdvdcss/1.2.13/libdvdcss-1.2.13.tar.bz2
-}
-
-build_libjpeg_turbo() {
-  download_and_unpack_file https://sourceforge.net/projects/libjpeg-turbo/files/1.5.0/libjpeg-turbo-1.5.0.tar.gz
-  cd libjpeg-turbo-1.5.0
-    #do_cmake_and_install "-DNASM=yasm" # couldn't figure out a static only build with cmake...maybe you can these days dunno
-    generic_configure "NASM=yasm"
-    do_make_and_make_install
-    sed -i.bak 's/typedef long INT32/typedef long XXINT32/' "$mingw_w64_x86_64_prefix/include/jmorecfg.h" # breaks VLC build without this...freaky...theoretically using cmake instead would be enough, but that installs .dll.a file... XXXX maybe no longer needed :|
-  cd ..
-}
-
-build_libproxy() {
-  # NB this lacks a .pc file still
-  download_and_unpack_file https://libproxy.googlecode.com/files/libproxy-0.4.11.tar.gz
-  cd libproxy-0.4.11
-    sed -i.bak "s/= recv/= (void *) recv/" libmodman/test/main.cpp # some compile failure
-    do_cmake_and_install
-  cd ..
-}
-
-build_lua() {
-  download_and_unpack_file https://www.lua.org/ftp/lua-5.3.3.tar.gz
-  cd lua-5.3.3
-    export AR="${cross_prefix}ar rcu" # needs rcu parameter so have to call it out different :|
-    do_make "CC=${cross_prefix}gcc RANLIB=${cross_prefix}ranlib generic" # generic == "generic target" and seems to result in a static build, no .exe's blah blah the mingw option doesn't even build liblua.a
-    unset AR
-    do_make_install "INSTALL_TOP=$mingw_w64_x86_64_prefix" "generic install"
-    cp etc/lua.pc $PKG_CONFIG_PATH
-  cd ..
-}
-
 build_libcurl() {
   download_and_unpack_file https://curl.haxx.se/download/curl-7.54.1.tar.gz
   cd curl-7.54.1
@@ -1435,181 +1287,6 @@ build_libcurl() {
     generic_configure "--without-ssl --with-gnutls --without-ca-bundle --with-ca-fallback" # Use GnuTLS's built-in CA store instead of a separate 'ca-bundle.crt'.
     do_make # 'curl.exe' only. Don't install.
     unset PKG_CONFIG
-  cd ..
-}
-
-build_libhdhomerun() {
-  exit 1 # still broken unfortunately, for cross compile :|
-  download_and_unpack_file https://download.silicondust.com/hdhomerun/libhdhomerun_20150826.tgz libhdhomerun
-  cd libhdhomerun
-    do_make CROSS_COMPILE=$cross_prefix  OS=Windows_NT
-  cd ..
-}
-
-build_dvbtee_app() {
-  build_libcurl # it "can use this" so why not
-#  build_libhdhomerun # broken but dependency apparently :|
-  do_git_checkout https://github.com/mkrufky/libdvbtee.git
-  cd libdvbtee_git
-    # checkout its submodule, apparently required
-    if [ ! -e libdvbpsi/bootstrap ]; then
-      rm -fr libdvbpsi # remove placeholder
-      do_git_checkout https://github.com/mkrufky/libdvbpsi.git
-      cd libdvbpsi_git
-        generic_configure_make_install # library dependency submodule... TODO don't install it, just leave it local :)
-      cd ..
-    fi
-    generic_configure
-    do_make # not install since don't have a dependency on the library
-  cd ..
-}
-
-build_qt() {
-  build_libjpeg_turbo # libjpeg a dependency [?]
-  unset CFLAGS # it makes something of its own first, which runs locally, so can't use a foreign arch, or maybe it can, but not important enough: http://stackoverflow.com/a/18775859/32453 XXXX could look at this
-  #download_and_unpack_file http://pkgs.fedoraproject.org/repo/pkgs/qt/qt-everywhere-opensource-src-4.8.7.tar.gz/d990ee66bf7ab0c785589776f35ba6ad/qt-everywhere-opensource-src-4.8.7.tar.gz # untested
-  #cd qt-everywhere-opensource-src-4.8.7
-  # download_and_unpack_file http://download.qt-project.org/official_releases/qt/5.1/5.1.1/submodules/qtbase-opensource-src-5.1.1.tar.xz qtbase-opensource-src-5.1.1 # not officially supported seems...so didn't try it
-  download_and_unpack_file http://pkgs.fedoraproject.org/repo/pkgs/qt/qt-everywhere-opensource-src-4.8.5.tar.gz/1864987bdbb2f58f8ae8b350dfdbe133/qt-everywhere-opensource-src-4.8.5.tar.gz
-  cd qt-everywhere-opensource-src-4.8.5
-    apply_patch file://$patch_dir/imageformats.patch
-    apply_patch file://$patch_dir/qt-win64.patch
-    # vlc's configure options...mostly
-    do_configure "-static -release -fast -no-exceptions -no-stl -no-sql-sqlite -no-qt3support -no-gif -no-libmng -qt-libjpeg -no-libtiff -no-qdbus -no-openssl -no-webkit -sse -no-script -no-multimedia -no-phonon -opensource -no-scripttools -no-opengl -no-script -no-scripttools -no-declarative -no-declarative-debug -opensource -no-s60 -host-little-endian -confirm-license -xplatform win32-g++ -device-option CROSS_COMPILE=$cross_prefix -prefix $mingw_w64_x86_64_prefix -prefix-install -nomake examples"
-    if [ ! -f 'already_qt_maked_k' ]; then
-      make sub-src -j $cpu_count
-      make install sub-src # let it fail, baby, it still installs a lot of good stuff before dying on mng...? huh wuh?
-      cp ./plugins/imageformats/libqjpeg.a $mingw_w64_x86_64_prefix/lib || exit 1 # I think vlc's install is just broken to need this [?]
-      cp ./plugins/accessible/libqtaccessiblewidgets.a  $mingw_w64_x86_64_prefix/lib || exit 1 # this feels wrong...
-      # do_make_and_make_install "sub-src" # sub-src might make the build faster? # complains on mng? huh?
-      touch 'already_qt_maked_k'
-    fi
-    # vlc needs an adjust .pc file? huh wuh?
-    sed -i.bak 's/Libs: -L${libdir} -lQtGui/Libs: -L${libdir} -lcomctl32 -lqjpeg -lqtaccessiblewidgets -lQtGui/' "$PKG_CONFIG_PATH/QtGui.pc" # sniff
-  cd ..
-  reset_cflags
-}
-
-build_vlc() {
-  # currently broken, since it got too old for libavcodec and I didn't want to build its own custom one yet to match, and now it's broken with gcc 5.2.0 seemingly
-  # call out dependencies here since it's a lot, plus hierarchical FTW!
-  # should be ffmpeg 1.1.1 or some odd?
-  echo "not building vlc, broken dependencies or something weird"
-  return
-  # vlc's own dependencies:
-  build_lua
-  build_libdvdread
-  build_libdvdnav
-  build_libx265
-  build_libjpeg_turbo
-  build_ffmpeg
-  build_qt
-
-  # currently vlc itself currently broken :|
-  do_git_checkout https://github.com/videolan/vlc.git
-  cd vlc_git
-  #apply_patch file://$patch_dir/vlc_localtime_s.patch # git revision needs it...
-  # outdated and patch doesn't apply cleanly anymore apparently...
-  #if [[ "$non_free" = "y" ]]; then
-  #  apply_patch https://raw.githubusercontent.com/gcsx/ffmpeg-windows-build-helpers/patch-5/patches/priorize_avcodec.patch
-  #fi
-  if [[ ! -f "configure" ]]; then
-    ./bootstrap
-  fi
-  export DVDREAD_LIBS='-ldvdread -ldvdcss -lpsapi'
-  do_configure "--disable-libgcrypt --disable-a52 --host=$host_target --disable-lua --disable-mad --enable-qt --disable-sdl --disable-mod" # don't have lua mingw yet, etc. [vlc has --disable-sdl [?]] x265 disabled until we care enough... Looks like the bluray problem was related to the BLURAY_LIBS definition. [not sure what's wrong with libmod]
-  rm -f `find . -name *.exe` # try to force a rebuild...though there are tons of .a files we aren't rebuilding as well FWIW...:|
-  rm -f already_ran_make* # try to force re-link just in case...
-  do_make
-  # do some gymnastics to avoid building the mozilla plugin for now [couldn't quite get it to work]
-  #sed -i.bak 's_git://git.videolan.org/npapi-vlc.git_https://github.com/rdp/npapi-vlc.git_' Makefile # this wasn't enough...
-  sed -i.bak "s/package-win-common: package-win-install build-npapi/package-win-common: package-win-install/" Makefile
-  sed -i.bak "s/.*cp .*builddir.*npapi-vlc.*//g" Makefile
-  make package-win-common # not do_make, fails still at end, plus this way we get new vlc.exe's
-  echo "
-
-
-     vlc success, created a file like ${PWD}/vlc-xxx-git/vlc.exe
-
-
-
-"
-  cd ..
-  unset DVDREAD_LIBS
-}
-
-reset_cflags() {
-  export CFLAGS=$original_cflags
-}
-
-build_mplayer() {
-  # pre requisites
-  build_libjpeg_turbo
-  build_libdvdread
-  build_libdvdnav
-
-  download_and_unpack_file https://sourceforge.net/projects/mplayer-edl/files/mplayer-export-snapshot.2014-05-19.tar.bz2 mplayer-export-2014-05-19
-  cd mplayer-export-2014-05-19
-    do_git_checkout https://github.com/FFmpeg/FFmpeg ffmpeg d43c303038e9bd # known compatible commit
-    export LDFLAGS='-lpthread -ldvdnav -ldvdread -ldvdcss' # not compat with newer dvdread possibly? huh wuh?
-    export CFLAGS=-DHAVE_DVDCSS_DVDCSS_H
-    do_configure "--enable-cross-compile --host-cc=cc --cc=${cross_prefix}gcc --windres=${cross_prefix}windres --ranlib=${cross_prefix}ranlib --ar=${cross_prefix}ar --as=${cross_prefix}as --nm=${cross_prefix}nm --enable-runtime-cpudetection --extra-cflags=$CFLAGS --with-dvdnav-config=$mingw_w64_x86_64_prefix/bin/dvdnav-config --disable-dvdread-internal --disable-libdvdcss-internal --disable-w32threads --enable-pthreads --extra-libs=-lpthread --enable-debug --enable-ass-internal --enable-dvdread --enable-dvdnav --disable-libvpx-lavc" # haven't reported the ldvdcss thing, think it's to do with possibly it not using dvdread.pc [?] XXX check with trunk
-    # disable libvpx didn't work with its v1.5.0 some reason :|
-    unset LDFLAGS
-    reset_cflags
-    sed -i.bak "s/HAVE_PTHREAD_CANCEL 0/HAVE_PTHREAD_CANCEL 1/g" config.h # mplayer doesn't set this up right?
-    touch -t 201203101513 config.h # the above line change the modify time for config.h--forcing a full rebuild *every time* yikes!
-    # try to force re-link just in case...
-    rm -f *.exe
-    rm -f already_ran_make* # try to force re-link just in case...
-    do_make
-    cp mplayer.exe mplayer_debug.exe
-    ${cross_prefix}strip mplayer.exe
-    echo "built ${PWD}/{mplayer,mencoder,mplayer_debug}.exe"
-  cd ..
-}
-
-build_mp4box() { # like build_gpac
-  # This script only builds the gpac_static lib plus MP4Box. Other tools inside
-  # specify revision until this works: https://sourceforge.net/p/gpac/discussion/287546/thread/72cf332a/
-  do_git_checkout https://github.com/gpac/gpac.git mp4box_gpac_git
-  cd mp4box_gpac_git
-    # are these tweaks needed? If so then complain to the mp4box people about it?
-    sed -i.bak "s/has_dvb4linux=\"yes\"/has_dvb4linux=\"no\"/g" configure
-    sed -i.bak "s/`uname -s`/MINGW32/g" configure
-    # XXX do I want to disable more things here?
-    # ./sandbox/cross_compilers/mingw-w64-i686/bin/i686-w64-mingw32-sdl-config
-    generic_configure "--static-mp4box --enable-static-bin --disable-oss-audio --extra-ldflags=-municode --disable-x11 --sdl-cfg=${cross_prefix}sdl-config"
-    # I seem unable to pass 3 libs into the same config line so do it with sed...
-    sed -i.bak "s/EXTRALIBS=.*/EXTRALIBS=-lws2_32 -lwinmm -lz/g" config.mak
-    cd src
-      do_make "$make_prefix_options"
-    cd ..
-    rm -f ./bin/gcc/MP4Box* # try and force a relink/rebuild of the .exe
-    cd applications/mp4box
-      rm -f already_ran_make* # ??
-      do_make "$make_prefix_options"
-    cd ../..
-    # copy it every time just in case it was rebuilt...
-    cp ./bin/gcc/MP4Box ./bin/gcc/MP4Box.exe # it doesn't name it .exe? That feels broken somehow...
-    echo "built $(readlink -f ./bin/gcc/MP4Box.exe)"
-  cd ..
-}
-
-build_libMXF() {
-  download_and_unpack_file https://sourceforge.net/projects/ingex/files/1.0.0/libMXF/libMXF-src-1.0.0.tgz "libMXF-src-1.0.0"
-  cd libMXF-src-1.0.0
-    apply_patch file://$patch_dir/libMXF.diff
-    do_make "MINGW_CC_PREFIX=$cross_prefix"
-    #
-    # Manual equivalent of make install. Enable it if desired. We shouldn't need it in theory since we never use libMXF.a file and can just hand pluck out the *.exe files already...
-    #
-    #cp libMXF/lib/libMXF.a $mingw_w64_x86_64_prefix/lib/libMXF.a
-    #cp libMXF++/libMXF++/libMXF++.a $mingw_w64_x86_64_prefix/lib/libMXF++.a
-    #mv libMXF/examples/writeaviddv50/writeaviddv50 libMXF/examples/writeaviddv50/writeaviddv50.exe
-    #mv libMXF/examples/writeavidmxf/writeavidmxf libMXF/examples/writeavidmxf/writeavidmxf.exe
-    #cp libMXF/examples/writeaviddv50/writeaviddv50.exe $mingw_w64_x86_64_prefix/bin/writeaviddv50.exe
-    #cp libMXF/examples/writeavidmxf/writeavidmxf.exe $mingw_w64_x86_64_prefix/bin/writeavidmxf.exe
   cd ..
 }
 
@@ -1755,37 +1432,6 @@ build_ffmpeg() {
   cd ..
 }
 
-build_lsw() {
-   # Build L-Smash-Works, which are plugins based on lsmash
-   #build_ffmpeg static # dependency, assume already built
-   build_lsmash # dependency
-   do_git_checkout https://github.com/VFR-maniac/L-SMASH-Works.git lsw
-   cd lsw/VapourSynth
-     do_configure "--prefix=$mingw_w64_x86_64_prefix --cross-prefix=$cross_prefix --target-os=mingw"
-     do_make_and_make_install
-     # AviUtl is 32bit-only
-     if [ "$bits_target" = "32" ]; then
-       cd ../AviUtl
-       do_configure "--prefix=$mingw_w64_x86_64_prefix --cross-prefix=$cross_prefix"
-       do_make
-     fi
-   cd ../..
-}
-
-find_all_build_exes() {
-  local found=""
-# NB that we're currently in the sandbox dir...
-  for file in `find . -name ffmpeg.exe` `find . -name ffmpeg_g.exe` `find . -name ffplay.exe` `find . -name MP4Box.exe` `find . -name mplayer.exe` `find . -name mencoder.exe` `find . -name avconv.exe` `find . -name avprobe.exe` `find . -name x264.exe` `find . -name writeavidmxf.exe` `find . -name writeaviddv50.exe` `find . -name rtmpdump.exe` `find . -name x265.exe` `find . -name ismindex.exe` `find . -name dvbtee.exe` `find . -name boxdumper.exe` `find . -name muxer.exe ` `find . -name remuxer.exe` `find . -name timelineeditor.exe` `find . -name lwcolor.auc` `find . -name lwdumper.auf` `find . -name lwinput.aui` `find . -name lwmuxer.auf` `find . -name vslsmashsource.dll`; do
-    found="$found $(readlink -f $file)"
-  done
-
-  # bash recursive glob fails here again?
-  for file in `find . -name vlc.exe | grep -- -`; do
-    found="$found $(readlink -f $file)"
-  done
-  echo $found # pseudo return value...
-}
-
 build_dependencies() {
   build_dlfcn
   build_bzip2 # Bzlib (bzip2) in FFmpeg is autodetected.
@@ -1854,30 +1500,15 @@ build_dependencies() {
 }
 
 build_apps() {
-  if [[ $build_dvbtee = "y" ]]; then
-    build_dvbtee_app
-  fi
-  # now the things that use the dependencies...
-  if [[ $build_libmxf = "y" ]]; then
-    build_libMXF
-  fi
-  if [[ $build_mp4box = "y" ]]; then
-    build_mp4box
-  fi
-  if [[ $build_mplayer = "y" ]]; then
-    build_mplayer
-  fi
   if [[ $build_ffmpeg_static = "y" ]]; then
     build_ffmpeg static
   else
     build_ffmpeg shared
   fi
-  if [[ $build_vlc = "y" ]]; then
-    build_vlc
-  fi
-  if [[ $build_lsw = "y" ]]; then
-    build_lsw
-  fi
+}
+
+reset_cflags() {
+  export CFLAGS=$original_cflags
 }
 
 # set some parameters initial values
@@ -1907,38 +1538,16 @@ else
 fi
 
 # variables with their defaults
-#build_ffmpeg_static=y # Force user selection.
-build_dvbtee=n
-build_libmxf=n
-build_mp4box=n
-build_mplayer=n
-build_vlc=n
-build_lsw=n # To build x264 with L-Smash-Works.
+build_ffmpeg_static=y
 git_get_latest=y
 prefer_stable=y # Only for x264 and x265.
-if [[ `uname` =~ "5.1" ]]; then # Disable when WinXP is detected, or you'll get "The procedure entry point _wfopen_s could not be located in the dynamic link library msvcrt.dll".
-  build_intel_qsv=n
-else
-  build_intel_qsv=y
-fi
 #disable_nonfree=n # have no value by default to force user selection
-flags=$(cat /proc/cpuinfo | grep flags)
-if [[ $flags =~ "ssse3" ]]; then # See https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html, https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html and https://stackoverflow.com/questions/19689014/gcc-difference-between-o3-and-os.
-  original_cflags='-march=core2 -O2'
-elif [[ $flags =~ "sse3" ]]; then
-  original_cflags='-march=prescott -O2'
-elif [[ $flags =~ "sse2" ]]; then
-  original_cflags='-march=pentium4 -O2'
-elif [[ $flags =~ "sse" ]]; then
-  original_cflags='-march=pentium3 -O2 -mfpmath=sse -msse'
-else
-  original_cflags='-mtune=generic -O2'
-fi
-# if you specify a march it needs to first so x264's configure will use it :|
+original_cflags='-march=pentium3 -O2 -mfpmath=sse -msse' # See https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html, https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html and https://stackoverflow.com/questions/19689014/gcc-difference-between-o3-and-os.
 ffmpeg_git_checkout_version=
 build_ismindex=n
 enable_gpl=y
 build_x264_with_libav=n # To build x264 with Libavformat.
+export ac_cv_func_vsnprintf_s=no # Mark vsnprintf_s as unavailable, as windows xp mscrt doesn't have it.
 
 # parse command line parameters, if any
 while true; do
@@ -1947,20 +1556,10 @@ while true; do
       --build-ffmpeg-static=y  (ffmpeg.exe, ffplay.exe and ffprobe.exe)
       --build-ffmpeg-static=n  (ffmpeg.exe, ffplay.exe, ffprobe.exe and dll-files)
       --ffmpeg-git-checkout-version=[master] if you want to build a particular version of FFmpeg, ex: n3.1.1 or a specific git hash
-      --gcc-cpu-count=[number of cpu cores set it higher than 1 if you have multiple cores and > 1GB RAM, this speeds up initial cross compiler build. FFmpeg build uses number of cores no matter what]
       --disable-nonfree=y (set to n to include nonfree like libfdk-aac)
-      --build-intel-qsv=y (set to y to include the [non windows xp compat.] qsv library and ffmpeg module. NB this not not hevc_qsv...
       --sandbox-ok=n [skip sandbox prompt if y]
       -d [meaning \"defaults\" skip all prompts, just build ffmpeg static with some reasonable defaults like no git updates]
-      --build-libmxf=n [builds libMXF, libMXF++, writeavidmxfi.exe and writeaviddv50.exe from the BBC-Ingex project]
-      --build-mp4box=n [builds MP4Box.exe from the gpac project]
-      --build-mplayer=n [builds mplayer.exe and mencoder.exe]
-      --build-vlc=n [builds a [rather bloated] vlc.exe]
-      --build-lsw=n [builds L-Smash Works VapourSynth and AviUtl plugins]
       --build-ismindex=n [builds ffmpeg utility ismindex.exe]
-      -a 'build all' builds ffmpeg, mplayer, vlc, etc. with all fixings turned on
-      --build-dvbtee=n [build dvbtee.exe a DVB profiler]
-      --compiler-flavors=[multi,win32,win64] [default prompt, or skip if you already have one built, multi is both win32 and win64]
       --cflags=[default is $original_cflags, which works on any cpu, see README for options]
       --git-get-latest=y [do a git pull for latest code from repositories like FFmpeg--can force a rebuild if changes are detected]
       --build-x264-with-libav=n build x264.exe with bundled/included "libav" ffmpeg libraries within it
@@ -1970,26 +1569,14 @@ while true; do
       --enable-gpl=[y] set to n to do an lgpl build
        "; exit 0 ;;
     --sandbox-ok=* ) sandbox_ok="${1#*=}"; shift ;;
-    --gcc-cpu-count=* ) gcc_cpu_count="${1#*=}"; shift ;;
     --ffmpeg-git-checkout-version=* ) ffmpeg_git_checkout_version="${1#*=}"; shift ;;
-    --build-libmxf=* ) build_libmxf="${1#*=}"; shift ;;
-    --build-mp4box=* ) build_mp4box="${1#*=}"; shift ;;
     --build-ismindex=* ) build_ismindex="${1#*=}"; shift ;;
     --git-get-latest=* ) git_get_latest="${1#*=}"; shift ;;
-    --build-intel-qsv=* ) build_intel_qsv="${1#*=}"; shift ;;
     --build-x264-with-libav=* ) build_x264_with_libav="${1#*=}"; shift ;;
-    --build-mplayer=* ) build_mplayer="${1#*=}"; shift ;;
     --cflags=* )
        original_cflags="${1#*=}"; echo "setting cflags as $original_cflags"; shift ;;
-    --build-vlc=* ) build_vlc="${1#*=}"; shift ;;
-    --build-lsw=* ) build_lsw="${1#*=}"; shift ;;
-    --build-dvbtee=* ) build_dvbtee="${1#*=}"; shift ;;
     --disable-nonfree=* ) disable_nonfree="${1#*=}"; shift ;;
-    # this doesn't actually "build all", like doesn't build 10 high-bit LGPL ffmpeg, but it does exercise the "non default" type build options...
-    -a         ) compiler_flavors="multi"; build_mplayer=y; build_libmxf=y; build_mp4box=y; build_vlc=y; build_lsw=y; high_bitdepth=y; build_ffmpeg_static=y; build_lws=y;
-                 disable_nonfree=n; git_get_latest=y; sandbox_ok=y; build_intel_qsv=y; build_dvbtee=y; build_x264_with_libav=y; shift ;;
     -d         ) gcc_cpu_count=$cpu_count; disable_nonfree="y"; sandbox_ok="y"; compiler_flavors="win32"; git_get_latest="n"; shift ;;
-    --compiler-flavors=* ) compiler_flavors="${1#*=}"; shift ;;
     --build-ffmpeg-static=* ) build_ffmpeg_static="${1#*=}"; shift ;;
     --prefer-stable=* ) prefer_stable="${1#*=}"; shift ;;
     --enable-gpl=* ) enable_gpl="${1#*=}"; shift ;;
@@ -2008,59 +1595,19 @@ install_cross_compiler
 
 export PKG_CONFIG_LIBDIR= # disable pkg-config from finding [and using] normal linux system installed libs [yikes]
 
-if [[ $OSTYPE == darwin* ]]; then
-  # mac add some helper scripts
-  mkdir -p mac_helper_scripts
-  cd mac_helper_scripts
-    if [[ ! -x readlink ]]; then
-      # make some scripts behave like linux...
-      curl -4 file://$patch_dir/md5sum.mac --fail > md5sum  || exit 1
-      chmod u+x ./md5sum
-      curl -4 file://$patch_dir/readlink.mac --fail > readlink  || exit 1
-      chmod u+x ./readlink
-    fi
-    export PATH=`pwd`:$PATH
-  cd ..
-fi
-
 original_path="$PATH"
-if [[ $compiler_flavors == "multi" || $compiler_flavors == "win32" ]]; then
-  echo
-  echo "Starting 32-bit builds..."
-  host_target='i686-w64-mingw32'
-  mingw_w64_x86_64_prefix="$cur_dir/cross_compilers/mingw-w64-i686/$host_target"
-  mingw_bin_path="$cur_dir/cross_compilers/mingw-w64-i686/bin"
-  export PKG_CONFIG_PATH="$mingw_w64_x86_64_prefix/lib/pkgconfig"
-  export PATH="$mingw_bin_path:$original_path"
-  bits_target=32
-  cross_prefix="$mingw_bin_path/i686-w64-mingw32-"
-  make_prefix_options="CC=${cross_prefix}gcc AR=${cross_prefix}ar PREFIX=$mingw_w64_x86_64_prefix RANLIB=${cross_prefix}ranlib LD=${cross_prefix}ld STRIP=${cross_prefix}strip CXX=${cross_prefix}g++"
-  mkdir -p win32
-  cd win32
-    build_dependencies
-    build_apps
-  cd ..
-fi
-
-if [[ $compiler_flavors == "multi" || $compiler_flavors == "win64" ]]; then
-  echo
-  echo "**************Starting 64-bit builds..." # make it have a bit easier to you can see when 32 bit is done
-  host_target='x86_64-w64-mingw32'
-  mingw_w64_x86_64_prefix="$cur_dir/cross_compilers/mingw-w64-x86_64/$host_target"
-  mingw_bin_path="$cur_dir/cross_compilers/mingw-w64-x86_64/bin"
-  export PKG_CONFIG_PATH="$mingw_w64_x86_64_prefix/lib/pkgconfig"
-  export PATH="$mingw_bin_path:$original_path"
-  bits_target=64
-  cross_prefix="$mingw_bin_path/x86_64-w64-mingw32-"
-  make_prefix_options="CC=${cross_prefix}gcc AR=${cross_prefix}ar PREFIX=$mingw_w64_x86_64_prefix RANLIB=${cross_prefix}ranlib LD=${cross_prefix}ld STRIP=${cross_prefix}strip CXX=${cross_prefix}g++"
-  mkdir -p win64
-  cd win64
-    build_dependencies
-    build_apps
-  cd ..
-fi
-
-echo "searching for all local exe's (some may not have been built this round, NB)..."
-for file in $(find_all_build_exes); do
-  echo "built $file"
-done
+echo
+echo "Starting 32-bit builds."
+host_target='i686-w64-mingw32'
+mingw_w64_x86_64_prefix="$cur_dir/cross_compilers/mingw-w64-i686/$host_target"
+mingw_bin_path="$cur_dir/cross_compilers/mingw-w64-i686/bin"
+export PKG_CONFIG_PATH="$mingw_w64_x86_64_prefix/lib/pkgconfig"
+export PATH="$mingw_bin_path:$original_path"
+bits_target=32
+cross_prefix="$mingw_bin_path/i686-w64-mingw32-"
+make_prefix_options="CC=${cross_prefix}gcc AR=${cross_prefix}ar PREFIX=$mingw_w64_x86_64_prefix RANLIB=${cross_prefix}ranlib LD=${cross_prefix}ld STRIP=${cross_prefix}strip CXX=${cross_prefix}g++"
+mkdir -p win32
+cd win32
+  build_dependencies
+  build_apps
+cd ..
