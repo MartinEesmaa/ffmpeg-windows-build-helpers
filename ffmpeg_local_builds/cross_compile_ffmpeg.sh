@@ -324,26 +324,26 @@ apply_patch() {
 }
 
 download_and_unpack_file() {
-  url="$1"
-  output_name=$(basename $url)
-  output_dir="$2"
-  if [[ -z $output_dir ]]; then
-    output_dir=$(basename $url | sed s/\.tar\.*//) # remove .tar.xx
+  local name=$(basename $1)
+  if [[ $2 ]]; then
+    local dir="$2"
+  else
+    local dir=$(echo $name | sed s/\.tar\.*//) # remove .tar.xx
   fi
-  if [ ! -f "$output_dir/unpacked.successfully" ]; then
-    echo "downloading $url"
-    if [[ -f $output_name ]]; then
-      rm $output_name || exit 1
+  if [ ! -f "$dir/unpacked.successfully" ]; then
+    echo "Downloading $1."
+    if [[ -f $name ]]; then
+      rm $name || exit 1
     fi
     #  From man curl
     #  -4, --ipv4
     #  If curl is capable of resolving an address to multiple IP versions (which it is if it is  IPv6-capable),
     #  this option tells curl to resolve names to IPv4 addresses only.
     #  avoid a "network unreachable" error in certain [broken Ubuntu] configurations a user ran into once
-    curl -4 "$url" --retry 50 -O -L --fail || exit 1 # -L means "allow redirection" or some odd :|
-    tar -xf "$output_name" || unzip "$output_name" || exit 1
-    touch "$output_dir/unpacked.successfully" || exit 1
-    rm "$output_name" || exit 1
+    curl -4 "$1" --retry 50 -O -L --fail || exit 1 # -L means "allow redirection" or some odd :|
+    tar -xf "$name" || unzip "$name" || exit 1
+    touch "$dir/unpacked.successfully" || exit 1
+    rm "$name" || exit 1
   fi
 }
 
