@@ -303,24 +303,23 @@ do_cmake_and_install() {
 }
 
 apply_patch() {
-  local url=$1 # if you want it to use a local file instead of a url one [i.e. local file with local modifications] specify it like file://localhost/full/path/to/filename.patch
-  local patch_type=$2
-  if [[ -z $patch_type ]]; then
-    patch_type="-p0" # some are -p1 unfortunately, git's default
+  if [[ $2 ]]; then
+    local type=$2 # Git patches need '-p1' (also see https://unix.stackexchange.com/a/26502).
+  else
+    local type="-p0"
   fi
-  local patch_name=$(basename $url)
-  local patch_done_name="$patch_name.done"
-  if [[ ! -e $patch_done_name ]]; then
-    if [[ -f $patch_name ]]; then
-      rm $patch_name || exit 1 # remove old version in case it has been since updated on the server...
+  local name=$(basename $1)
+  if [[ ! -e $name.done ]]; then
+    if [[ -f $name ]]; then
+      rm $name || exit 1 # remove old version in case it has been since updated on the server...
     fi
-    curl -4 --retry 5 $url -O --fail || exit 1
-    echo "Applying patch '$patch_name'."
-    patch $patch_type < "$patch_name" || exit 1
-    touch $patch_done_name || exit 1
+    curl -4 --retry 5 $1 -O --fail || exit 1
+    echo "Applying patch '$name'."
+    patch $type < "$name" || exit 1
+    touch $name.done || exit 1
     rm -f already_ran* # if it's a new patch, reset everything too, in case it's really really really new
-  #else
-    #echo "Patch '$patch_name' already applied."
+  else
+    echo "Patch '$name' already applied."
   fi
 }
 
