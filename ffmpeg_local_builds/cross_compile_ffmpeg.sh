@@ -105,10 +105,9 @@ The resultant binary may not be distributable, but can be useful for in-house us
 
 # made into a method so I don't/don't have to download this script every time if only doing just 32 or just6 64 bit builds...
 download_gcc_build_script() {
-  local zeranoe_script_name=$1
-  rm -f $zeranoe_script_name || exit 1
-  curl -4 file://$patch_dir/$zeranoe_script_name -O --fail || exit 1
-  chmod u+x $zeranoe_script_name
+  rm -f $1 || exit 1
+  curl -4 file://$patch_dir/$1 -O --fail || exit 1
+  chmod u+x $1
 }
 
 install_cross_compiler() {
@@ -124,7 +123,7 @@ install_cross_compiler() {
       echo
 
       # --disable-shared allows c++ to be distributed at all...which seemed necessary for some random dependency which happens to use/require c++...
-      local zeranoe_script_name=mingw-w64-build-r22.local # https://files.1f0.de/mingw/scripts/
+      local zeranoe_script_name=mingw-w64-build-r24.local # https://files.1f0.de/mingw/scripts/
       local zeranoe_script_options="--default-configure --cpu-count=$gcc_cpu_count --pthreads-w32-ver=2-9-1 --disable-shared --clean-build --verbose"
       echo "Building win32 cross compiler."
       download_gcc_build_script $zeranoe_script_name
