@@ -404,12 +404,15 @@ do_strip() {
 gen_ld_script() {
   lib=$mingw_w64_x86_64_prefix/lib/$1
   lib_s="${1:3:-2}_s"
-  if [[ ! -f $mingw_w64_x86_64_prefix/lib/lib$lib_s.a ]]; then
-    echo "Generating linker script $lib: $2"
+  if [ ! -f "$mingw_w64_x86_64_prefix/lib/lib$lib_s.a" ] || [ "$lib" -nt "$mingw_w64_x86_64_prefix/lib/lib$lib_s.a" ]; then
+    rm -f $mingw_w64_x86_64_prefix/lib/lib$lib_s.a
+    echo "Generating linker script for $(basename $lib), adding $2".
     mv -f $lib $mingw_w64_x86_64_prefix/lib/lib$lib_s.a
     echo "GROUP ( -l$lib_s $2 )" > $lib
+  else
+    echo "Already generated linker script for $2."
   fi
-}
+} # gen_ld_script libxxx.a -lxxx
 
 build_dlfcn() {
   do_git_checkout https://github.com/dlfcn-win32/dlfcn-win32.git
