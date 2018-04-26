@@ -414,6 +414,19 @@ gen_ld_script() {
   fi
 } # gen_ld_script libxxx.a -lxxx
 
+build_cmake() {
+  download_and_unpack_file https://cmake.org/files/v3.11/cmake-3.11.1.tar.gz
+  cd cmake-3.11.1
+    if [[ ! -f CMakeLists.txt.bak ]]; then # https://gitlab.kitware.com/cmake/cmake/commit/99bf77f49c18f9947b2386c4f5b6308da793de9f.
+      sed -i.bak "577s/CMAKE.*/DEFINED BUILD_CursesDialog)/;586,587d" CMakeLists.txt
+    fi
+    do_configure "--prefix=/usr -- -DBUILD_CursesDialog=0 -DBUILD_TESTING=0" # Don't build 'ccmake' (ncurses), or './configure' will fail otherwise.
+    # Options after "--" are passed to CMake (Usage: ./bootstrap [<options>...] [-- <cmake-options>...])
+    do_make
+    do_make_install "install/strip" # This overwrites Cygwin's 'cmake.exe', 'cpack.exe' and 'ctest.exe'.
+  cd ..
+}
+
 build_dlfcn() {
   do_git_checkout https://github.com/dlfcn-win32/dlfcn-win32.git
   cd dlfcn-win32_git
