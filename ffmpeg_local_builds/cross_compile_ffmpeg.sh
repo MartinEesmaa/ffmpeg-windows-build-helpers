@@ -2,7 +2,7 @@
 # ffmpeg windows cross compile helper/download script, see github repo README
 # Copyright (C) 2012 Roger Pack, the script is under the GPLv3, but output FFmpeg's executables aren't
 
-yes_no_sel () {
+yes_no_sel() {
   unset user_input
   local question="$1"
   shift
@@ -32,7 +32,7 @@ set_box_memory_size_bytes() {
   fi
 }
 
-check_missing_packages () {
+check_missing_packages() {
   # zeranoe's build scripts use wget, though we don't here...
   local check_packages=('7z' 'autoconf' 'autogen' 'automake' 'bison' 'bzip2' 'cmake' 'curl' 'cvs' 'ed' 'flex' 'g++' 'gcc' 'git' 'gperf' 'hg' 'libtool' 'libtoolize' 'make' 'makeinfo' 'patch' 'pax' 'pkg-config' 'svn' 'unzip' 'wget' 'xz' 'yasm')
   for package in "${check_packages[@]}"; do
@@ -1500,16 +1500,8 @@ reset_cflags() {
 
 # set some parameters initial values
 cur_dir="$(pwd)/sandbox"
-patch_dir="$(pwd)/../../../patches"
-cpu_count="$(grep -c processor /proc/cpuinfo 2>/dev/null)" # linux cpu count
-if [ -z "$cpu_count" ]; then
-  cpu_count=`sysctl -n hw.ncpu | tr -d '\n'` # OS X
-  if [ -z "$cpu_count" ]; then
-    echo "warning, unable to determine cpu count, defaulting to 1"
-    cpu_count=1 # else default to just 1, instead of blank, which means infinite
-  fi
-fi
-original_cpu_count=$cpu_count # save it away for some that revert it temporarily
+patch_dir="$(dirname $(pwd))/patches" # Or $(cd $(pwd)/../patches && pwd).
+cpu_count=1
 
 set_box_memory_size_bytes
 if [[ $box_memory_size_bytes -lt 600000000 ]]; then
@@ -1563,7 +1555,7 @@ while true; do
     --cflags=* )
        original_cflags="${1#*=}"; echo "setting cflags as $original_cflags"; shift ;;
     --disable-nonfree=* ) disable_nonfree="${1#*=}"; shift ;;
-    -d         ) gcc_cpu_count=$cpu_count; disable_nonfree="y"; sandbox_ok="y"; compiler_flavors="win32"; git_get_latest="n"; shift ;;
+    -d         ) gcc_cpu_count=$cpu_count; disable_nonfree="y"; sandbox_ok="y"; git_get_latest="n"; shift ;;
     --build-ffmpeg-static=* ) build_ffmpeg_static="${1#*=}"; shift ;;
     --prefer-stable=* ) prefer_stable="${1#*=}"; shift ;;
     --enable-gpl=* ) enable_gpl="${1#*=}"; shift ;;
