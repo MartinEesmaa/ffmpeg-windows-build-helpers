@@ -427,6 +427,20 @@ build_cmake() {
   cd ..
 }
 
+build_nasm() {
+  download_and_unpack_file http://www.nasm.us/pub/nasm/releasebuilds/2.13.03/nasm-2.13.03.tar.xz
+  cd nasm-2.13.03
+    if [[ ! -f Makefile.in.bak ]]; then # Library only.
+      sed -i.bak "/man1/d" Makefile.in
+    fi
+    do_configure "--prefix=/usr"
+    # No '--prefix=$mingw_w64_x86_64_prefix', because NASM has to be built with Cygwin's GCC. Otherwise it can't read Cygwin paths and you'd get errors like "nasm: fatal: unable to open output file `/cygdrive/c/DOCUME~1/Admin/LOCALS~1/Temp/ffconf.Ld8518el/test.o'" while configuring FFmpeg for instance.
+    do_make
+    do_strip . --strip-unneeded
+    do_make_install # 'nasm.exe' and 'ndisasm.exe' will be installed in '/usr/bin' (Cygwin's bin map).
+  cd ..
+}
+
 build_dlfcn() {
   do_git_checkout https://github.com/dlfcn-win32/dlfcn-win32.git
   cd dlfcn-win32_git
