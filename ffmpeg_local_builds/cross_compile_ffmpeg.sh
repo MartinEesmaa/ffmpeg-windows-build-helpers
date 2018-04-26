@@ -188,19 +188,21 @@ do_git_checkout() {
 
   if [[ $3 ]]; then
     echo "Doing git checkout $3."
+    git reset --hard
+    git clean -fdx
     git checkout "$3" || exit 1
     git merge "$3" || exit 1 # get incoming changes to a branch
   else
-    if [[ $(git rev-parse HEAD) != $(git ls-remote -h $1 master | sed "s/\s.*//") ]]; then
-      if [[ $git_get_latest = "y" ]]; then
+    if [[ $git_get_latest = "y" ]]; then
+      if [[ $(git rev-parse HEAD) != $(git ls-remote -h $1 master | sed "s/\s.*//") ]]; then
         echo "Got upstream changes. Updating $dir to latest git version 'origin/master'."
         git reset --hard # Return files to their original state.
         git clean -fdx # Clean the working tree; build- as well as untracked files.
         git checkout master || exit 1
         git merge origin/master || exit 1
+      else
+        echo "Got no code changes. Local $dir repo is up-to-date."
       fi
-    else
-      echo "Got no code changes. Local $dir repo is up-to-date."
     fi
   fi
   cd ..
