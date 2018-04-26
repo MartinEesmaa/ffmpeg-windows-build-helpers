@@ -354,15 +354,14 @@ generic_configure() {
 }
 
 generic_download_and_make_and_install() {
-  local url="$1"
-  local english_name="$2"
-  if [[ -z $english_name ]]; then
-    english_name=$(basename $url | sed s/\.tar\.*//) # remove .tar.xx, take last part of url
+  if [[ $2 ]]; then
+    local name="$2"
+  else
+    local name=$(basename $1 | sed s/\.tar\.*//) # remove .tar.xx, take last part of url
   fi
-  local extra_configure_options="$3"
-  download_and_unpack_file $url $english_name
-  cd $english_name || exit "unable to cd, may need to specify dir it will unpack to as parameter"
-  generic_configure "$extra_configure_options"
+  download_and_unpack_file $1 $name
+  cd $name || exit "unable to cd, may need to specify dir it will unpack to as parameter"
+  generic_configure "$3"
   do_make_and_make_install
   cd ..
 }
