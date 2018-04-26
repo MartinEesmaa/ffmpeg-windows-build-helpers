@@ -367,9 +367,8 @@ generic_download_and_make_and_install() {
 }
 
 do_git_checkout_and_make_install() {
-  local url=$1
-  local git_checkout_name=$(basename $url | sed s/\.git/_git/) # http://y/abc.git -> abc_git
-  do_git_checkout $url $git_checkout_name
+  local git_checkout_name=$(basename $1 | sed s/\.git/_git/) # http://y/abc.git -> abc_git
+  do_git_checkout $1 $git_checkout_name
   cd $git_checkout_name
     generic_configure_make_install
   cd ..
