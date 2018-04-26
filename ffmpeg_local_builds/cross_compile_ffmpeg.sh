@@ -350,8 +350,7 @@ download_and_unpack_file() {
 }
 
 generic_configure() {
-  local extra_configure_options="$1"
-  do_configure "--host=$host_target --prefix=$mingw_w64_x86_64_prefix --disable-shared --enable-static $extra_configure_options"
+  do_configure "--host=$host_target --prefix=$mingw_w64_x86_64_prefix --disable-shared --enable-static $1"
 }
 
 generic_download_and_make_and_install() {
