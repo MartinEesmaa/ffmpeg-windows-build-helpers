@@ -379,6 +379,28 @@ generic_configure_make_install() {
   do_make_and_make_install
 }
 
+do_strip() {
+  if [ ! -f "already_ran_strip" ]; then
+    if [ -f "$1" ]; then
+      echo "Doing ${host_target}-strip $2 $(basename $1)"
+      ${cross_prefix}strip $2 $1 || exit 1
+    else
+      for files in $1/*.{dll,exe}; do
+        [ -f "$files" ] || continue
+        echo "Doing ${host_target}-strip $2 $(basename $files)"
+        ${cross_prefix}strip $2 $files || exit 1
+      done
+    fi
+    touch "already_ran_strip" || exit 1
+  else
+    if [ -f "$1" ]; then
+      echo "Already stripped $(basename $1)."
+    else
+      echo "Already stripped $(basename $(pwd))."
+    fi
+  fi
+} # do_strip file/dir [strip-parameters]
+
 gen_ld_script() {
   lib=$mingw_w64_x86_64_prefix/lib/$1
   lib_s="${1:3:-2}_s"
