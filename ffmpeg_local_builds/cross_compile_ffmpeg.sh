@@ -750,14 +750,10 @@ build_libspeex() {
     if [[ ! -f Makefile.am.bak ]]; then # Library only.
       sed -i.bak "/m4data/,+2d;/^SUBDIRS/s/ doc.*//" Makefile.am
     fi
-    export SPEEXDSP_CFLAGS="-I$mingw_w64_x86_64_prefix/include"
-    export SPEEXDSP_LIBS="-L$mingw_w64_x86_64_prefix/lib -lspeexdsp" # 'configure' somehow can't find SpeexDSP with 'pkg-config'.
-    generic_configure "--disable-binaries" # If you do want the libraries, then 'speexdec.exe' needs 'LDFLAGS=-lwinmm'.
+    generic_configure "--disable-binaries" # If you do want the binaries, then 'speexdec.exe' needs 'LDFLAGS=-lwinmm'.
     do_make_and_make_install
-    unset SPEEXDSP_CFLAGS
-    unset SPEEXDSP_LIBS
   cd ..
-}
+} # [libspeexdsp, dlfcn]
 
 build_libtheora() {
   do_git_checkout https://github.com/xiph/theora.git
@@ -1467,7 +1463,7 @@ build_dependencies() {
   build_libvorbis
   build_libopus
   build_libspeexdsp
-  build_libspeex # Uses libspeexdsp and dlfcn.
+  build_libspeex
   build_libtheora # Needs libogg >= 1.1. Needs libvorbis >= 1.0.1, sdl and libpng for test, programs and examples [disabled]. Uses dlfcn.
   build_libsndfile "install-libgsm" # Needs libogg >= 1.1.3 and libvorbis >= 1.2.3 for external support [disabled]. Uses dlfcn. 'build_libsndfile "install-libgsm"' to install the included LibGSM 6.10.
   build_lame # Uses dlfcn.
