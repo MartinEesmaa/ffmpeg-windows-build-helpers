@@ -877,12 +877,13 @@ build_libgme() {
   do_git_checkout https://bitbucket.org/mpyne/game-music-emu.git
   cd game-music-emu_git
     if [[ ! -f CMakeLists.txt.bak ]]; then
-      sed -i.bak "101,102s/.*/#&/" CMakeLists.txt # Library only.
+      sed -i.bak "/EXCLUDE_FROM_ALL/d" CMakeLists.txt # Library only.
       sed -i.bak "s/ __declspec.*//" gme/blargg_source.h # Needed for building shared FFmpeg libraries.
     fi
-    do_cmake_and_install "-DBUILD_SHARED_LIBS=0 -DENABLE_UBSAN=0"
+    do_cmake_and_install "-DBUILD_SHARED_LIBS=0 -DENABLE_UBSAN=0 -DZLIB_INCLUDE_DIR=$mingw_w64_x86_64_prefix/include -DZLIB_LIBRARY=$mingw_w64_x86_64_prefix/lib/libz.a"
+    # Otherwise they default to: "ZLIB_INCLUDE_DIR:PATH=/usr/include" and "ZLIB_LIBRARY:FILEPATH=/usr/lib/libz.a" and cmake would thus pick Cygwin's zlib, which leads to "warning: "errno" redefined" (LibGME) and "undefined reference to `__assert_func'" (FFmpeg).
   cd ..
-}
+} # zlib
 
 build_libbluray() {
   do_git_checkout https://git.videolan.org/git/libbluray.git
