@@ -599,15 +599,15 @@ build_gmp() {
 } # [dlfcn]
 
 build_libnettle() {
-  download_and_unpack_file https://ftp.gnu.org/gnu/nettle/nettle-3.3.tar.gz
-  cd nettle-3.3
+  download_and_unpack_file https://ftp.gnu.org/gnu/nettle/nettle-3.4.tar.gz
+  cd nettle-3.4
     if [[ ! -f Makefile.in.bak ]]; then # Library only
       sed -i.bak "/^SUBDIRS/s/=.*/=/" Makefile.in
     fi
-    generic_configure "--disable-openssl --disable-documentation" # in case we have both gnutls and openssl, just use gnutls [except that gnutls uses this so...huh? https://github.com/rdp/ffmpeg-windows-build-helpers/issues/25#issuecomment-28158515
-    do_make_and_make_install # What's up with "Configured with: ... --with-gmp=/cygdrive/d/ffmpeg-windows-build-helpers-master/native_build/windows/ffmpeg_local_builds/sandbox/cross_compilers/pkgs/gmp/gmp-6.1.2-i686" in 'config.log'? Isn't the 'gmp-6.1.2' above being used?
+    generic_configure "--disable-documentation"
+    do_make_and_make_install
   cd ..
-}
+} # gmp >= 3.0, [dlfcn]
 
 build_gnutls() {
   download_and_unpack_file https://www.mirrorservice.org/sites/ftp.gnupg.org/gcrypt/gnutls/v3.5/gnutls-3.5.14.tar.xz
@@ -1471,7 +1471,7 @@ build_dependencies() {
   build_libxml2 # For DASH support configure FFmpeg with --enable-libxml2.
   build_fontconfig
   build_gmp # For RTMP support configure FFmpeg with --enable-gmp.
-  build_libnettle # Needs gmp >= 3.0. Uses dlfcn.
+  build_libnettle
   build_gnutls # Needs nettle >= 3.1, hogweed (nettle) >= 3.1. Uses zlib and dlfcn.
   #if [[ "$non_free" = "y" ]]; then
   #  build_openssl-1.0.2 # Nonfree alternative to GnuTLS. 'build_openssl-1.0.2 "dllonly"' to build shared libraries only.
