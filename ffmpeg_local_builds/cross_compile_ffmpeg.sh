@@ -889,32 +889,34 @@ build_libbluray() {
   do_git_checkout https://git.videolan.org/git/libbluray.git
   cd libbluray_git
     if [[ ! -d .git/modules ]]; then
-      git submodule update --init --remote # For UDF support [default=enabled], which strangely enough is in another repository.
+      git submodule update --init --remote # For UDF support (default=enabled), which strangely enough is in another repository.
+      # This can also be done with 'git clone --recursive', but since libbluray is the only one that actually requires a submodule, it's undesirable to have it in 'do_git_checkout()'.
     else
-      local local_git_version=`git --git-dir=.git/modules/contrib/libudfread rev-parse HEAD`
-      local remote_git_version=`git ls-remote -h git://git.videolan.org/libudfread.git | sed "s/\s.*//"`
-      if [[ "$local_git_version" != "$remote_git_version" ]]; then
-        git clean -f # Throw away local changes; 'already_*' in this case.
-        git submodule foreach -q 'git clean -f' # Throw away local changes; 'already_configured_*' and 'udfread.c.bak' in this case.
-        rm -f contrib/libudfread/src/udfread-version.h
-        git submodule update --remote -f # Checkout even if the working tree differs from HEAD.
+      if [[ $(git --git-dir=.git/modules/contrib/libudfread rev-parse HEAD) != $(git ls-remote -h git://git.videolan.org/libudfread.git | sed "s/\s.*//") ]]; then
+        git submodule foreach -q 'git reset --hard' # Return files to their original state.
+        git submodule foreach -q 'git clean -fdx' # Clean the working tree; build- as well as untracked files.
+        echo "Got upstream changes. Updating the libudfread submodule to latest git version 'origin/master'."
+        git submodule update --remote
+        rm -f already_* # Force recompiling libbluray.
+      else
+        echo "Got no code changes. The libudfread submodule is up-to-date."
       fi
-    fi
-    if [[ ! -f jni/win32/jni_md.h.bak ]]; then
-      sed -i.bak "/JNIEXPORT/s/ __declspec.*//" jni/win32/jni_md.h # Needed for building shared FFmpeg libraries.
     fi
     cd contrib/libudfread
       if [[ ! -f src/udfread.c.bak ]]; then
         sed -i.bak "/WIN32$/,+4d" src/udfread.c # Fix WinXP incompatibility.
       fi
       if [[ ! -f src/udfread-version.h ]]; then
-        generic_configure # Generate 'udfread-version.h', or building Libbluray fails otherwise.
+        generic_configure # Generate 'udfread-version.h', or building LibBluray fails otherwise.
       fi
     cd ../..
+    if [[ ! -f jni/win32/jni_md.h.bak ]]; then
+      sed -i.bak "s/ __declspec.*//" jni/win32/jni_md.h # Needed for building shared FFmpeg libraries.
+    fi
     generic_configure "--disable-examples --disable-bdjava-jar"
     do_make_and_make_install
   cd ..
-}
+} # libxml >= 2.6, freetype, [fontconfig (-lgdi32 is used instead), dlfcn]
 
 build_libbs2b() {
   download_and_unpack_file https://downloads.sourceforge.net/project/bs2b/libbs2b/3.1.0/libbs2b-3.1.0.tar.gz
@@ -1497,7 +1499,7 @@ build_dependencies() {
   build_libmpg123
   build_libopenmpt
   build_libgme
-  build_libbluray # Needs libxml >= 2.6, freetype, fontconfig. Uses dlfcn.
+  build_libbluray
   build_libbs2b # Needs libsndfile. Uses dlfcn.
   build_libsoxr
   build_libflite
