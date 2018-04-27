@@ -833,8 +833,9 @@ build_fdk-aac() {
 
 build_libopencore() {
   generic_download_and_make_and_install https://sourceforge.net/projects/opencore-amr/files/opencore-amr/opencore-amr-0.1.5.tar.gz
-  generic_download_and_make_and_install https://sourceforge.net/projects/opencore-amr/files/vo-amrwbenc/vo-amrwbenc-0.1.3.tar.gz
-}
+  #generic_download_and_make_and_install https://sourceforge.net/projects/opencore-amr/files/vo-amrwbenc/vo-amrwbenc-0.1.3.tar.gz
+  generic_download_and_make_and_install https://github.com/mstorsjo/vo-amrwbenc/archive/v0.1.3.tar.gz vo-amrwbenc-0.1.3
+} # [dlfcn]
 
 build_libilbc() {
   do_git_checkout https://github.com/TimothyGu/libilbc.git
@@ -844,7 +845,7 @@ build_libilbc() {
     fi
     generic_configure_make_install
   cd ..
-}
+} # [dlfcn]
 
 build_libmodplug() {
   do_git_checkout_and_make_install https://github.com/Konstanty/libmodplug.git
@@ -1468,8 +1469,8 @@ build_dependencies() {
   build_lame
   build_twolame
   build_fdk-aac
-  build_libopencore # Uses dlfcn.
-  build_libilbc # Uses dlfcn.
+  build_libopencore
+  build_libilbc
   build_libmodplug # Uses dlfcn.
   build_libgme
   build_libbluray # Needs libxml >= 2.6, freetype, fontconfig. Uses dlfcn.
