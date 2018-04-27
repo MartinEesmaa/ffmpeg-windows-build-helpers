@@ -708,7 +708,7 @@ build_libogg() {
     fi
     generic_configure_make_install
   cd ..
-}
+} # [dlfcn]
 
 build_libvorbis() {
   do_git_checkout https://github.com/xiph/vorbis.git
@@ -719,7 +719,7 @@ build_libvorbis() {
     generic_configure "--disable-docs --disable-examples --disable-oggtest"
     do_make_and_make_install
   cd ..
-}
+} # libogg >= 1.0, [dlfcn]
 
 build_libopus() {
   do_git_checkout https://github.com/xiph/opus.git
@@ -1462,8 +1462,8 @@ build_dependencies() {
   #  build_openssl-1.1.0
   #fi
   #build_libcurl # Uses GnuTLS/OpenSSL, zlib and dlfcn. Only for building 'curl.exe'.
-  build_libogg # Uses dlfcn.
-  build_libvorbis # Needs libogg >= 1.0. Uses dlfcn.
+  build_libogg
+  build_libvorbis
   build_libopus # Uses dlfcn.
   build_libspeexdsp # Needs libogg for examples. Uses dlfcn.
   build_libspeex # Uses libspeexdsp and dlfcn.
