@@ -483,7 +483,6 @@ build_zlib() {
       sed -i.bak "/man3dir/d" Makefile.in
     fi
     do_configure "--prefix=$mingw_w64_x86_64_prefix --static"
-    #do_make_and_make_install "$make_prefix_options ARFLAGS=rcs" # ARFLAGS avoid failure on OS X.
     do_make_and_make_install "$make_prefix_options"
   cd ..
 }
@@ -1477,7 +1476,7 @@ build_dependencies() {
   build_dlfcn
   build_bzip2 # Bzlib (bzip2) in FFmpeg is autodetected, so no need for --enable-bzlib.
   build_liblzma # Lzma in FFmpeg is autodetected, so no need for --enable-lzma.
-  build_zlib # Zlib in FFmpeg is autodetected.
+  build_zlib # Zlib in FFmpeg is autodetected, so no need for --enable-zlib.
   build_iconv # Iconv in FFmpeg is autodetected. Uses dlfcn.
   build_sdl2 # Sdl2 in FFmpeg is autodetected. Needed to build FFPlay. Uses iconv and dlfcn.
   if [[ $build_intel_qsv = y ]]; then
