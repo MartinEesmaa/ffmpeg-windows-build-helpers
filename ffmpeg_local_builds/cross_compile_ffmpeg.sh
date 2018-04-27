@@ -797,7 +797,7 @@ build_lame() {
     generic_configure "--enable-nasm --disable-decoder --disable-frontend"
     do_make_and_make_install
   cd ..
-}
+} # [dlfcn]
 
 build_twolame() {
   do_git_checkout https://github.com/njh/twolame.git
@@ -807,7 +807,7 @@ build_twolame() {
     fi
     generic_configure_make_install
   cd ..
-}
+} # [libsndfile >= 1.0.0, dlfcn]
 
 build_fdk-aac() {
   do_git_checkout https://github.com/mstorsjo/fdk-aac.git
@@ -1467,8 +1467,8 @@ build_dependencies() {
   build_libspeex
   build_libtheora
   build_libsndfile install-libgsm # 'build_libsndfile install-libgsm' to install the bundled LibGSM 6.10.
-  build_lame # Uses dlfcn.
-  build_twolame # Uses libsndfile >= 1.0.0 and dlfcn.
+  build_lame
+  build_twolame
   build_fdk-aac # Uses dlfcn.
   build_libopencore # Uses dlfcn.
   build_libilbc # Uses dlfcn.
