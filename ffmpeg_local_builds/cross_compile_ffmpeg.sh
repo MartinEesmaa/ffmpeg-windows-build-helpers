@@ -496,21 +496,20 @@ build_iconv() {
 } # [dlfcn]
 
 build_sdl2() {
-  download_and_unpack_file http://libsdl.org/release/SDL2-2.0.5.tar.gz
-  cd SDL2-2.0.5
-    apply_patch file://$patch_dir/SDL2-2.0.5_lib-only.diff
-    #apply_patch file://$patch_dir/sdl2.xinput.diff # mingw-w64 master needs it?
+  download_and_unpack_file https://libsdl.org/release/SDL2-2.0.8.tar.gz
+  cd SDL2-2.0.8
+    apply_patch file://$patch_dir/SDL2-2.0.8_lib-only.diff
     if [[ ! -f configure.bak ]]; then
       sed -i.bak "s/ -mwindows//" configure # Allow ffmpeg to output anything to console.
       sed -i.bak "/#ifndef DECLSPEC/i\#define DECLSPEC" include/begin_code.h # Needed for building shared FFmpeg libraries.
     fi
     generic_configure "--bindir=$mingw_bin_path"
     do_make_and_make_install
-    if [[ ! -f $mingw_bin_path/$host_target-sdl2-config ]]; then
-      mv "$mingw_bin_path/sdl2-config" "$mingw_bin_path/$host_target-sdl2-config" # At the moment FFmpeg's 'configure' doesn't use 'sdl2-config', because it gives priority to 'sdl2.pc', but when it does, it expects 'i686-w64-mingw32-sdl2-config' in 'cross_compilers/mingw-w64-i686/bin'.
+    if [[ ! -f $mingw_bin_path/${host_target}-sdl2-config ]]; then
+      mv "$mingw_bin_path/sdl2-config" "$mingw_bin_path/${host_target}-sdl2-config" # At the moment FFmpeg's 'configure' doesn't use 'sdl2-config', because it gives priority to 'sdl2.pc', but when it does, it expects 'i686-w64-mingw32-sdl2-config' in 'cross_compilers/mingw-w64-i686/bin'.
     fi
   cd ..
-}
+} # [iconv, dlfcn]
 
 build_libzimg() {
   do_git_checkout https://github.com/sekrit-twc/zimg.git
@@ -1468,7 +1467,7 @@ build_ffmpeg() {
     fi
     echo `date`
   cd ..
-}
+} # SDL2 (only for FFplay)
 
 build_dependencies() {
   build_cmake
@@ -1478,7 +1477,7 @@ build_dependencies() {
   build_liblzma # Lzma in FFmpeg is autodetected, so no need for --enable-lzma.
   build_zlib # Zlib in FFmpeg is autodetected, so no need for --enable-zlib.
   build_iconv # Iconv in FFmpeg is autodetected, so no need for --enable-iconv.
-  build_sdl2 # Sdl2 in FFmpeg is autodetected. Needed to build FFPlay. Uses iconv and dlfcn.
+  build_sdl2 # Sdl2 in FFmpeg is autodetected, so no need for --enable-sdl2.
   if [[ $build_intel_qsv = y ]]; then
     build_intel_quicksync_mfx
   fi
