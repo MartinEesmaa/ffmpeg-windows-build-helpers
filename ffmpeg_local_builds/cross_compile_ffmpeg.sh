@@ -548,12 +548,10 @@ build_libwebp() {
     if [[ ! -f Makefile.am.bak ]]; then # Library only.
       sed -i.bak "/^SUBDIRS/s/=.*/= src/" Makefile.am
     fi
-    export LIBPNG_CONFIG="$mingw_w64_x86_64_prefix/bin/libpng-config --static" # LibPNG somehow doesn't get autodetected.
-    generic_configure "--disable-wic"
+    generic_configure "--disable-png --disable-jpeg --disable-tiff --disable-gif --disable-wic" # These are only necessary for building the bundled tools/binaries.
     do_make_and_make_install
-    unset LIBPNG_CONFIG
   cd ..
-}
+} # [dlfcn]
 
 build_freetype() {
   download_and_unpack_file https://sourceforge.net/projects/freetype/files/freetype2/2.8/freetype-2.8.tar.bz2
@@ -1478,14 +1476,10 @@ build_dependencies() {
   build_zlib # Zlib in FFmpeg is autodetected, so no need for --enable-zlib.
   build_iconv # Iconv in FFmpeg is autodetected, so no need for --enable-iconv.
   build_sdl2 # Sdl2 in FFmpeg is autodetected, so no need for --enable-sdl2.
-  if [[ $build_intel_qsv = y ]]; then
-    build_intel_quicksync_mfx
-  fi
   build_libzimg # Uses dlfcn.
   build_libopenjpeg
-  #build_libjpeg_turbo # mplayer can use this, VLC qt might need it? [replaces libjpeg]
   build_libpng # Needs zlib >= 1.0.4. Uses dlfcn.
-  build_libwebp # Uses dlfcn.
+  build_libwebp
   build_freetype # Uses zlib, bzip2, and libpng.
   build_libxml2 # Uses zlib, liblzma, iconv and dlfcn.
   build_fontconfig # Needs freetype and libxml >= 2.6. Uses iconv and dlfcn.
