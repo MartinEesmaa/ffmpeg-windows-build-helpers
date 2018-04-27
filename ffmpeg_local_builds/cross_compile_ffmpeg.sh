@@ -493,7 +493,7 @@ build_iconv() {
     generic_configure "--disable-nls"
     do_make "install-lib" # No need for 'do_make_install', because 'install-lib' already has install-instructions.
   cd ..
-}
+} # [dlfcn]
 
 build_sdl2() {
   download_and_unpack_file http://libsdl.org/release/SDL2-2.0.5.tar.gz
@@ -1477,7 +1477,7 @@ build_dependencies() {
   build_bzip2 # Bzlib (bzip2) in FFmpeg is autodetected, so no need for --enable-bzlib.
   build_liblzma # Lzma in FFmpeg is autodetected, so no need for --enable-lzma.
   build_zlib # Zlib in FFmpeg is autodetected, so no need for --enable-zlib.
-  build_iconv # Iconv in FFmpeg is autodetected. Uses dlfcn.
+  build_iconv # Iconv in FFmpeg is autodetected, so no need for --enable-iconv.
   build_sdl2 # Sdl2 in FFmpeg is autodetected. Needed to build FFPlay. Uses iconv and dlfcn.
   if [[ $build_intel_qsv = y ]]; then
     build_intel_quicksync_mfx
