@@ -727,10 +727,11 @@ build_libopus() {
     if [[ ! -f Makefile.am.bak ]]; then # Library only.
       sed -i.bak "/m4data/,+2d;/install-data-local/,+2d" Makefile.am
     fi
-    generic_configure "--disable-doc --disable-extra-programs"
+    generic_configure "--disable-doc --disable-extra-programs --disable-stack-protector"
+    # Without '--disable-stack-protector' FFmpeg's 'configure' fails with "undefined reference to `__stack_chk_fail'".
     do_make_and_make_install
   cd ..
-}
+} # [dlfcn]
 
 build_libspeexdsp() {
   do_git_checkout https://github.com/xiph/speexdsp.git
@@ -1464,7 +1465,7 @@ build_dependencies() {
   #build_libcurl # Uses GnuTLS/OpenSSL, zlib and dlfcn. Only for building 'curl.exe'.
   build_libogg
   build_libvorbis
-  build_libopus # Uses dlfcn.
+  build_libopus
   build_libspeexdsp # Needs libogg for examples. Uses dlfcn.
   build_libspeex # Uses libspeexdsp and dlfcn.
   build_libtheora # Needs libogg >= 1.1. Needs libvorbis >= 1.0.1, sdl and libpng for test, programs and examples [disabled]. Uses dlfcn.
