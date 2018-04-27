@@ -776,15 +776,17 @@ build_libsndfile() {
     generic_configure "--disable-sqlite --disable-external-libs --disable-full-suite"
     do_make_and_make_install
     if [ "$1" = "install-libgsm" ]; then
-      if [[ ! -f $mingw_w64_x86_64_prefix/lib/libgsm.a ]]; then
+      if [ ! -f "$mingw_w64_x86_64_prefix/lib/libgsm.a" ] || [ "src/GSM610/.libs/libgsm.a" -nt "$mingw_w64_x86_64_prefix/lib/libgsm.a" ]; then
+        rm -f $mingw_w64_x86_64_prefix/lib/libgsm.a
+        echo "Installing GSM 6.10."
         install -m644 src/GSM610/.libs/libgsm.a $mingw_w64_x86_64_prefix/lib/libgsm.a
         install -m644 src/GSM610/gsm.h $mingw_w64_x86_64_prefix/include/gsm.h
       else
-        echo "already installed GSM 6.10 ..."
+        echo "Already installed GSM 6.10."
       fi
     fi
   cd ..
-}
+} # [(libogg >= 1.1.3 and libvorbis >= 1.2.3 only for external support), dlfcn]
 
 build_lame() {
   do_git_checkout https://github.com/rbrito/lame.git
@@ -1464,7 +1466,7 @@ build_dependencies() {
   build_libspeexdsp
   build_libspeex
   build_libtheora
-  build_libsndfile "install-libgsm" # Needs libogg >= 1.1.3 and libvorbis >= 1.2.3 for external support [disabled]. Uses dlfcn. 'build_libsndfile "install-libgsm"' to install the included LibGSM 6.10.
+  build_libsndfile install-libgsm # 'build_libsndfile install-libgsm' to install the bundled LibGSM 6.10.
   build_lame # Uses dlfcn.
   build_twolame # Uses libsndfile >= 1.0.0 and dlfcn.
   build_fdk-aac # Uses dlfcn.
