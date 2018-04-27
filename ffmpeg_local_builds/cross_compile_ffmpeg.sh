@@ -812,26 +812,24 @@ build_twolame() {
 build_fdk-aac() {
   do_git_checkout https://github.com/mstorsjo/fdk-aac.git
   cd fdk-aac_git
-    if [[ ! -f "configure" ]]; then
-      autoreconf -fiv || exit 1
-    fi
     do_configure "--host=$host_target --prefix=$mingw_w64_x86_64_prefix --disable-static" # Build shared library ('libfdk-aac-1.dll').
-    do_make_and_make_install
+    do_make
+    do_strip .libs/libfdk-aac-1.dll
+    do_make_install
 
-    mkdir -p $cur_dir/redist # Strip and pack shared library.
-    if [ $bits_target = 32 ]; then
-      local arch=x86
-    else
-      local arch=x86_64
+    mkdir -p $redist_dir
+    archive="$redist_dir/libfdk-aac-x86-$(git describe --tags)"
+    if [[ $original_cflags =~ "pentium3" ]]; then
+      archive+="_legacy"
     fi
-    archive="$cur_dir/redist/libfdk-aac-${arch}-$(git describe --tags).7z"
-    if [[ ! -f $archive ]]; then
-      ${cross_prefix}strip $mingw_w64_x86_64_prefix/bin/libfdk-aac-1.dll
+    if [[ ! -f $archive.7z ]]; then # Pack shared library.
       sed "s/$/\r/" NOTICE > NOTICE.txt
-      7z a -mx=9 $archive $mingw_w64_x86_64_prefix/bin/libfdk-aac-1.dll NOTICE.txt && rm -f NOTICE.txt
+      7z a -mx=9 $archive.7z $(pwd)/.libs/libfdk-aac-1.dll NOTICE.txt && rm -f NOTICE.txt
+    else
+      echo "Already made '$(basename $archive.7z)'."
     fi
   cd ..
-}
+} # [dlfcn]
 
 build_libopencore() {
   generic_download_and_make_and_install https://sourceforge.net/projects/opencore-amr/files/opencore-amr/opencore-amr-0.1.5.tar.gz
@@ -1469,7 +1467,7 @@ build_dependencies() {
   build_libsndfile install-libgsm # 'build_libsndfile install-libgsm' to install the bundled LibGSM 6.10.
   build_lame
   build_twolame
-  build_fdk-aac # Uses dlfcn.
+  build_fdk-aac
   build_libopencore # Uses dlfcn.
   build_libilbc # Uses dlfcn.
   build_libmodplug # Uses dlfcn.
@@ -1521,6 +1519,7 @@ reset_cflags() {
 # set some parameters initial values
 cur_dir="$(pwd)/sandbox"
 patch_dir="$(dirname $(pwd))/patches" # Or $(cd $(pwd)/../patches && pwd).
+redist_dir="$(dirname $(pwd))/redist"
 cpu_count=1
 
 set_box_memory_size_bytes
