@@ -577,17 +577,15 @@ build_libxml2() {
 } # [zlib, liblzma, iconv, dlfcn]
 
 build_fontconfig() {
-  download_and_unpack_file https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.12.4.tar.gz
-  cd fontconfig-2.12.4
+  download_and_unpack_file https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.13.0.tar.bz2
+  cd fontconfig-2.13.0
     if [[ ! -f Makefile.in.bak ]]; then # Library only.
-      sed -i.bak "/^SUBDIRS/s/fc.*/src/;438,439d;/^install-data-am/s/:.*/: install-pkgconfigDATA/;/\tinstall-xmlDATA$/d" Makefile.in
+      sed -i.bak "/^SUBDIRS/s/fc.*/src/;456,457d;/^install-data-am/s/:.*/: install-pkgconfigDATA/;/\tinstall-xmlDATA$/d" Makefile.in
     fi
-    #export CFLAGS= # compile fails with -march=sandybridge ... with mingw 4.0.6 at least ...
-    generic_configure "--enable-iconv --enable-libxml2 --disable-docs --with-libiconv" # Use Libxml2 instead of Expat.
+    generic_configure "--enable-libxml2 --disable-docs" # Use Libxml2 instead of Expat.
     do_make_and_make_install
-    #reset_cflags
   cd ..
-}
+} # freetype, libxml >= 2.6, [iconv, dlfcn]
 
 build_gmp() {
   download_and_unpack_file https://gmplib.org/download/gmp/gmp-6.1.2.tar.xz
@@ -1475,7 +1473,7 @@ build_dependencies() {
   build_libwebp
   build_freetype
   build_libxml2 # For DASH support configure FFmpeg with --enable-libxml2.
-  build_fontconfig # Needs freetype and libxml >= 2.6. Uses iconv and dlfcn.
+  build_fontconfig
   build_gmp # For rtmp support configure FFmpeg with '--enable-gmp'. Uses dlfcn.
   build_libnettle # Needs gmp >= 3.0. Uses dlfcn.
   build_gnutls # Needs nettle >= 3.1, hogweed (nettle) >= 3.1. Uses zlib and dlfcn.
