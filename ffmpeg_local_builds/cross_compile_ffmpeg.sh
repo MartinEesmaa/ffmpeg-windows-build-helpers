@@ -554,20 +554,16 @@ build_libwebp() {
 } # [dlfcn]
 
 build_freetype() {
-  download_and_unpack_file https://sourceforge.net/projects/freetype/files/freetype2/2.8/freetype-2.8.tar.bz2
-  cd freetype-2.8
+  #download_and_unpack_file https://sourceforge.net/projects/freetype/files/freetype2/2.9/freetype-2.9.tar.bz2
+  download_and_unpack_file https://download.savannah.gnu.org/releases/freetype/freetype-2.9.tar.bz2
+  cd freetype-2.9
     if [[ ! -f builds/unix/install.mk.bak ]]; then # Library only.
       sed -i.bak "/bindir) /s/\s*\\\//;/aclocal/d;/man1/d;/BUILD_DIR/d;/docs/d" builds/unix/install.mk
     fi
-    if [[ `uname` == CYGWIN* ]]; then
-      generic_configure "--build=i686-pc-cygwin --with-bzip2" # hard to believe but needed...
-      # 'configure' can't detect bzip2 without '--with-bzip2', because there's no 'bzip2.pc'.
-    else
-      generic_configure "--with-bzip2"
-    fi
+    generic_configure "--build=i686-pc-cygwin" # Without '--build=i686-pc-cygwin' you'd get: "could not open '/cygdrive/[...]/include/freetype/ttnameid.h' for writing".
     do_make_and_make_install
   cd ..
-}
+} # [zlib, bzip2, libpng]
 
 build_libxml2() {
   download_and_unpack_file http://xmlsoft.org/sources/libxml2-2.9.4.tar.gz libxml2-2.9.4
@@ -1480,7 +1476,7 @@ build_dependencies() {
   build_libopenjpeg
   build_libpng # Needs zlib >= 1.0.4. Uses dlfcn.
   build_libwebp
-  build_freetype # Uses zlib, bzip2, and libpng.
+  build_freetype
   build_libxml2 # Uses zlib, liblzma, iconv and dlfcn.
   build_fontconfig # Needs freetype and libxml >= 2.6. Uses iconv and dlfcn.
   build_gmp # For rtmp support configure FFmpeg with '--enable-gmp'. Uses dlfcn.
