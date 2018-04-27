@@ -462,7 +462,7 @@ build_bzip2() {
       install -m644 libbz2.a $mingw_w64_x86_64_prefix/lib/libbz2.a
       install -m644 bzlib.h $mingw_w64_x86_64_prefix/include/bzlib.h
     else
-      echo "already made bzip2-1.0.6"
+      echo "Already made bzip2-1.0.6."
     fi
   cd ..
 }
@@ -1471,8 +1471,10 @@ build_ffmpeg() {
 }
 
 build_dependencies() {
+  build_cmake
+  build_nasm
   build_dlfcn
-  build_bzip2 # Bzlib (bzip2) in FFmpeg is autodetected.
+  build_bzip2 # Bzlib (bzip2) in FFmpeg is autodetected, so no need for --enable-bzlib.
   build_liblzma # Lzma in FFmpeg is autodetected. Uses dlfcn.
   build_zlib # Zlib in FFmpeg is autodetected.
   build_iconv # Iconv in FFmpeg is autodetected. Uses dlfcn.
