@@ -610,20 +610,19 @@ build_libnettle() {
 } # gmp >= 3.0, [dlfcn]
 
 build_gnutls() {
-  download_and_unpack_file https://www.mirrorservice.org/sites/ftp.gnupg.org/gcrypt/gnutls/v3.5/gnutls-3.5.14.tar.xz
-  cd gnutls-3.5.14
+  download_and_unpack_file https://www.gnupg.org/ftp/gcrypt/gnutls/v3.6/gnutls-3.6.2.tar.xz
+  cd gnutls-3.6.2
     # --disable-cxx don't need the c++ version, in an effort to cut down on size... XXXX test size difference...
     # --enable-local-libopts to allow building with local autogen installed,
     # --disable-guile is so that if it finds guile installed (cygwin did/does) it won't try and link/build to it and fail...
-    # libtasn1 is some dependency, appears provided is an option [see also build_libnettle]
-    # pks #11 hopefully we don't need kit
-    if [[ ! -f lib/gnutls.pc.in.bak ]]; then # Somehow FFmpeg's 'configure' needs '-lcrypt32'. Otherwise you'll get "undefined reference to `_imp__Cert...'" and "ERROR: gnutls not found using pkg-config".
-      sed -i.bak "/privat/s/.*/& -lcrypt32/" lib/gnutls.pc.in
+    if [[ ! -f lib/gnutls.pc.in.bak ]]; then
+      sed -i.bak "s/Libs.private.*/& -lcrypt32/" lib/gnutls.pc.in
     fi
+    # FFmpeg's 'configure' needs '-lcrypt32' for GnuTLS. Otherwise you'll get "undefined reference to `_imp__Cert[...]'" and "ERROR: gnutls not found using pkg-config" (https://gitlab.com/gnutls/gnutls/issues/412). Configuring FFmpeg with '--extra-libs=-lcrypt32' is another option.
     generic_configure "--disable-doc --disable-tools --disable-cxx --disable-tests --disable-gtk-doc-html --disable-libdane --disable-nls --enable-local-libopts --disable-guile --with-included-libtasn1 --with-included-unistring --without-p11-kit"
     do_make_and_make_install
   cd ..
-}
+} # nettle >= 3.1, hogweed(=nettle) >= 3.1, [zlib, dlfcn]
 
 build_openssl-1.0.2() {
   download_and_unpack_file https://www.openssl.org/source/openssl-1.0.2l.tar.gz
@@ -1472,7 +1471,7 @@ build_dependencies() {
   build_fontconfig
   build_gmp # For RTMP support configure FFmpeg with --enable-gmp.
   build_libnettle
-  build_gnutls # Needs nettle >= 3.1, hogweed (nettle) >= 3.1. Uses zlib and dlfcn.
+  build_gnutls # For HTTPS TLS 1.2 support on WinXP configure FFmpeg with --enable-gnutls.
   #if [[ "$non_free" = "y" ]]; then
   #  build_openssl-1.0.2 # Nonfree alternative to GnuTLS. 'build_openssl-1.0.2 "dllonly"' to build shared libraries only.
   #  build_openssl-1.1.0 # Nonfree alternative to GnuTLS. Can't be used with LibRTMP. 'build_openssl-1.1.0 "dllonly"' to build shared libraries only.
