@@ -625,40 +625,33 @@ build_gnutls() {
 } # nettle >= 3.1, hogweed(=nettle) >= 3.1, [zlib, dlfcn]
 
 build_openssl-1.0.2() {
-  download_and_unpack_file https://www.openssl.org/source/openssl-1.0.2l.tar.gz
-  cd openssl-1.0.2l
-    apply_patch file://$patch_dir/openssl-1.0.2l_lib-only.diff
+  download_and_unpack_file https://www.openssl.org/source/openssl-1.0.2o.tar.gz
+  cd openssl-1.0.2o
+    apply_patch file://$patch_dir/openssl-1.0.2o_lib-only.diff
     export CC="${cross_prefix}gcc"
     export AR="${cross_prefix}ar"
     export RANLIB="${cross_prefix}ranlib"
-    local config_options="--prefix=$mingw_w64_x86_64_prefix zlib "
+    local config_options="--prefix=$mingw_w64_x86_64_prefix zlib --with-zlib-include=$mingw_w64_x86_64_prefix/include --with-zlib-lib=$mingw_w64_x86_64_prefix/lib mingw "
     if [ "$1" = "dllonly" ]; then
-      config_options+="shared "
+      config_options+="shared"
     else
-      config_options+="no-shared no-dso "
-    fi
-    if [ "$bits_target" = "32" ]; then
-      config_options+="mingw" # Build shared libraries ('libeay32.dll' and 'ssleay32.dll') if "dllonly" is specified.
-      local arch=x86
-    else
-      config_options+="mingw64" # Build shared libraries ('libeay64.dll' and 'ssleay64.dll') if "dllonly" is specified.
-      local arch=x86_64
+      config_options+="no-shared no-dso"
     fi
     do_configure "$config_options" ./Configure
-    if [[ ! -f Makefile_1 ]]; then
-      sed -i_1 "s/-O3/-O2/" Makefile # Change CFLAGS (OpenSSL's 'Configure' already creates a 'Makefile.bak').
-    fi
-    if [ "$1" = "dllonly" ]; then
+    sed -i "s/-O3/-O2/" Makefile # Change CFLAGS.
+    if [ "$1" = "dllonly" ]; then # Make, strip and pack shared libraries.
       do_make "build_libs"
-
-      mkdir -p $cur_dir/redist # Strip and pack shared libraries.
-      archive="$cur_dir/redist/openssl-${arch}-v1.0.2l.7z"
-      if [[ ! -f $archive ]]; then
-        for sharedlib in *.dll; do
-          ${cross_prefix}strip $sharedlib
-        done
+      do_strip .
+      mkdir -p $redist_dir
+      archive="$redist_dir/openssl-x86-v1.0.2o"
+      if [[ $original_cflags =~ "pentium3" ]]; then
+        archive+="_legacy"
+      fi
+      if [[ ! -f $archive.7z ]]; then
         sed "s/$/\r/" LICENSE > LICENSE.txt
-        7z a -mx=9 $archive *.dll LICENSE.txt && rm -f LICENSE.txt
+        7z a -mx=9 $archive.7z *.dll LICENSE.txt && rm -f LICENSE.txt
+      else
+        echo "Already made '$(basename $archive.7z)'."
       fi
     else
       do_make_and_make_install
@@ -1472,9 +1465,9 @@ build_dependencies() {
   build_gmp # For RTMP support configure FFmpeg with --enable-gmp.
   build_libnettle
   build_gnutls # For HTTPS TLS 1.2 support on WinXP configure FFmpeg with --enable-gnutls.
-  #if [[ "$non_free" = "y" ]]; then
-  #  build_openssl-1.0.2 # Nonfree alternative to GnuTLS. 'build_openssl-1.0.2 "dllonly"' to build shared libraries only.
-  #  build_openssl-1.1.0 # Nonfree alternative to GnuTLS. Can't be used with LibRTMP. 'build_openssl-1.1.0 "dllonly"' to build shared libraries only.
+  #if [[ "$non_free" = "y" ]]; then # Nonfree alternative to GnuTLS.
+  #  build_openssl-1.0.2
+  #  build_openssl-1.1.0
   #fi
   #build_libcurl # Uses GnuTLS/OpenSSL, zlib and dlfcn. Only for building 'curl.exe'.
   build_libogg # Uses dlfcn.
@@ -1524,6 +1517,11 @@ build_apps() {
   else
     build_ffmpeg shared
   fi
+}
+
+build_openssl-dlls() {
+  build_openssl-1.0.2 dllonly # Only for building 'libeay32.dll' and 'ssleay32.dll' (for Xidel).
+  build_openssl-1.1.0 dllonly # Only for building 'libeay64.dll' and 'ssleay64.dll'.
 }
 
 reset_cflags() {
@@ -1614,7 +1612,6 @@ mingw_w64_x86_64_prefix="$cur_dir/cross_compilers/mingw-w64-i686/$host_target"
 mingw_bin_path="$cur_dir/cross_compilers/mingw-w64-i686/bin"
 export PKG_CONFIG_PATH="$mingw_w64_x86_64_prefix/lib/pkgconfig"
 export PATH="$mingw_bin_path:$original_path"
-bits_target=32
 cross_prefix="$mingw_bin_path/i686-w64-mingw32-"
 make_prefix_options="CC=${cross_prefix}gcc AR=${cross_prefix}ar PREFIX=$mingw_w64_x86_64_prefix RANLIB=${cross_prefix}ranlib LD=${cross_prefix}ld STRIP=${cross_prefix}strip CXX=${cross_prefix}g++"
 mkdir -p win32
