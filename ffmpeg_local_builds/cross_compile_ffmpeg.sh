@@ -566,18 +566,15 @@ build_freetype() {
 } # [zlib, bzip2, libpng]
 
 build_libxml2() {
-  download_and_unpack_file http://xmlsoft.org/sources/libxml2-2.9.4.tar.gz libxml2-2.9.4
-  cd libxml2-2.9.4
+  download_and_unpack_file http://xmlsoft.org/sources/libxml2-2.9.8.tar.gz
+  cd libxml2-2.9.8
     if [[ ! -f Makefile.in.bak ]]; then # Library only.
       sed -i.bak "/^PROGRAMS/s/=.*/=/;/^SUBDIRS/s/ doc.*//;/^install-data-am/s/:.*/: install-pkgconfigDATA/;/\tinstall-m4dataDATA/d;/^install-exec-am/s/:.*/: install-libLTLIBRARIES/;/install-confexecDATA install-libLTLIBRARIES/d" Makefile.in
-    fi
-    if [[ ! -f libxml.h.bak ]]; then # Otherwise you'll get "libxml.h:...: warning: "LIBXML_STATIC" redefined". Not an error, but still.
-      sed -i.bak "/NOLIBTOOL/s/.*/& \&\& !defined(LIBXML_STATIC)/" libxml.h
     fi
     generic_configure "--with-ftp=no --with-http=no --with-python=no"
     do_make_and_make_install
   cd ..
-}
+} # [zlib, liblzma, iconv, dlfcn]
 
 build_fontconfig() {
   download_and_unpack_file https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.12.4.tar.gz
@@ -1477,7 +1474,7 @@ build_dependencies() {
   build_libpng # Needs zlib >= 1.0.4. Uses dlfcn.
   build_libwebp
   build_freetype
-  build_libxml2 # Uses zlib, liblzma, iconv and dlfcn.
+  build_libxml2 # For DASH support configure FFmpeg with --enable-libxml2.
   build_fontconfig # Needs freetype and libxml >= 2.6. Uses iconv and dlfcn.
   build_gmp # For rtmp support configure FFmpeg with '--enable-gmp'. Uses dlfcn.
   build_libnettle # Needs gmp >= 3.0. Uses dlfcn.
