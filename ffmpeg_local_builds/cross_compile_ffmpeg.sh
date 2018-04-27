@@ -847,9 +847,31 @@ build_libilbc() {
   cd ..
 } # [dlfcn]
 
-build_libmodplug() {
-  do_git_checkout_and_make_install https://github.com/Konstanty/libmodplug.git
-}
+build_libmpg123() {
+  download_and_unpack_file https://downloads.sourceforge.net/project/mpg123/mpg123/1.25.10/mpg123-1.25.10.tar.bz2
+  cd mpg123-1.25.10
+    if [[ ! -f libmpg123.pc.in.bak ]]; then
+      sed -i.bak "/Libs/a\Libs.private: @LIBS@" libmpg123.pc.in
+    fi
+    # FFmpeg's 'configure' needs '-lshlwapi' for LibOpenMPT. Otherwise you'll get "undefined reference to `_imp__PathIs[...]'" and "ERROR: libopenmpt not found using pkg-config" (https://sourceforge.net/p/mpg123/mailman/message/35653684/). Configuring FFmpeg with '--extra-libs=-lshlwapi' is another option.
+    if [[ ! -f Makefile.in.bak ]]; then # Library only
+      sed -i.bak "/^all-am/s/\$(PROG.*/\\\/;/^install-data-am/s/ install-man//;/^install-exec-am/s/ install-binPROGRAMS//" Makefile.in
+    fi
+    generic_configure "--enable-yasm"
+    do_make_and_make_install
+  cd ..
+} # [dlfcn]
+
+build_libopenmpt() {
+  download_and_unpack_file https://lib.openmpt.org/files/libopenmpt/src/libopenmpt-0.3.8+release.autotools.tar.gz
+  cd libopenmpt-0.3.8+release.autotools
+    if [[ ! -f Makefile.in.bak ]]; then # Library only
+      sed -i.bak "/^all-am/s/DATA/pkgconfig_DATA/;/^install-data-am/s/:.*/: \\\/;s/\tinstall-nobase_dist_docDATA /\t/" Makefile.in
+    fi
+    generic_configure "--disable-openmpt123 --disable-examples --disable-tests"
+    do_make_and_make_install
+  cd ..
+} # zlib, libmpg123, libogg, libvorbis, [dlfcn]
 
 build_libgme() {
   do_git_checkout https://bitbucket.org/mpyne/game-music-emu.git
@@ -1471,7 +1493,8 @@ build_dependencies() {
   build_fdk-aac
   build_libopencore
   build_libilbc
-  build_libmodplug # Uses dlfcn.
+  build_libmpg123
+  build_libopenmpt
   build_libgme
   build_libbluray # Needs libxml >= 2.6, freetype, fontconfig. Uses dlfcn.
   build_libbs2b # Needs libsndfile. Uses dlfcn.
