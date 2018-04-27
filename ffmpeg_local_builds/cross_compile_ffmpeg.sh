@@ -593,14 +593,10 @@ build_gmp() {
     if [[ ! -f Makefile.in.bak ]]; then # Library only.
       sed -i.bak "/^SUBDIRS/c\SUBDIRS = mpn mpz mpq mpf printf scanf rand cxx tune" Makefile.in
     fi
-    #export CC_FOR_BUILD=/usr/bin/gcc # Are these needed?
-    #export CPP_FOR_BUILD=usr/bin/cpp
-    generic_configure "ABI=$bits_target"
-    #unset CC_FOR_BUILD
-    #unset CPP_FOR_BUILD
+    generic_configure "ABI=32"
     do_make_and_make_install
   cd ..
-}
+} # [dlfcn]
 
 build_libnettle() {
   download_and_unpack_file https://ftp.gnu.org/gnu/nettle/nettle-3.3.tar.gz
@@ -1474,7 +1470,7 @@ build_dependencies() {
   build_freetype
   build_libxml2 # For DASH support configure FFmpeg with --enable-libxml2.
   build_fontconfig
-  build_gmp # For rtmp support configure FFmpeg with '--enable-gmp'. Uses dlfcn.
+  build_gmp # For RTMP support configure FFmpeg with --enable-gmp.
   build_libnettle # Needs gmp >= 3.0. Uses dlfcn.
   build_gnutls # Needs nettle >= 3.1, hogweed (nettle) >= 3.1. Uses zlib and dlfcn.
   #if [[ "$non_free" = "y" ]]; then
