@@ -468,12 +468,13 @@ build_bzip2() {
 }
 
 build_liblzma() {
-  download_and_unpack_file https://sourceforge.net/projects/lzmautils/files/xz-5.2.3.tar.xz
+  #download_and_unpack_file https://sourceforge.net/projects/lzmautils/files/xz-5.2.3.tar.xz
+  download_and_unpack_file https://github.com/xz-mirror/xz/archive/v5.2.3.tar.gz xz-5.2.3
   cd xz-5.2.3
     generic_configure "--disable-xz --disable-xzdec --disable-lzmadec --disable-lzmainfo --disable-scripts --disable-doc --disable-nls"
     do_make_and_make_install
   cd ..
-}
+} # [dlfcn]
 
 build_zlib() {
   download_and_unpack_file https://github.com/madler/zlib/archive/v1.2.11.tar.gz zlib-1.2.11
@@ -1475,7 +1476,7 @@ build_dependencies() {
   build_nasm
   build_dlfcn
   build_bzip2 # Bzlib (bzip2) in FFmpeg is autodetected, so no need for --enable-bzlib.
-  build_liblzma # Lzma in FFmpeg is autodetected. Uses dlfcn.
+  build_liblzma # Lzma in FFmpeg is autodetected, so no need for --enable-lzma.
   build_zlib # Zlib in FFmpeg is autodetected.
   build_iconv # Iconv in FFmpeg is autodetected. Uses dlfcn.
   build_sdl2 # Sdl2 in FFmpeg is autodetected. Needed to build FFPlay. Uses iconv and dlfcn.
