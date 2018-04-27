@@ -760,13 +760,12 @@ build_libtheora() {
   cd theora_git
     if [[ ! -f Makefile.am.bak ]]; then # Library only.
       sed -i.bak "s/ doc.*//" Makefile.am
-      #sed -i.bak "s/double rint/&_disabled/" examples/encoder_example.c # double define issue [?] # For if you want to build examples. Untested.
     fi
     generic_configure "--disable-doc --disable-oggtest --disable-vorbistest --disable-examples"
-    # 'examples/encoder_example.c' would otherwise cause problems; "encoder_example.c:56:15: error: static declaration of 'rint' follows non-static declaration". No more issues with latest libpng either.
+    # 'examples/encoder_example.c' would otherwise cause problems; "encoder_example.c:56:15: error: static declaration of 'rint' follows non-static declaration".
     do_make_and_make_install
   cd ..
-}
+} # libogg >= 1.1, [(libvorbis >= 1.0.1, sdl and libpng only for 'test', 'programs' and 'examples'), dlfcn]
 
 build_libsndfile() {
   do_git_checkout https://github.com/erikd/libsndfile.git
@@ -1464,7 +1463,7 @@ build_dependencies() {
   build_libopus
   build_libspeexdsp
   build_libspeex
-  build_libtheora # Needs libogg >= 1.1. Needs libvorbis >= 1.0.1, sdl and libpng for test, programs and examples [disabled]. Uses dlfcn.
+  build_libtheora
   build_libsndfile "install-libgsm" # Needs libogg >= 1.1.3 and libvorbis >= 1.2.3 for external support [disabled]. Uses dlfcn. 'build_libsndfile "install-libgsm"' to install the included LibGSM 6.10.
   build_lame # Uses dlfcn.
   build_twolame # Uses libsndfile >= 1.0.0 and dlfcn.
