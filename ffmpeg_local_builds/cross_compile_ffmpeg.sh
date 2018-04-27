@@ -742,7 +742,7 @@ build_libspeexdsp() {
     generic_configure "--disable-examples"
     do_make_and_make_install
   cd ..
-}
+} # [libogg (only for 'examples'), dlfcn]
 
 build_libspeex() {
   do_git_checkout https://github.com/xiph/speex.git
@@ -1466,7 +1466,7 @@ build_dependencies() {
   build_libogg
   build_libvorbis
   build_libopus
-  build_libspeexdsp # Needs libogg for examples. Uses dlfcn.
+  build_libspeexdsp
   build_libspeex # Uses libspeexdsp and dlfcn.
   build_libtheora # Needs libogg >= 1.1. Needs libvorbis >= 1.0.1, sdl and libpng for test, programs and examples [disabled]. Uses dlfcn.
   build_libsndfile "install-libgsm" # Needs libogg >= 1.1.3 and libvorbis >= 1.2.3 for external support [disabled]. Uses dlfcn. 'build_libsndfile "install-libgsm"' to install the included LibGSM 6.10.
