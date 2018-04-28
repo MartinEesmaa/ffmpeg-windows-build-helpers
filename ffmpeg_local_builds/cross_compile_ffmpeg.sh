@@ -967,8 +967,8 @@ build_libsnappy() {
 } # [zlib (only for 'unittests'), dlfcn]
 
 build_vamp_plugin() {
-  download_and_unpack_file https://code.soundsoftware.ac.uk/attachments/download/2206/vamp-plugin-sdk-2.7.1.tar.gz
-  cd vamp-plugin-sdk-2.7.1
+  download_and_unpack_file https://github.com/c4dm/vamp-plugin-sdk/archive/vamp-plugin-sdk-v2.7.1.tar.gz vamp-plugin-sdk-vamp-plugin-sdk-v2.7.1
+  cd vamp-plugin-sdk-vamp-plugin-sdk-v2.7.1
     apply_patch file://$patch_dir/vamp-plugin-sdk-2.7.1_static-lib.diff # Create install-static target.
     if [[ ! -f configure.bak ]]; then # Fix for "'M_PI' was not declared in this scope" (see https://stackoverflow.com/a/29264536).
       sed -i.bak "s/c++98/gnu++98/" configure
@@ -976,7 +976,7 @@ build_vamp_plugin() {
     do_configure "--host=$host_target --prefix=$mingw_w64_x86_64_prefix --disable-programs"
     do_make "install-static" # No need for 'do_make_install', because 'install-static' already has install-instructions.
   cd ..
-}
+} # [libsndfile (only for 'vamp-simple-host.exe'), dlfcn]
 
 build_fftw() {
   download_and_unpack_file http://fftw.org/fftw-3.3.6-pl2.tar.gz
@@ -1510,7 +1510,7 @@ build_dependencies() {
   build_libsoxr
   build_libflite
   build_libsnappy
-  build_vamp_plugin # Needs libsndfile for 'vamp-simple-host.exe' [disabled].
+  build_vamp_plugin
   build_fftw # Uses dlfcn.
   build_libsamplerate # Needs libsndfile >= 1.0.6 and fftw >= 0.15.0 for tests. Uses dlfcn.
   build_librubberband # Needs libsamplerate, libsndfile, fftw and vamp_plugin. 'configure' will fail otherwise. Eventhough librubberband doesn't necessarily need them (libsndfile only for 'rubberband.exe' and vamp_plugin only for "Vamp audio analysis plugin"). How to use the bundled libraries '-DUSE_SPEEX' and '-DUSE_KISSFFT'?
