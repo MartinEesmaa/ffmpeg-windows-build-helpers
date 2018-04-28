@@ -959,12 +959,12 @@ build_libflite() {
 build_libsnappy() {
   do_git_checkout https://github.com/google/snappy.git
   cd snappy_git
-    if [[ ! -f Makefile.am.bak ]]; then # Library only.
-      sed -i.bak "/# Unit/,+7d;/^dist/s/=.*/=/" Makefile.am
+    if [[ ! -f CMakeLists.txt.bak ]]; then # Library only.
+      sed -i.bak "/CMakePackageConfigHelpers/,\$d" CMakeLists.txt
     fi
-    generic_configure_make_install
+    do_cmake_and_install "-DSNAPPY_BUILD_TESTS=0"
   cd ..
-}
+} # [zlib (only for 'unittests'), dlfcn]
 
 build_vamp_plugin() {
   download_and_unpack_file https://code.soundsoftware.ac.uk/attachments/download/2206/vamp-plugin-sdk-2.7.1.tar.gz
@@ -1509,7 +1509,7 @@ build_dependencies() {
   build_libbs2b
   build_libsoxr
   build_libflite
-  build_libsnappy # Uses zlib (only for unittests [disabled]) and dlfcn.
+  build_libsnappy
   build_vamp_plugin # Needs libsndfile for 'vamp-simple-host.exe' [disabled].
   build_fftw # Uses dlfcn.
   build_libsamplerate # Needs libsndfile >= 1.0.6 and fftw >= 0.15.0 for tests. Uses dlfcn.
