@@ -926,7 +926,7 @@ build_libbs2b() {
     fi
     generic_configure_make_install
   cd ..
-}
+} # libsndfile, [dlfcn]
 
 build_libsoxr() {
   do_git_checkout https://git.code.sf.net/p/soxr/code soxr_git
@@ -1500,7 +1500,7 @@ build_dependencies() {
   build_libopenmpt
   build_libgme
   build_libbluray
-  build_libbs2b # Needs libsndfile. Uses dlfcn.
+  build_libbs2b
   build_libsoxr
   build_libflite
   build_libsnappy # Uses zlib (only for unittests [disabled]) and dlfcn.
