@@ -979,15 +979,15 @@ build_vamp_plugin() {
 } # [libsndfile (only for 'vamp-simple-host.exe'), dlfcn]
 
 build_fftw() {
-  download_and_unpack_file http://fftw.org/fftw-3.3.6-pl2.tar.gz
-  cd fftw-3.3.6-pl2
+  download_and_unpack_file http://fftw.org/fftw-3.3.7.tar.gz
+  cd fftw-3.3.7
     if [[ ! -f Makefile.in.bak ]]; then # Library only.
       sed -i.bak "/^SUBDIRS/s/api.*/api/;/^libbench2/d" Makefile.in
     fi
     generic_configure "--disable-doc"
     do_make_and_make_install
   cd ..
-}
+} # [dlfcn]
 
 build_libsamplerate() {
   do_git_checkout https://github.com/erikd/libsamplerate.git
@@ -1511,7 +1511,7 @@ build_dependencies() {
   build_libflite
   build_libsnappy
   build_vamp_plugin
-  build_fftw # Uses dlfcn.
+  build_fftw
   build_libsamplerate # Needs libsndfile >= 1.0.6 and fftw >= 0.15.0 for tests. Uses dlfcn.
   build_librubberband # Needs libsamplerate, libsndfile, fftw and vamp_plugin. 'configure' will fail otherwise. Eventhough librubberband doesn't necessarily need them (libsndfile only for 'rubberband.exe' and vamp_plugin only for "Vamp audio analysis plugin"). How to use the bundled libraries '-DUSE_SPEEX' and '-DUSE_KISSFFT'?
   build_frei0r # Needs dlfcn.
