@@ -939,14 +939,20 @@ build_libsoxr() {
 }
 
 build_libflite() {
+#  download_and_unpack_file http://www.festvox.org/flite/packed/flite-2.1/flite-2.1-release.tar.bz2
+#  cd flite-2.1-release # Fails with "../build/i386-mingw32/lib/libflite.a(cst_val.o):cst_val.c:(.text+0xdcd): undefined reference to `c99_snprintf'", because WinXP's 'msvcrt.dll' doesn't contain "_vsnprintf_s".
+#    if [[ ! -f configure.bak ]]; then
+#      sed -i.bak "s|i386-mingw32-|$cross_prefix|" configure
+#      sed -i.bak "135,141d" main/Makefile # Library only.
+#    fi
   download_and_unpack_file http://www.festvox.org/flite/packed/flite-2.0/flite-2.0.0-release.tar.bz2
   cd flite-2.0.0-release
     if [[ ! -f configure.bak ]]; then
       sed -i.bak "s|i386-mingw32-|$cross_prefix|" configure
-      #sed -i.bak "/define const/i\#include <windows.h>" tools/find_sts_main.c # Needed for x86_64? Untested.
       sed -i.bak "128,134d" main/Makefile # Library only.
     fi
-    generic_configure_make_install
+    do_configure "--host=$host_target --prefix=$mingw_w64_x86_64_prefix --disable-shared"
+    do_make_and_make_install
   cd ..
 }
 
