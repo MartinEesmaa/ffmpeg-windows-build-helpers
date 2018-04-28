@@ -511,16 +511,6 @@ build_sdl2() {
   cd ..
 } # [iconv, dlfcn]
 
-build_libzimg() {
-  do_git_checkout https://github.com/sekrit-twc/zimg.git
-  cd zimg_git
-    if [[ ! -f Makefile.am.bak ]]; then # Library only.
-      sed -i.bak "/dist_doc_DATA/,+19d" Makefile.am
-    fi
-    generic_configure_make_install
-  cd ..
-}
-
 build_libopenjpeg() {
   do_git_checkout https://github.com/uclouvain/openjpeg.git
   cd openjpeg_git
@@ -998,7 +988,7 @@ build_libsamplerate() {
     fi
     do_make_and_make_install
   cd ..
-}
+} # [libsndfile >= 1.0.6 and fftw >= 0.15.0 only for 'tests'), dlfcn]
 
 build_librubberband() {
   do_git_checkout https://github.com/breakfastquay/rubberband.git
@@ -1007,7 +997,18 @@ build_librubberband() {
     do_configure "--host=$host_target --prefix=$mingw_w64_x86_64_prefix"
     do_make "install-static" # No need for 'do_make_install', because 'install-static' already has install-instructions.
   cd ..
-}
+} # libsamplerate, libsndfile, fftw, vamp_plugin.
+# Eventhough librubberband doesn't necessarily need them (libsndfile only for 'rubberband.exe' and vamp_plugin only for "Vamp audio analysis plugin"), './configure' will fail otherwise. How to use the bundled libraries '-DUSE_SPEEX' and '-DUSE_KISSFFT'?
+
+build_libzimg() {
+  do_git_checkout https://github.com/sekrit-twc/zimg.git
+  cd zimg_git
+    if [[ ! -f Makefile.am.bak ]]; then # Library only.
+      sed -i.bak "/dist_doc_DATA/,+19d" Makefile.am
+    fi
+    generic_configure_make_install
+  cd ..
+} # [dlfcn]
 
 build_frei0r() {
   do_git_checkout https://github.com/dyne/frei0r.git
@@ -1475,7 +1476,6 @@ build_dependencies() {
   build_zlib # Zlib in FFmpeg is autodetected, so no need for --enable-zlib.
   build_iconv # Iconv in FFmpeg is autodetected, so no need for --enable-iconv.
   build_sdl2 # Sdl2 in FFmpeg is autodetected, so no need for --enable-sdl2.
-  build_libzimg # Uses dlfcn.
   build_libopenjpeg
   build_libpng # Needs zlib >= 1.0.4. Uses dlfcn.
   build_libwebp
@@ -1512,8 +1512,9 @@ build_dependencies() {
   build_libsnappy
   build_vamp_plugin
   build_fftw
-  build_libsamplerate # Needs libsndfile >= 1.0.6 and fftw >= 0.15.0 for tests. Uses dlfcn.
-  build_librubberband # Needs libsamplerate, libsndfile, fftw and vamp_plugin. 'configure' will fail otherwise. Eventhough librubberband doesn't necessarily need them (libsndfile only for 'rubberband.exe' and vamp_plugin only for "Vamp audio analysis plugin"). How to use the bundled libraries '-DUSE_SPEEX' and '-DUSE_KISSFFT'?
+  build_libsamplerate
+  build_librubberband
+  build_libzimg
   build_frei0r # Needs dlfcn.
   build_vidstab
   build_libmysofa # Needed for FFmpeg's SOFAlizer filter (https://ffmpeg.org/ffmpeg-filters.html#sofalizer). Uses dlfcn.
