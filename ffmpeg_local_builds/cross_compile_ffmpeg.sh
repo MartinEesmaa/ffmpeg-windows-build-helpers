@@ -1302,6 +1302,15 @@ build_libvpx() {
   cd ..
 }
 
+build_libaom() {
+  do_git_checkout https://aomedia.googlesource.com/aom libaom_git
+  mkdir -p libaom_git/aom_build
+  cd libaom_git/aom_build # Out-of-source build.
+    do_cmake "-DCMAKE_TOOLCHAIN_FILE=build/cmake/toolchains/x86-mingw-gcc.cmake -DENABLE_DOCS=0 -DENABLE_EXAMPLES=0 -DENABLE_NASM=1 -DENABLE_TOOLS=0 -DCONFIG_UNIT_TESTS=0" "$(dirname $(pwd))"
+    do_make_and_make_install
+  cd ../..
+} # cmake >= 3.5
+
 build_libcurl() {
   download_and_unpack_file https://curl.haxx.se/download/curl-7.54.1.tar.gz
   cd curl-7.54.1
@@ -1517,6 +1526,7 @@ build_dependencies() {
   build_libx264
   build_libx265
   build_libvpx
+  build_libaom
 }
 
 build_apps() {
