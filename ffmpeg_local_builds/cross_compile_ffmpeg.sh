@@ -1197,14 +1197,13 @@ build_libxavs() {
 }
 
 build_libxvid() {
-  download_and_unpack_file http://downloads.xvid.org/downloads/xvidcore-1.3.4.tar.gz xvidcore
+  download_and_unpack_file https://downloads.xvid.com/downloads/xvidcore-1.3.5.tar.gz xvidcore
   cd xvidcore/build/generic
-    apply_patch file://$patch_dir/xvidcore-1.3.4_static-lib.diff
-    do_configure "--host=$host_target --prefix=$mingw_w64_x86_64_prefix" # no static option...
-    #sed -i.bak "s/-mno-cygwin//" platform.inc # remove old compiler flag that now apparently breaks us # Not needed for static library, but neither anymore for shared library (see 'configure#L5010').
-    cpu_count=1 # possibly can't build this multi-thread ? http://betterlogic.com/roger/2014/02/xvid-build-woe/
+    apply_patch file://$patch_dir/xvidcore-1.3.5_static-lib.diff
+    export ac_yasm=no # Force the use of NASM.
+    do_configure "--host=$host_target --prefix=$mingw_w64_x86_64_prefix"
     do_make_and_make_install
-    cpu_count=$original_cpu_count
+    unset ac_yasm
   cd ../../..
 }
 

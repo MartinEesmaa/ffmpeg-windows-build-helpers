@@ -1,19 +1,21 @@
 diff -ur configure.bak configure
---- configure.bak	2015-06-21 16:21:32.000000000 +0200
-+++ configure	2017-04-24 21:53:57.687500000 +0200
-@@ -4386,9 +4386,6 @@
+--- configure.bak	2017-12-11 21:26:37.000000000 +0100
++++ configure	2017-12-30 00:00:48.343750000 +0100
+@@ -4392,10 +4392,7 @@
+      [cC][yY][gG][wW][iI][nN]*|mingw32*|mks*)
  	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
  $as_echo "ok" >&6; }
- 	STATIC_LIB="xvidcore.\$(STATIC_EXTENSION)"
+-	STATIC_LIB="xvidcore.\$(STATIC_EXTENSION)"
 -	SHARED_LIB="xvidcore.\$(SHARED_EXTENSION)"
 -	SPECIFIC_LDFLAGS="-shared -Wl,--dll,--out-implib,\$@.a libxvidcore.def"
 -	SPECIFIC_CFLAGS="-mno-cygwin"
++	STATIC_LIB="libxvidcore.\$(STATIC_EXTENSION)"
  	;;
       darwin*)
  	STATIC_LIB="libxvidcore.\$(STATIC_EXTENSION)"
 diff -ur Makefile.bak Makefile
---- Makefile.bak	2015-06-21 16:21:32.000000000 +0200
-+++ Makefile	2017-04-24 21:57:39.875000000 +0200
+--- Makefile.bak	2017-12-11 21:26:37.000000000 +0100
++++ Makefile	2017-12-30 00:09:55.640625000 +0100
 @@ -70,7 +70,7 @@
  
  .SUFFIXES: .$(OBJECT_EXTENSION) .$(ASSEMBLY_EXTENSION) .c
@@ -56,11 +58,10 @@ diff -ur Makefile.bak Makefile
  	@echo "  D: $(includedir)"
  	@$(INSTALL) -d $(DESTDIR)$(includedir)
  	@echo "  I: $(includedir)/xvid.h"
-@@ -148,22 +127,7 @@
- 	@echo "  D: $(libdir)"
+@@ -149,21 +128,6 @@
  	@$(INSTALL) -d $(DESTDIR)$(libdir)
  	@echo "  I: $(libdir)/$(STATIC_LIB)"
--	@$(INSTALL) -m 644 $(BUILD_DIR)/$(STATIC_LIB) $(DESTDIR)$(libdir)/$(STATIC_LIB)
+ 	@$(INSTALL) -m 644 $(BUILD_DIR)/$(STATIC_LIB) $(DESTDIR)$(libdir)/$(STATIC_LIB)
 -ifeq ($(SHARED_EXTENSION),dll)
 -	@echo "  I: $(libdir)/$(SHARED_LIB).a"
 -	@$(INSTALL) -m 644 $(BUILD_DIR)/$(SHARED_LIB).a $(DESTDIR)$(libdir)/$(SHARED_LIB).a
@@ -76,7 +77,6 @@ diff -ur Makefile.bak Makefile
 -	@test -z "$(SO_LINK)" || \
 -		$(LN_S) $(SHARED_LIB) $(DESTDIR)$(libdir)/$(SO_LINK)
 -endif
-+	@$(INSTALL) -m 644 $(BUILD_DIR)/$(STATIC_LIB) $(DESTDIR)$(libdir)/libxvidcore.a
  
  #-----------------------------------------------------------------------------
  # Platorm specific file -- dumb rules for people executing make before
