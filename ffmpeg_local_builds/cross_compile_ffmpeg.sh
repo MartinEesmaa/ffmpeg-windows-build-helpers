@@ -1095,13 +1095,13 @@ build_zvbi() {
 build_fribidi() {
   do_git_checkout https://github.com/behdad/fribidi.git
   cd fribidi_git
-    if [[ ! -f Makefile.am.bak ]]; then # Library only and disable regeneration of 'configure' (which screws with the CPPFLAGS).
-      sed -i.bak "s/ bin.*//;40s/ \\\//;41d" Makefile.am
+    if [[ ! -f Makefile.am.bak ]]; then # Library only.
+      sed -i.bak "s/ bin.*//" Makefile.am
     fi
-    generic_configure "--disable-debug --disable-deprecated"
+    generic_configure "--disable-deprecated"
     do_make_and_make_install
   cd ..
-}
+} # [dlfcn]
 
 build_libass() {
   do_git_checkout_and_make_install https://github.com/libass/libass.git
@@ -1522,7 +1522,7 @@ build_dependencies() {
     build_libdecklink
   fi
   build_zvbi
-  build_fribidi # Uses dlfcn.
+  build_fribidi
   build_libass # Needs freetype >= 9.10.3 (see https://bugs.launchpad.net/ubuntu/+source/freetype1/+bug/78573 o_O) and fribidi >= 0.19.0. Uses fontconfig >= 2.10.92, iconv and dlfcn.
   build_libxavs
   build_libxvid # FFmpeg now has native support, but libxvid still provides a better image.
