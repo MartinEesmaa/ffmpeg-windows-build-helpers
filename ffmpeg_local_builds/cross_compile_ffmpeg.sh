@@ -1217,6 +1217,17 @@ build_libopenh264() {
   cd ..
 }
 
+build_libx264() {
+  do_git_checkout http://git.videolan.org/git/x264.git
+  cd x264_git
+    if [[ ! -f configure.bak ]]; then # Change CFLAGS.
+      sed -i.bak "s/O3 -/O2 -/" configure
+    fi
+    do_configure "--host=$host_target --cross-prefix=$cross_prefix --prefix=$mingw_w64_x86_64_prefix --enable-static --disable-cli --disable-win32thread" # Use pthreads instead of win32threads.
+    do_make_and_make_install
+  cd ..
+} # nasm >= 2.13 (unless '--disable-asm' is specified)
+
 build_libvpx() {
   do_git_checkout https://chromium.googlesource.com/webm/libvpx.git
   cd libvpx_git
@@ -1311,71 +1322,6 @@ build_libx265() {
   rm already_ran_make_install*
   do_make_install
   cd ../..
-}
-
-build_libx264() {
-  local checkout_dir="x264"
-  if [[ $build_x264_with_libav == "y" ]]; then
-    build_ffmpeg static --disable-libx264 ffmpeg_git_pre_x264 # installs libav locally so we can use it within x264.exe FWIW...
-    checkout_dir="${checkout_dir}_with_libav"
-    # they don't know how to use a normal pkg-config when cross compiling, so specify some manually: (see their mailing list for a request...)
-    export LAVF_LIBS="$LAVF_LIBS $(pkg-config --libs libavformat libavcodec libavutil libswscale)"
-    export LAVF_CFLAGS="$LAVF_CFLAGS $(pkg-config --cflags libavformat libavcodec libavutil libswscale)"
-    export SWSCALE_LIBS="$SWSCALE_LIBS $(pkg-config --libs libswscale)"
-  fi
-
-  local x264_profile_guided=n # or y -- haven't gotten this proven yet...TODO
-  if [[ $high_bitdepth == "y" ]]; then
-    checkout_dir="${checkout_dir}_high_bitdepth_10"
-  else
-    checkout_dir="${checkout_dir}_normal_bitdepth"
-  fi
-
-  #if [[ $prefer_stable = "n" ]]; then
-  #  do_git_checkout "http://git.videolan.org/git/x264.git" $checkout_dir "origin/master" # During 'configure': "Found no assembler. Minimum version is nasm-2.13".
-  #else
-    do_git_checkout "http://git.videolan.org/git/x264.git" $checkout_dir "origin/stable"
-  #fi
-  cd $checkout_dir
-    if [[ ! -f configure.bak ]]; then # Change CFLAGS.
-      sed -i.bak "s/O3 -/O2 -/" configure
-    fi
-
-    local configure_flags="--host=$host_target --enable-static --cross-prefix=$cross_prefix --prefix=$mingw_w64_x86_64_prefix --enable-strip --disable-cli" # --enable-win32thread --enable-debug is another useful option here? # Library only.
-    if [[ $build_x264_with_libav == "n" ]]; then
-      configure_flags+=" --disable-lavf" # lavf stands for libavformat, there is no --enable-lavf option, either auto or disable...
-    fi
-    if [[ $high_bitdepth == "y" ]]; then
-      configure_flags+=" --bit-depth=10" # Enable 10 bits (main10) per pixels profile. possibly affects other profiles as well (?)
-    fi
-    for i in $CFLAGS; do
-      configure_flags+=" --extra-cflags=$i" # needs it this way seemingly :|
-    done
-
-    if [[ $x264_profile_guided = y ]]; then
-      # I wasn't able to figure out how/if this gave any speedup...
-      # TODO more march=native here?
-      # TODO profile guided here option, with wine?
-      do_configure "$configure_flags"
-      curl -4 http://samples.mplayerhq.hu/yuv4mpeg2/example.y4m.bz2 -O --fail || exit 1
-      rm -f example.y4m # in case it exists already...
-      bunzip2 example.y4m.bz2 || exit 1
-      # XXX does this kill git updates? maybe a more general fix, since vid.stab does also?
-      sed -i.bak "s_\\, ./x264_, wine ./x264_" Makefile # in case they have wine auto-run disabled http://askubuntu.com/questions/344088/how-to-ensure-wine-does-not-auto-run-exe-files
-      do_make_and_make_install "fprofiled VIDS=example.y4m" # guess it has its own make fprofiled, so we don't need to manually add -fprofile-generate here...
-    else
-      # normal path
-      do_configure "$configure_flags"
-      do_make
-      echo force reinstall in case bit depth changed at all :|
-      rm already_ran_make_install*
-      do_make_install
-    fi
-
-    unset LAVF_LIBS
-    unset LAVF_CFLAGS
-    unset SWSCALE_LIBS
-  cd ..
 }
 
 build_libcurl() {
@@ -1590,9 +1536,9 @@ build_dependencies() {
   build_libxavs
   build_libxvid # FFmpeg now has native support, but libxvid still provides a better image.
   build_libopenh264
+  build_libx264
   build_libvpx
   build_libx265
-  build_libx264 # at bottom as it might build a ffmpeg which needs all the above deps...
 }
 
 build_apps() {
@@ -1654,13 +1600,11 @@ fi
 # variables with their defaults
 build_ffmpeg_static=y
 git_get_latest=y
-prefer_stable=y # Only for x264 and x265.
 #disable_nonfree=n # have no value by default to force user selection
 original_cflags='-march=pentium3 -O2 -mfpmath=sse -msse' # See https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html, https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html and https://stackoverflow.com/questions/19689014/gcc-difference-between-o3-and-os.
 ffmpeg_git_checkout_version=
 build_ismindex=n
 enable_gpl=y
-build_x264_with_libav=n # To build x264 with Libavformat.
 export ac_cv_func_vsnprintf_s=no # Mark vsnprintf_s as unavailable, as windows xp mscrt doesn't have it.
 
 # parse command line parameters, if any
@@ -1676,9 +1620,6 @@ while true; do
       --build-ismindex=n [builds ffmpeg utility ismindex.exe]
       --cflags=[default is $original_cflags, which works on any cpu, see README for options]
       --git-get-latest=y [do a git pull for latest code from repositories like FFmpeg--can force a rebuild if changes are detected]
-      --build-x264-with-libav=n build x264.exe with bundled/included "libav" ffmpeg libraries within it
-      --prefer-stable=y build a few libraries from releases instead of git master
-      --high-bitdepth=n Enable high bit depth for x264 (10 bits) and x265 (10 and 12 bits, x64 build. Not officially supported on x86 (win32), but enabled by disabling its assembly).
       --debug Make this script  print out each line as it executes
       --enable-gpl=[y] set to n to do an lgpl build
        "; exit 0 ;;
@@ -1686,15 +1627,12 @@ while true; do
     --ffmpeg-git-checkout-version=* ) ffmpeg_git_checkout_version="${1#*=}"; shift ;;
     --build-ismindex=* ) build_ismindex="${1#*=}"; shift ;;
     --git-get-latest=* ) git_get_latest="${1#*=}"; shift ;;
-    --build-x264-with-libav=* ) build_x264_with_libav="${1#*=}"; shift ;;
     --cflags=* )
        original_cflags="${1#*=}"; echo "setting cflags as $original_cflags"; shift ;;
     --disable-nonfree=* ) disable_nonfree="${1#*=}"; shift ;;
     -d         ) gcc_cpu_count=$cpu_count; disable_nonfree="y"; sandbox_ok="y"; git_get_latest="n"; shift ;;
     --build-ffmpeg-static=* ) build_ffmpeg_static="${1#*=}"; shift ;;
-    --prefer-stable=* ) prefer_stable="${1#*=}"; shift ;;
     --enable-gpl=* ) enable_gpl="${1#*=}"; shift ;;
-    --high-bitdepth=* ) high_bitdepth="${1#*=}"; shift ;;
     --debug ) set -x; shift ;;
     -- ) shift; break ;;
     -* ) echo "Error, unknown option: '$1'."; exit 1 ;;
