@@ -68,6 +68,14 @@ check_missing_packages() {
     echo "your yasm version is too old $yasm_version wanted 1.2.0"
     exit 1
   fi
+
+  if [ ! -f $HOME/.hgrc ]; then # 'hg purge' (the Mercurial equivalent of 'git clean') isn't enabled by default.
+    mkdir -p "$HOME"
+    cat > $HOME/.hgrc <<EOF
+[extensions]
+purge =
+EOF
+  fi
 }
 
 
@@ -200,6 +208,51 @@ do_git_checkout() {
         git clean -fdx # Clean the working tree; build- as well as untracked files.
         git checkout master || exit 1
         git merge origin/master || exit 1
+      else
+        echo "Got no code changes. Local $dir repo is up-to-date."
+      fi
+    fi
+  fi
+  cd ..
+}
+
+do_hg_checkout() {
+  if [[ $2 ]]; then
+    local dir="$2"
+  else
+    local dir=$(basename $1)_hg # http://y/abc -> abc_hg
+  fi
+  if [ ! -d $dir ]; then
+    echo "Downloading (via hg clone) $dir from $1."
+    rm -fr $dir.tmp # just in case it was interrupted previously...
+    hg clone $1 $dir.tmp || exit 1
+    # prevent partial checkouts by renaming it only after success
+    mv $dir.tmp $dir
+    echo "Done hg cloning to $dir."
+    cd $dir
+  else
+    cd $dir
+    if [[ $git_get_latest = "y" ]]; then
+      hg pull # need this no matter what
+    else
+      echo "Not doing hg get latest pull for latest code $dir."
+    fi
+  fi
+
+  if [[ $3 ]]; then
+    echo "Doing hg update $3."
+    hg revert -a --no-backup
+    hg purge
+    hg update "$3" || exit 1
+    #hg merge "$3" || exit 1 # get incoming changes to a branch
+  else
+    if [[ $git_get_latest = "y" ]]; then
+      if [[ $(hg id) != $(hg id -r default $1) ]]; then # 'hg id http://hg.videolan.org/x265' defaults to the "stable" branch!
+        echo "Got upstream changes. Updating $dir to latest hg version."
+        hg revert -a --no-backup # Return files to their original state.
+        hg purge # Clean the working tree; build- as well as untracked files.
+        hg pull -u || exit 1
+        hg update || exit 1
       else
         echo "Got no code changes. Local $dir repo is up-to-date."
       fi
@@ -1228,6 +1281,14 @@ build_libx264() {
   cd ..
 } # nasm >= 2.13 (unless '--disable-asm' is specified)
 
+build_libx265() {
+  do_hg_checkout http://hg.videolan.org/x265
+  cd x265_hg/source
+    do_cmake "-DENABLE_SHARED=0 -DENABLE_CLI=0 -DWINXP_SUPPORT=1" # No '-DHIGH_BIT_DEPTH=1'. See 'x265_hg/source/CMakeLists.txt' why.
+    do_make_and_make_install
+  cd ../..
+} # nasm >= 2.13 (unless '-DENABLE_ASSEMBLY=0' is specified)
+
 build_libvpx() {
   do_git_checkout https://chromium.googlesource.com/webm/libvpx.git
   cd libvpx_git
@@ -1239,89 +1300,6 @@ build_libvpx() {
     do_make_and_make_install
     unset CROSS
   cd ..
-}
-
-build_libx265() {
-  # the only one that uses mercurial, so there's some extra initial junk in this method... XXX needs some cleanup :|
-  local checkout_dir=x265
-  if [[ $high_bitdepth == "y" ]]; then
-    checkout_dir=x265_high_bitdepth_10
-  fi
-
-  if [[ $prefer_stable = "n" ]]; then
-    local old_hg_version
-    if [[ -d $checkout_dir ]]; then
-      cd $checkout_dir
-      if [[ $git_get_latest = "y" ]]; then
-        echo "doing hg pull -u x265"
-        old_hg_version=`hg --debug id -i`
-        hg pull -u || exit 1
-        hg update || exit 1 # guess you need this too if no new changes are brought down [what the...]
-      else
-        echo "not doing hg pull x265"
-        old_hg_version=`hg --debug id -i`
-      fi
-    else
-      echo "doing hg clone x265"
-      hg clone https://bitbucket.org/multicoreware/x265 $checkout_dir || exit 1
-      cd $checkout_dir
-      old_hg_version=none-yet
-    fi
-    cd source
-
-    local new_hg_version=`hg --debug id -i`
-    if [[ "$old_hg_version" != "$new_hg_version" ]]; then
-      echo "got upstream hg changes, forcing rebuild...x265"
-      rm -f already*
-    else
-      echo "still at hg $new_hg_version x265"
-    fi
-  else
-    # i.e. prefer_stable == "y" TODO clean this up these two branches are pretty similar...
-    local old_hg_version
-    if [[ -d $checkout_dir ]]; then
-      cd $checkout_dir
-      if [[ $git_get_latest = "y" ]]; then
-        echo "doing hg pull -u x265"
-        old_hg_version=`hg --debug id -i`
-        hg pull -u || exit 1
-        hg update || exit 1 # guess you need this too if no new changes are brought down [what the...]
-      else
-        echo "not doing hg pull x265"
-        old_hg_version=`hg --debug id -i`
-      fi
-    else
-      echo "doing hg clone x265"
-      hg clone https://bitbucket.org/multicoreware/x265 -r stable $checkout_dir || exit 1
-      cd $checkout_dir
-      old_hg_version=none-yet
-    fi
-    cd source
-
-    local new_hg_version=`hg --debug id -i`
-    if [[ "$old_hg_version" != "$new_hg_version" ]]; then
-      echo "got upstream hg changes, forcing rebuild...x265"
-      rm -f already*
-    else
-      echo "still at hg $new_hg_version x265"
-    fi
-  fi # dont with prefer_stable = [y|n]
-  apply_patch file://$patch_dir/libx265_git_declspec.diff # Needed for building shared FFmpeg libraries.
-
-  local cmake_params="-DENABLE_SHARED=0 -DENABLE_CLI=0" # Library only.
-  if [ "$bits_target" = "32" ]; then
-    cmake_params+=" -DWINXP_SUPPORT=1" # enable windows xp/vista compatibility in x86 build
-  fi
-  if [[ $high_bitdepth == "y" ]]; then
-    cmake_params+=" -DHIGH_BIT_DEPTH=1" # Enable 10 bits (main10) and 12 bits (???) per pixels profiles.
-  fi
-
-  do_cmake "$cmake_params"
-  do_make
-  echo force reinstall in case bit depth changed at all :|
-  rm already_ran_make_install*
-  do_make_install
-  cd ../..
 }
 
 build_libcurl() {
@@ -1537,8 +1515,8 @@ build_dependencies() {
   build_libxvid # FFmpeg now has native support, but libxvid still provides a better image.
   build_libopenh264
   build_libx264
-  build_libvpx
   build_libx265
+  build_libvpx
 }
 
 build_apps() {
