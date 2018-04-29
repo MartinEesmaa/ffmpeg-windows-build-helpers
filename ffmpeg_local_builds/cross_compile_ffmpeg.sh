@@ -1322,142 +1322,74 @@ build_libcurl() {
 }
 
 build_ffmpeg() {
-  local extra_postpend_configure_options=$2
-  local output_dir=$3
+  local output_dir=$2
   if [[ -z $output_dir ]]; then
     output_dir="ffmpeg_git"
   fi
   if [[ "$non_free" = "y" ]]; then
     output_dir+="_with_fdk_aac"
   fi
-  if [[ $high_bitdepth == "y" ]]; then
-    output_dir+="_x26x_high_bitdepth"
-  fi
-  if [[ $build_intel_qsv == "n" ]]; then
-    output_dir+="_xp_compat"
-  fi
-  if [[ $enable_gpl == 'n' ]]; then
-    output_dir+="_lgpl"
-  fi
-
-  local postpend_configure_opts=""
-
   # can't mix and match --enable-static --enable-shared unfortunately, or the final executable seems to just use shared if the're both present
   if [[ $1 == "shared" ]]; then
     output_dir+="_shared"
-    postpend_configure_opts="--enable-shared --disable-static --prefix=$(pwd)/${output_dir}"
+    local postpend_configure_opts="--enable-shared --disable-static --prefix=$(pwd)/${output_dir}"
   else
-    postpend_configure_opts="--enable-static --disable-shared --prefix=$mingw_w64_x86_64_prefix"
+    local postpend_configure_opts="--enable-static --disable-shared --prefix=$mingw_w64_x86_64_prefix"
   fi
-
   do_git_checkout https://github.com/FFmpeg/FFmpeg.git $output_dir $ffmpeg_git_checkout_version
   cd $output_dir
-    git clean -f # Throw away local changes; 'already_*', diff-, done- and bak-files. Somehow the patched files get back to their original state when doing a rerun.
+    apply_patch file://$patch_dir/wincrypt-for-winxp-compatibility.diff # WinXP doesn't have 'bcrypt' (see https://github.com/FFmpeg/FFmpeg/commit/aedbf1640ced8fc09dc980ead2a387a59d8f7f68).
     apply_patch file://$patch_dir/libfdk-aac_load-shared-library-dynamically.diff
     apply_patch file://$patch_dir/frei0r_load-shared-libraries-dynamically.diff
-    if [[ ! -f configure.bak ]]; then # Changes being made to 'configure' are done with 'sed', because 'configure' gets updated a lot.
+    if [[ ! -f configure.bak ]]; then
       sed -i.bak "/enabled libfdk_aac/s/&.*/\&\& { check_header fdk-aac\/aacenc_lib.h || die \"ERROR: aacenc_lib.h not found\"; }/;/require libfdk_aac/,/without pkg-config/d;/    libfdk_aac/d;/    libflite/i\    libfdk_aac" configure # Load 'libfdk-aac-1.dll' dynamically.
-      sed -i "/enabled libtwolame/s/&&$/-DLIBTWOLAME_STATIC \&\& add_cppflags -DLIBTWOLAME_STATIC \&\&/;/enabled libmodplug/s/.*/& -DMODPLUG_STATIC \&\& add_cppflags -DMODPLUG_STATIC/;/enabled libcaca/s/.*/& -DCACA_STATIC \&\& add_cppflags -DCACA_STATIC/" configure # Add '-Dxxx_STATIC' to LibTwoLAME, LibModplug and Libcaca. FFmpeg should change this upstream, just like they did with libopenjpeg.
-      # Alternative to 'do_configure "... --extra-cflags=-DLIBTWOLAME_STATIC --extra-cflags=-DMODPLUG_STATIC --extra-cflags=-DCACA_STATIC"'.
-      sed -i.bak "s/ install-data//" Makefile # Binary only (don't install 'DATA_FILES' and 'EXAMPLES_FILES').
     fi
-
-    if [ "$bits_target" = "32" ]; then
-      local arch=x86
-    else
-      local arch=x86_64
-    fi
-
-    init_options="--arch=$arch --target-os=mingw32 --cross-prefix=$cross_prefix --pkg-config=pkg-config --pkg-config-flags=--static --extra-version=Reino --enable-gray --enable-version3 --disable-debug --disable-doc --disable-htmlpages --disable-manpages --disable-podpages --disable-txtpages --disable-w32threads"
-    if [[ `uname` =~ "5.1" ]]; then
-      init_options+=" --disable-schannel"
-      # Fix WinXP incompatibility by disabling Microsoft's Secure Channel, because Windows XP doesn't support TLS 1.1 and 1.2, but with GnuTLS or OpenSSL it does. The main reason I started this journey!
-    fi
-    config_options="$init_options --enable-fontconfig --enable-gmp --enable-gnutls --enable-libass --enable-libbluray --enable-libbs2b --enable-libcaca --enable-libfdk-aac --enable-libflite --enable-libfreetype --enable-libfribidi --enable-libgme --enable-libgsm --enable-libilbc --enable-libmodplug --enable-libmp3lame --enable-libmysofa --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libopenh264 --enable-libopenjpeg --enable-libopus --enable-libsnappy --enable-libsoxr --enable-libspeex --enable-libtheora --enable-libtwolame --enable-libvo-amrwbenc --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libzimg --enable-libzvbi"
-    # With the changes being made to 'configure' above and with '--pkg-config-flags=--static' there's no need anymore for '--extra-cflags=' and '--extra-libs='.
-    if [[ $enable_gpl == 'y' ]]; then
-      config_options+=" --enable-gpl --enable-avisynth --enable-frei0r --enable-filter=frei0r --enable-librubberband --enable-libvidstab --enable-libx264 --enable-libx265 --enable-libxavs --enable-libxvid"
-    fi
-    # other possibilities (you'd need to also uncomment the call to their build method):
-    #   --enable-w32threads # [worse UDP than pthreads, so not using that]
-    if [[ $build_intel_qsv = y ]]; then
-      config_options+=" --enable-libmfx" # [note, not windows xp friendly]
-    fi
-    config_options+=" --enable-avresample" # guess this is some kind of libav specific thing (the FFmpeg fork) but L-Smash needs it so why not always build it :)
-
-    for i in $CFLAGS; do
-      config_options+=" --extra-cflags=$i" # --extra-cflags may not be needed here, but adds it to the final console output which I like for debugging purposes
-    done
-
-    config_options+=" $postpend_configure_opts"
-
+    init_options="--arch=x86 --target-os=mingw32 --cross-prefix=$cross_prefix --pkg-config=pkg-config --pkg-config-flags=--static --extra-version=Reino --enable-gray --enable-version3 --disable-debug --disable-doc --disable-htmlpages --disable-manpages --disable-podpages --disable-txtpages --disable-w32threads"
+    config_options="$init_options --enable-avisynth --enable-frei0r --enable-filter=frei0r --enable-gmp --enable-gnutls --enable-gpl --enable-libaom --enable-libass --enable-libbluray --enable-libbs2b --enable-libcaca --extra-cflags=-DCACA_STATIC --enable-libfdk-aac --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libgme --enable-libgsm --enable-libilbc --enable-libmp3lame --enable-libmysofa --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libopenh264 --enable-libopenmpt --enable-libopus --enable-librubberband --enable-libsnappy --enable-libsoxr --enable-libspeex --enable-libtesseract --enable-libtheora --enable-libtwolame --extra-cflags=-DLIBTWOLAME_STATIC --enable-libvidstab --enable-libvo-amrwbenc --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxavs --enable-libxml2 --enable-libxvid --enable-libzimg --enable-libzvbi"
+    # 'configure' needs '--extra-cflags=-DCACA_STATIC ' for libcaca. Otherwise you'll get "undefined reference to `_imp__caca_create_canvas'" and "ERROR: caca not found using pkg-config".
+    # 'configure' needs '--extra-cflags=-DLIBTWOLAME_STATIC' for libtwolame. Otherwise you'll get "undefined reference to `_imp__twolame_init'" and "ERROR: libtwolame not found". 'twolame.pc' does contain "Cflags.private: -DLIBTWOLAME_STATIC" nowadays, but pkg-config doesn't support this entry.
     if [[ "$non_free" = "y" ]]; then
       config_options+=" --enable-nonfree --enable-decklink"
-      # To use fdk-aac in VLC, we need to change FFMPEG's default (aac), but I haven't found how to do that... So I disabled it. This could be an new option for the script? (was --disable-decoder=aac )
-      # other possible options: --enable-openssl [unneeded since we use gnutls]
+      # Other possible options: '--enable-openssl'.
     fi
-    #apply_patch file://$patch_dir/nvresize2.patch "-p1" # uncomment if you want to test nvresize filter [et al] http://ffmpeg.org/pipermail/ffmpeg-devel/2015-November/182781.html patch worked with 7ab37cae34b3845
-
-    do_debug_build=n # if you need one for backtraces/examining segfaults using gdb.exe ... change this to y :) XXXX make it affect x264 too...and make it param
-    if [[ "$do_debug_build" = "y" ]]; then
-      # not sure how many of these are actually needed/useful...possibly none LOL
-      config_options+=" --disable-optimizations --extra-cflags=-Og --extra-cflags=-fno-omit-frame-pointer --enable-debug=3 --extra-cflags=-fno-inline $postpend_configure_opts"
-      # this one kills gdb workability for static build? ai ai [?] XXXX
-      config_options+=" --disable-libgme"
-    fi
-    config_options+=" $extra_postpend_configure_options"
-
+    for i in $CFLAGS; do
+      config_options+=" --extra-cflags=$i" # Adds "-march=pentium3 -O2 -mfpmath=sse -msse" to the buildconf.
+    done
+    config_options+=" $postpend_configure_opts"
     do_configure "$config_options"
-    rm -f */*.a */*.dll *.exe # just in case some dependency library has changed, force it to re-link even if the ffmpeg source hasn't changed...
-    rm -f already_ran_make*
-    echo "doing ffmpeg make $(pwd)"
-    do_make_and_make_install # install ffmpeg to get libavcodec libraries to be used as dependencies for other things, like vlc [XXX make this a parameter?] or install shared to a local dir
-
-    # build ismindex.exe, too, just for fun
-    if [[ $build_ismindex == "y" ]]; then
-      make tools/ismindex.exe || exit 1
-    fi
-
-    # XXX really ffmpeg should have set this up right but doesn't, patch FFmpeg itself instead...
-    if [[ $1 == "static" ]]; then
-      if [[ $build_intel_qsv = y ]]; then
-        sed -i.bak 's/-lavutil -lm.*/-lavutil -lm -lmfx -lstdc++ -lpthread/' "$PKG_CONFIG_PATH/libavutil.pc"
-      else
-        sed -i.bak 's/-lavutil -lm.*/-lavutil -lm -lpthread/' "$PKG_CONFIG_PATH/libavutil.pc"
-      fi
-      sed -i.bak 's/-lswresample -lm.*/-lswresample -lm -lsoxr/' "$PKG_CONFIG_PATH/libswresample.pc" # XXX patch ffmpeg
-    fi
-
-    sed -i.bak 's/-lswresample -lm.*/-lswresample -lm -lsoxr/' "$PKG_CONFIG_PATH/libswresample.pc" # XXX patch ffmpeg
+    do_make # 'ffmpeg.exe', 'ffplay.exe' and 'ffprobe.exe' only. No install.
 
     if [[ $non_free == "y" ]]; then
       if [[ $1 == "shared" ]]; then
-        echo "Done! You will find $bits_target-bit $1 non-redistributable binaries in $(pwd)/bin."
+        echo "Done! You will find 32-bit $1 non-redistributable binaries in '$(pwd)/bin'."
       else
-        echo "Done! You will find $bits_target-bit $1 non-redistributable binaries in $(pwd)."
+        echo "Done! You will find 32-bit $1 non-redistributable binaries in '$(pwd)'."
       fi
     else
-      mkdir -p $cur_dir/redist
-      archive="$cur_dir/redist/ffmpeg-$(git describe --tags --match N)-win$bits_target-$1"
+      mkdir -p $redist_dir
+      archive="$redist_dir/ffmpeg-$(git describe --tags --match N)-win32-$1"
       if [[ $original_cflags =~ "pentium3" ]]; then
         archive+="_legacy"
       fi
       if [[ $1 == "shared" ]]; then
-        echo "Done! You will find $bits_target-bit $1 binaries in $(pwd)/bin."
-        if [[ ! -f $archive.7z ]]; then
-          sed "s/$/\r/" COPYING.GPLv3 > bin/COPYING.GPLv3.txt
-          cd bin
-            7z a -mx=9 $archive.7z *.exe *.dll COPYING.GPLv3.txt && rm -f COPYING.GPLv3.txt
-          cd ..
+        do_make_install "" "install-libs" # Because of '--prefix=$(pwd)/${output_dir}' the dlls are stripped and installed to 'ffmpeg_git_shared/bin'.
+        echo "Done! You will find 32-bit $1 binaries in $(pwd) and libraries in $(pwd)/bin."
+        if [[ ! -f $archive.7z ]]; then # Pack shared build.
+          sed "s/$/\r/" COPYING.GPLv3 > COPYING.GPLv3.txt
+          7z a -mx=9 $archive.7z ffmpeg.exe ffplay.exe ffprobe.exe $(pwd)/bin/*.dll COPYING.GPLv3.txt && rm -f COPYING.GPLv3.txt
+        else
+          echo "Already made '$(basename $archive.7z)'."
         fi
       else
-        echo "Done! You will find $bits_target-bit $1 binaries in $(pwd)."
-        if [[ ! -f $archive.7z ]]; then
+        echo "Done! You will find 32-bit $1 binaries in $(pwd)."
+        if [[ ! -f $archive.7z ]]; then # Pack static build.
           sed "s/$/\r/" COPYING.GPLv3 > COPYING.GPLv3.txt
           7z a -mx=9 $archive.7z ffmpeg.exe ffplay.exe ffprobe.exe COPYING.GPLv3.txt && rm -f COPYING.GPLv3.txt
+        else
+          echo "Already made '$(basename $archive.7z)'."
         fi
       fi
-      echo "You will find redistributable archives in $cur_dir/redist."
+      echo "You will find redistributable archives in $redist_dir."
     fi
     echo `date`
   cd ..
@@ -1591,8 +1523,6 @@ git_get_latest=y
 #disable_nonfree=n # have no value by default to force user selection
 original_cflags='-march=pentium3 -O2 -mfpmath=sse -msse' # See https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html, https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html and https://stackoverflow.com/questions/19689014/gcc-difference-between-o3-and-os.
 ffmpeg_git_checkout_version=
-build_ismindex=n
-enable_gpl=y
 export ac_cv_func_vsnprintf_s=no # Mark vsnprintf_s as unavailable, as windows xp mscrt doesn't have it.
 
 # parse command line parameters, if any
@@ -1605,22 +1535,18 @@ while true; do
       --disable-nonfree=y (set to n to include nonfree like libfdk-aac)
       --sandbox-ok=n [skip sandbox prompt if y]
       -d [meaning \"defaults\" skip all prompts, just build ffmpeg static with some reasonable defaults like no git updates]
-      --build-ismindex=n [builds ffmpeg utility ismindex.exe]
       --cflags=[default is $original_cflags, which works on any cpu, see README for options]
       --git-get-latest=y [do a git pull for latest code from repositories like FFmpeg--can force a rebuild if changes are detected]
       --debug Make this script  print out each line as it executes
-      --enable-gpl=[y] set to n to do an lgpl build
        "; exit 0 ;;
     --sandbox-ok=* ) sandbox_ok="${1#*=}"; shift ;;
     --ffmpeg-git-checkout-version=* ) ffmpeg_git_checkout_version="${1#*=}"; shift ;;
-    --build-ismindex=* ) build_ismindex="${1#*=}"; shift ;;
     --git-get-latest=* ) git_get_latest="${1#*=}"; shift ;;
     --cflags=* )
        original_cflags="${1#*=}"; echo "setting cflags as $original_cflags"; shift ;;
     --disable-nonfree=* ) disable_nonfree="${1#*=}"; shift ;;
     -d         ) gcc_cpu_count=$cpu_count; disable_nonfree="y"; sandbox_ok="y"; git_get_latest="n"; shift ;;
     --build-ffmpeg-static=* ) build_ffmpeg_static="${1#*=}"; shift ;;
-    --enable-gpl=* ) enable_gpl="${1#*=}"; shift ;;
     --debug ) set -x; shift ;;
     -- ) shift; break ;;
     -* ) echo "Error, unknown option: '$1'."; exit 1 ;;

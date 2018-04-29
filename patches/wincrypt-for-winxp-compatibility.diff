@@ -1,0 +1,71 @@
+--- configure.bak	2018-04-23 01:24:57.578125000 +0200
++++ configure	2018-04-23 01:27:24.156250000 +0200
+@@ -2142,10 +2142,10 @@
+ "
+ 
+ SYSTEM_LIBRARIES="
+-    bcrypt
+     vaapi_drm
+     vaapi_x11
+     vdpau_x11
++    wincrypt
+ "
+ 
+ TOOLCHAIN_FEATURES="
+@@ -3446,7 +3446,7 @@
+ avformat_suggest="libm network zlib"
+ avresample_deps="avutil"
+ avresample_suggest="libm"
+-avutil_suggest="clock_gettime ffnvcodec libm libdrm libmfx opencl user32 vaapi videotoolbox corefoundation corevideo coremedia bcrypt"
++avutil_suggest="clock_gettime ffnvcodec libm libdrm libmfx opencl user32 vaapi videotoolbox corefoundation corevideo coremedia wincrypt"
+ postproc_deps="avutil gpl"
+ postproc_suggest="libm"
+ swresample_deps="avutil"
+@@ -5829,10 +5829,9 @@
+ check_builtin stdatomic stdatomic.h "atomic_int foo, bar = ATOMIC_VAR_INIT(-1); atomic_store(&foo, 0); foo += bar"
+ 
+ check_lib advapi32 "windows.h"            RegCloseKey          -ladvapi32
+-check_lib bcrypt   "windows.h bcrypt.h"   BCryptGenRandom      -lbcrypt &&
+-    check_cpp_condition bcrypt bcrypt.h "defined BCRYPT_RNG_ALGORITHM"
+ check_lib ole32    "windows.h"            CoTaskMemFree        -lole32
+ check_lib shell32  "windows.h shellapi.h" CommandLineToArgvW   -lshell32
++check_lib wincrypt "windows.h wincrypt.h" CryptGenRandom       -ladvapi32
+ check_lib psapi    "windows.h psapi.h"    GetProcessMemoryInfo -lpsapi
+ 
+ check_lib android android/native_window.h ANativeWindow_acquire -landroid
+--- libavutil/random_seed.c.bak	2018-04-23 00:20:00.468750000 +0200
++++ libavutil/random_seed.c	2018-04-23 01:29:13.296875000 +0200
+@@ -26,9 +26,9 @@
+ #if HAVE_IO_H
+ #include <io.h>
+ #endif
+-#if HAVE_BCRYPT
++#if HAVE_WINCRYPT
+ #include <windows.h>
+-#include <bcrypt.h>
++#include <wincrypt.h>
+ #endif
+ #include <fcntl.h>
+ #include <math.h>
+@@ -121,14 +121,13 @@
+ {
+     uint32_t seed;
+ 
+-#if HAVE_BCRYPT
+-    BCRYPT_ALG_HANDLE algo_handle;
+-    NTSTATUS ret = BCryptOpenAlgorithmProvider(&algo_handle, BCRYPT_RNG_ALGORITHM,
+-                                               MS_PRIMITIVE_PROVIDER, 0);
+-    if (BCRYPT_SUCCESS(ret)) {
+-        NTSTATUS ret = BCryptGenRandom(algo_handle, (UCHAR*)&seed, sizeof(seed), 0);
+-        BCryptCloseAlgorithmProvider(algo_handle, 0);
+-        if (BCRYPT_SUCCESS(ret))
++#if HAVE_WINCRYPT
++    HCRYPTPROV provider;
++    if (CryptAcquireContext(&provider, NULL, NULL, PROV_RSA_FULL,
++                            CRYPT_VERIFYCONTEXT | CRYPT_SILENT)) {
++        BOOL ret = CryptGenRandom(provider, sizeof(seed), (PBYTE) &seed);
++        CryptReleaseContext(provider, 0);
++        if (ret)
+             return seed;
+     }
+ #endif
