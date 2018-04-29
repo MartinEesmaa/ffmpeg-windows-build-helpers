@@ -1207,20 +1207,24 @@ build_libxvid() {
   cd ../../..
 }
 
+build_libopenh264() {
+  do_git_checkout "https://github.com/cisco/openh264.git"
+  cd openh264_git
+    if [[ ! -f Makefile.bak ]]; then # Change CFLAGS and Library only.
+      sed -i.bak "s/O3/O2/;/^all:/s/ binaries//" Makefile
+    fi
+    do_make "$make_prefix_options OS=mingw_nt ARCH=i686 ASM=nasm install-static" # No need for 'do_make_install', because 'install-static' already has install-instructions.
+  cd ..
+}
+
 build_libvpx() {
   do_git_checkout https://chromium.googlesource.com/webm/libvpx.git
   cd libvpx_git
     if [[ ! -f vp8/common/threading.h.bak ]]; then
-      sed -i.bak "/<semaphore.h/i\#include <sys/types.h>" vp8/common/threading.h
-    fi
-    # 'cross_compilers/mingw-w64-i686/include/semaphore.h' would otherwise cause problems; "semaphore.h:152:8: error: unknown type name 'mode_t'".
-    if [[ "$bits_target" = "32" ]]; then
-      local config_options="--target=x86-win32-gcc"
-    else
-      local config_options="--target=x86_64-win64-gcc"
+      sed -i.bak "/<semaphore.h/i\#include <sys/types.h>" vp8/common/threading.h # With 'cross_compilers/mingw-w64-i686/include/semaphore.h' you'd otherwise get: "semaphore.h:152:8: error: unknown type name 'mode_t'".
     fi
     export CROSS="$cross_prefix"
-    do_configure "$config_options --prefix=$mingw_w64_x86_64_prefix --enable-static --disable-shared --disable-examples --disable-tools --disable-docs --disable-unit-tests --enable-vp9-highbitdepth"
+    do_configure "--target=x86-win32-gcc --prefix=$mingw_w64_x86_64_prefix --enable-static --disable-shared --disable-examples --disable-tools --disable-docs --disable-unit-tests --enable-vp9-highbitdepth"
     do_make_and_make_install
     unset CROSS
   cd ..
@@ -1307,21 +1311,6 @@ build_libx265() {
   rm already_ran_make_install*
   do_make_install
   cd ../..
-}
-
-build_libopenh264() {
-  do_git_checkout "https://github.com/cisco/openh264.git"
-  cd openh264_git
-    if [[ ! -f Makefile.bak ]]; then # Change CFLAGS and Library only.
-      sed -i.bak "s/O3/O2/;/^all:/s/ binaries//" Makefile
-    fi
-    if [ $bits_target = 32 ]; then
-      local arch=i686 # or x86?
-    else
-      local arch=x86_64
-    fi
-    do_make "$make_prefix_options OS=mingw_nt ARCH=$arch ASM=yasm install-static" # No need for 'do_make_install', because 'install-static' already has install-instructions.
-  cd ..
 }
 
 build_libx264() {
@@ -1600,9 +1589,9 @@ build_dependencies() {
   build_tesseract
   build_libxavs
   build_libxvid # FFmpeg now has native support, but libxvid still provides a better image.
+  build_libopenh264
   build_libvpx
   build_libx265
-  build_libopenh264
   build_libx264 # at bottom as it might build a ffmpeg which needs all the above deps...
 }
 
