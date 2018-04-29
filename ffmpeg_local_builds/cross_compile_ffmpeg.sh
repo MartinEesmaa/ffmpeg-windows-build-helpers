@@ -1064,7 +1064,7 @@ build_libcaca() {
     generic_configure "--libdir=$mingw_w64_x86_64_prefix/lib --disable-csharp --disable-java --disable-cxx --disable-python --disable-ruby --disable-doc"
     do_make_and_make_install
   cd ..
-}
+} # [zlib, dlfcn]
 
 build_libdecklink() {
   if [[ ! -f $mingw_w64_x86_64_prefix/include/DeckLinkAPIVersion.h ]]; then
@@ -1090,7 +1090,7 @@ build_zvbi() {
     # Without '--without-libiconv-prefix' 'configure' would otherwise search for and only accept a shared Libiconv library.
     do_make_and_make_install
   cd ..
-}
+} # [iconv, libpng, dlfcn]
 
 build_fribidi() {
   do_git_checkout https://github.com/behdad/fribidi.git
@@ -1517,11 +1517,11 @@ build_dependencies() {
   build_vidstab
   build_libmysofa # Needed for FFmpeg's SOFAlizer filter (https://ffmpeg.org/ffmpeg-filters.html#sofalizer).
   build_frei0r
-  build_libcaca # Uses zlib and dlfcn.
+  build_libcaca
   if [[ "$non_free" = "y" ]]; then
     build_libdecklink
   fi
-  build_zvbi # Uses iconv, libpng and dlfcn.
+  build_zvbi
   build_fribidi # Uses dlfcn.
   build_libass # Needs freetype >= 9.10.3 (see https://bugs.launchpad.net/ubuntu/+source/freetype1/+bug/78573 o_O) and fribidi >= 0.19.0. Uses fontconfig >= 2.10.92, iconv and dlfcn.
   build_libxavs
