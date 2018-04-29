@@ -1048,11 +1048,12 @@ build_libmysofa() {
   do_git_checkout https://github.com/hoene/libmysofa.git
   cd libmysofa_git
     if [[ ! -f CMakeLists.txt.bak ]]; then # Library only.
-      sed -i.bak "/^install/,+1d" CMakeLists.txt
+      sed -i.bak "/^install(.*)/d" CMakeLists.txt
     fi
-    do_cmake_and_install "-DBUILD_SHARED_LIBS=0 -DBUILD_TESTS=0"
+    do_cmake_and_install "-DBUILD_SHARED_LIBS=0 -DBUILD_TESTS=0 -DMATH=$mingw_w64_x86_64_prefix/lib/libm.a -DZLIB_INCLUDE_DIR=$mingw_w64_x86_64_prefix/include -DZLIB_LIBRARY=$mingw_w64_x86_64_prefix/lib/libz.a"
+    # Otherwise they default to: "MATH:FILEPATH=/usr/lib/libm.a", "ZLIB_INCLUDE_DIR:PATH=/usr/include" and "ZLIB_LIBRARY:FILEPATH=/usr/lib/libz.dll.a"
   cd ..
-}
+} # [dlfcn]
 
 build_libcaca() {
   do_git_checkout https://github.com/cacalabs/libcaca.git
@@ -1517,7 +1518,7 @@ build_dependencies() {
   build_libzimg
   build_frei0r # Needs dlfcn.
   build_vidstab
-  build_libmysofa # Needed for FFmpeg's SOFAlizer filter (https://ffmpeg.org/ffmpeg-filters.html#sofalizer). Uses dlfcn.
+  build_libmysofa # Needed for FFmpeg's SOFAlizer filter (https://ffmpeg.org/ffmpeg-filters.html#sofalizer).
   build_libcaca # Uses zlib and dlfcn.
   if [[ "$non_free" = "y" ]]; then
     build_libdecklink
