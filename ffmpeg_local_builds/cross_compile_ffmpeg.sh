@@ -1105,7 +1105,7 @@ build_fribidi() {
 
 build_libass() {
   do_git_checkout_and_make_install https://github.com/libass/libass.git
-}
+} # freetype >= 9.10.3 (see https://bugs.launchpad.net/ubuntu/+source/freetype1/+bug/78573 o_O), fribidi >= 0.19.0, [fontconfig >= 2.10.92, iconv, dlfcn]
 
 build_libxavs() {
   do_svn_checkout https://svn.code.sf.net/p/xavs/code/trunk xavs_svn
@@ -1523,7 +1523,7 @@ build_dependencies() {
   fi
   build_zvbi
   build_fribidi
-  build_libass # Needs freetype >= 9.10.3 (see https://bugs.launchpad.net/ubuntu/+source/freetype1/+bug/78573 o_O) and fribidi >= 0.19.0. Uses fontconfig >= 2.10.92, iconv and dlfcn.
+  build_libass
   build_libxavs
   build_libxvid # FFmpeg now has native support, but libxvid still provides a better image.
   build_libvpx
