@@ -1010,30 +1010,6 @@ build_libzimg() {
   cd ..
 } # [dlfcn]
 
-build_frei0r() {
-  do_git_checkout https://github.com/dyne/frei0r.git
-  cd frei0r_git
-    do_cmake_and_install
-
-    mkdir -p $cur_dir/redist # Strip and pack shared libraries.
-    if [ $bits_target = 32 ]; then
-      local arch=x86
-    else
-      local arch=x86_64
-    fi
-    archive="$cur_dir/redist/frei0r-plugins-${arch}-$(git describe --tags).7z"
-    if [[ ! -f $archive ]]; then
-      for sharedlib in $mingw_w64_x86_64_prefix/lib/frei0r-1/*.dll; do
-        ${cross_prefix}strip $sharedlib
-      done
-      for doc in AUTHORS ChangeLog COPYING README.md; do
-        sed "s/$/\r/" $doc > $mingw_w64_x86_64_prefix/lib/frei0r-1/$doc.txt
-      done
-      7z a -mx=9 $archive $mingw_w64_x86_64_prefix/lib/frei0r-1 && rm -f $mingw_w64_x86_64_prefix/lib/frei0r-1/*.txt
-    fi
-  cd ..
-}
-
 build_vidstab() {
   do_git_checkout https://github.com/georgmartius/vid.stab.git vid.stab_git
   cd vid.stab_git
@@ -1054,6 +1030,28 @@ build_libmysofa() {
     # Otherwise they default to: "MATH:FILEPATH=/usr/lib/libm.a", "ZLIB_INCLUDE_DIR:PATH=/usr/include" and "ZLIB_LIBRARY:FILEPATH=/usr/lib/libz.dll.a"
   cd ..
 } # [dlfcn]
+
+build_frei0r() {
+  do_git_checkout https://github.com/dyne/frei0r.git
+  cd frei0r_git
+    do_cmake_and_install
+    do_strip $mingw_w64_x86_64_prefix/lib/frei0r-1
+
+    mkdir -p $redist_dir # Pack shared libraries.
+    archive="$redist_dir/frei0r-plugins-x86-$(git describe --tags)"
+    if [[ $original_cflags =~ "pentium3" ]]; then
+      archive+="_legacy"
+    fi
+    if [[ ! -f $archive.7z ]]; then
+      for doc in AUTHORS ChangeLog COPYING README.md; do
+        sed "s/$/\r/" $doc > $mingw_w64_x86_64_prefix/lib/frei0r-1/$doc.txt
+      done
+      7z a -mx=9 $archive.7z $mingw_w64_x86_64_prefix/lib/frei0r-1 && rm -f $mingw_w64_x86_64_prefix/lib/frei0r-1/*.txt
+    else
+      echo "Already made '$(basename $archive.7z)'."
+    fi
+  cd ..
+} # dlfcn
 
 build_libcaca() {
   do_git_checkout https://github.com/cacalabs/libcaca.git
@@ -1516,9 +1514,9 @@ build_dependencies() {
   build_libsamplerate
   build_librubberband
   build_libzimg
-  build_frei0r # Needs dlfcn.
   build_vidstab
   build_libmysofa # Needed for FFmpeg's SOFAlizer filter (https://ffmpeg.org/ffmpeg-filters.html#sofalizer).
+  build_frei0r
   build_libcaca # Uses zlib and dlfcn.
   if [[ "$non_free" = "y" ]]; then
     build_libdecklink
