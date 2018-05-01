@@ -1311,16 +1311,6 @@ build_libaom() {
   cd ../..
 } # cmake >= 3.5
 
-build_libcurl() {
-  download_and_unpack_file https://curl.haxx.se/download/curl-7.54.1.tar.gz
-  cd curl-7.54.1
-    export PKG_CONFIG="pkg-config --static" # Automatically detect all GnuTLS's dependencies.
-    generic_configure "--without-ssl --with-gnutls --without-ca-bundle --with-ca-fallback" # Use GnuTLS's built-in CA store instead of a separate 'ca-bundle.crt'.
-    do_make # 'curl.exe' only. Don't install.
-    unset PKG_CONFIG
-  cd ..
-}
-
 build_ffmpeg() {
   local output_dir=$2
   if [[ -z $output_dir ]]; then
@@ -1415,7 +1405,6 @@ build_dependencies() {
   #  build_openssl-1.0.2
   #  build_openssl-1.1.0
   #fi
-  #build_libcurl # Uses GnuTLS/OpenSSL, zlib and dlfcn. Only for building 'curl.exe'.
   build_libogg
   build_libvorbis
   build_libopus
@@ -1493,6 +1482,32 @@ build_tesseract() {
     build_libtesseract
   fi
 }
+
+build_curl() {
+  build_gmp
+  build_libnettle
+  build_gnutls
+  #build_openssl-1.0.2
+  #build_openssl-1.1.0
+
+  download_and_unpack_file https://curl.haxx.se/download/curl-7.59.0.tar.bz2
+  cd curl-7.59.0
+    export PKG_CONFIG="pkg-config --static" # Automatically detect all GnuTLS's dependencies.
+    generic_configure "--without-ssl --with-gnutls --without-ca-bundle --with-ca-fallback" # Use GnuTLS's built-in CA store instead of a separate 'ca-bundle.crt'.
+    do_make # 'curl.exe' only. Don't install.
+    unset PKG_CONFIG
+
+    mkdir -p $redist_dir # Strip and pack 'curl.exe'.
+    archive="$redist_dir/curl-7.59.0_gnutls_zlib-win32-static"
+    if [[ $original_cflags =~ "pentium3" ]]; then
+      archive+="_legacy"
+    fi
+    if [[ ! -f $archive.7z ]]; then
+      sed "s/$/\r/" COPYING > src/COPYING.txt
+      7z a -mx=9 $archive.7z src/curl.exe src/COPYING.txt && rm -f src/COPYING.txt
+    fi
+  cd ..
+} # gnutls/openssl, [zlib, dlfcn]
 
 reset_cflags() {
   export CFLAGS=$original_cflags
