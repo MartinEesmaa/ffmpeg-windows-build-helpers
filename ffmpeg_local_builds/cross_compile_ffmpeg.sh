@@ -1088,7 +1088,7 @@ build_frei0r() {
 build_libcaca() {
   do_git_checkout https://github.com/cacalabs/libcaca.git
   cd libcaca_git
-    apply_patch file://$patch_dir/libcaca_git_stdio-cruft.diff # Fix WinXP incompatibility.
+    apply_patch file://$patch_dir/libcaca_git_stdio-cruft.patch -p1 # Fix WinXP incompatibility.
     if [[ ! -f Makefile.am.bak ]]; then # Library only.
       sed -i.bak "/^SUBDIRS/s/ src.*//;/cxx.*doc/d" Makefile.am
       sed -i.bak "/^SUBDIRS/s/ t//" caca/Makefile.am
