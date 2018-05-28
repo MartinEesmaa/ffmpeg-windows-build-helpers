@@ -1,7 +1,8 @@
-diff -ur Makefile.in.bak Makefile.in
---- Makefile.in.bak	2017-04-27 15:44:27.859375000 +0200
-+++ Makefile.in	2017-05-23 23:10:31.531250000 +0200
-@@ -166,6 +166,15 @@
+diff --git a/Makefile.in b/Makefile.in
+index 3a70a71..070f10d 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -166,6 +166,15 @@ bin:
  lib:
  	$(MKDIR) $@
  
@@ -17,13 +18,14 @@ diff -ur Makefile.in.bak Makefile.in
  install:	all
  	$(MKDIR) -p $(DESTDIR)$(INSTALL_BINDIR)
  	$(MKDIR) -p $(DESTDIR)$(INSTALL_INCDIR)
-diff -ur rubberband.pc.in.bak rubberband.pc.in
---- rubberband.pc.in.bak	2017-05-21 23:35:23.515625000 +0200
-+++ rubberband.pc.in	2017-05-23 23:05:01.156250000 +0200
-@@ -5,6 +5,7 @@
+diff --git a/rubberband.pc.in b/rubberband.pc.in
+index ac96edd..ba1256c 100644
+--- a/rubberband.pc.in
++++ b/rubberband.pc.in
+@@ -5,6 +5,7 @@ includedir=${prefix}/include
  
  Name: rubberband
- Version: 1.8.1
+ Version: 1.8.2
 -Description: 
 +Description: An audio time-stretching and pitch-shifting library and utility program
  Libs: -L${libdir} -lrubberband
