@@ -646,6 +646,15 @@ build_gnutls() {
   cd ..
 } # nettle >= 3.1, hogweed(=nettle) >= 3.1, [zlib, dlfcn]
 
+build_mbedtls() {
+  do_git_checkout https://github.com/ARMmbed/mbedtls.git
+  mkdir -p mbedtls_git/build_dir
+  cd mbedtls_git/build_dir # Out-of-source build.
+    do_cmake "-DENABLE_PROGRAMS=0 -DENABLE_TESTING=0 -DENABLE_ZLIB_SUPPORT=1 -DZLIB_INCLUDE_DIR=$mingw_w64_x86_64_prefix/include -DZLIB_LIBRARY_RELEASE=$mingw_w64_x86_64_prefix/lib/libz.a" "$(dirname $(pwd))"
+    do_make_and_make_install
+  cd ../..
+}
+
 build_openssl-1.0.2() {
   download_and_unpack_file https://www.openssl.org/source/openssl-1.0.2o.tar.gz
   cd openssl-1.0.2o
@@ -1335,7 +1344,7 @@ build_ffmpeg() {
       sed -i.bak "/enabled libfdk_aac/s/&.*/\&\& { check_header fdk-aac\/aacenc_lib.h || die \"ERROR: aacenc_lib.h not found\"; }/;/require libfdk_aac/,/without pkg-config/d;/    libfdk_aac/d;/    libflite/i\    libfdk_aac" configure # Load 'libfdk-aac-1.dll' dynamically.
     fi
     init_options="--arch=x86 --target-os=mingw32 --cross-prefix=$cross_prefix --pkg-config=pkg-config --pkg-config-flags=--static --extra-version=Reino --enable-gray --enable-version3 --disable-debug --disable-doc --disable-htmlpages --disable-manpages --disable-podpages --disable-txtpages --disable-w32threads"
-    config_options="$init_options --enable-avisynth --enable-frei0r --enable-filter=frei0r --enable-gmp --enable-gnutls --enable-gpl --enable-libaom --enable-libass --enable-libbluray --enable-libbs2b --enable-libcaca --extra-cflags=-DCACA_STATIC --enable-libfdk-aac --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libgme --enable-libgsm --enable-libilbc --enable-libmp3lame --enable-libmysofa --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libopenh264 --enable-libopenmpt --enable-libopus --enable-librubberband --enable-libsnappy --enable-libsoxr --enable-libspeex --enable-libtesseract --enable-libtheora --enable-libtwolame --extra-cflags=-DLIBTWOLAME_STATIC --enable-libvidstab --enable-libvo-amrwbenc --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxavs --enable-libxml2 --enable-libxvid --enable-libzimg --enable-libzvbi"
+    config_options="$init_options --enable-avisynth --enable-frei0r --enable-filter=frei0r --enable-gmp --enable-gpl --enable-libaom --enable-libass --enable-libbluray --enable-libbs2b --enable-libcaca --extra-cflags=-DCACA_STATIC --enable-libfdk-aac --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libgme --enable-libgsm --enable-libilbc --enable-libmp3lame --enable-libmysofa --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libopenh264 --enable-libopenmpt --enable-libopus --enable-librubberband --enable-libsnappy --enable-libsoxr --enable-libspeex --enable-libtesseract --enable-libtheora --enable-libtwolame --extra-cflags=-DLIBTWOLAME_STATIC --enable-libvidstab --enable-libvo-amrwbenc --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxavs --enable-libxml2 --enable-libxvid --enable-libzimg --enable-libzvbi --enable-mbedtls"
     # 'configure' needs '--extra-cflags=-DCACA_STATIC ' for libcaca. Otherwise you'll get "undefined reference to `_imp__caca_create_canvas'" and "ERROR: caca not found using pkg-config".
     # 'configure' needs '--extra-cflags=-DLIBTWOLAME_STATIC' for libtwolame. Otherwise you'll get "undefined reference to `_imp__twolame_init'" and "ERROR: libtwolame not found". 'twolame.pc' does contain "Cflags.private: -DLIBTWOLAME_STATIC" nowadays, but pkg-config doesn't support this entry.
     if [[ "$non_free" = "y" ]]; then
@@ -1399,8 +1408,9 @@ build_dependencies() {
   build_libxml2 # For DASH support configure FFmpeg with --enable-libxml2.
   build_fontconfig
   build_gmp # For RTMP support configure FFmpeg with --enable-gmp.
-  build_libnettle
-  build_gnutls # For HTTPS TLS 1.2 support on WinXP configure FFmpeg with --enable-gnutls.
+  #build_libnettle
+  #build_gnutls # For HTTPS TLS 1.2 support on WinXP configure FFmpeg with --enable-gnutls.
+  build_mbedtls # For HTTPS TLS 1.2 support on WinXP configure FFmpeg with --enable-mbedtls.
   #if [[ "$non_free" = "y" ]]; then # Nonfree alternative to GnuTLS.
   #  build_openssl-1.0.2
   #  build_openssl-1.1.0
