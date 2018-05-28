@@ -1337,7 +1337,7 @@ build_ffmpeg() {
   fi
   do_git_checkout https://github.com/FFmpeg/FFmpeg.git $output_dir $ffmpeg_git_checkout_version
   cd $output_dir
-    apply_patch file://$patch_dir/wincrypt-for-winxp-compatibility.diff # WinXP doesn't have 'bcrypt' (see https://github.com/FFmpeg/FFmpeg/commit/aedbf1640ced8fc09dc980ead2a387a59d8f7f68).
+    apply_patch file://$patch_dir/wincrypt-for-winxp-compatibility.patch -p1 # WinXP doesn't have 'bcrypt' (see https://github.com/FFmpeg/FFmpeg/commit/aedbf1640ced8fc09dc980ead2a387a59d8f7f68).
     apply_patch file://$patch_dir/libfdk-aac_load-shared-library-dynamically.diff
     apply_patch file://$patch_dir/frei0r_load-shared-libraries-dynamically.diff
     if [[ ! -f configure.bak ]]; then

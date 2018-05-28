@@ -1,6 +1,8 @@
---- configure.bak	2018-04-23 01:24:57.578125000 +0200
-+++ configure	2018-04-23 01:27:24.156250000 +0200
-@@ -2142,10 +2142,10 @@
+diff --git a/configure b/configure
+index 22eeca2..98d141e 100755
+--- a/configure
++++ b/configure
+@@ -2148,10 +2148,10 @@ SYSTEM_FUNCS="
  "
  
  SYSTEM_LIBRARIES="
@@ -12,7 +14,7 @@
  "
  
  TOOLCHAIN_FEATURES="
-@@ -3446,7 +3446,7 @@
+@@ -3458,7 +3458,7 @@ avformat_deps="avcodec avutil"
  avformat_suggest="libm network zlib"
  avresample_deps="avutil"
  avresample_suggest="libm"
@@ -21,7 +23,7 @@
  postproc_deps="avutil gpl"
  postproc_suggest="libm"
  swresample_deps="avutil"
-@@ -5829,10 +5829,9 @@
+@@ -5846,10 +5846,9 @@ check_header asm/types.h
  check_builtin stdatomic stdatomic.h "atomic_int foo, bar = ATOMIC_VAR_INIT(-1); atomic_store(&foo, 0); foo += bar"
  
  check_lib advapi32 "windows.h"            RegCloseKey          -ladvapi32
@@ -33,8 +35,10 @@
  check_lib psapi    "windows.h psapi.h"    GetProcessMemoryInfo -lpsapi
  
  check_lib android android/native_window.h ANativeWindow_acquire -landroid
---- libavutil/random_seed.c.bak	2018-04-23 00:20:00.468750000 +0200
-+++ libavutil/random_seed.c	2018-04-23 01:29:13.296875000 +0200
+diff --git a/libavutil/random_seed.c b/libavutil/random_seed.c
+index 70dc509..881c23c 100644
+--- a/libavutil/random_seed.c
++++ b/libavutil/random_seed.c
 @@ -26,9 +26,9 @@
  #if HAVE_IO_H
  #include <io.h>
@@ -47,7 +51,7 @@
  #endif
  #include <fcntl.h>
  #include <math.h>
-@@ -121,14 +121,13 @@
+@@ -121,14 +121,13 @@ uint32_t av_get_random_seed(void)
  {
      uint32_t seed;
  
