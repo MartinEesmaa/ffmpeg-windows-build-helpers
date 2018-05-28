@@ -521,9 +521,9 @@ build_bzip2() {
 }
 
 build_liblzma() {
-  #download_and_unpack_file https://sourceforge.net/projects/lzmautils/files/xz-5.2.3.tar.xz
-  download_and_unpack_file https://github.com/xz-mirror/xz/archive/v5.2.3.tar.gz xz-5.2.3
-  cd xz-5.2.3
+  #download_and_unpack_file https://sourceforge.net/projects/lzmautils/files/xz-5.2.4.tar.xz
+  download_and_unpack_file https://github.com/xz-mirror/xz/archive/v5.2.4.tar.gz xz-5.2.4
+  cd xz-5.2.4
     generic_configure "--disable-xz --disable-xzdec --disable-lzmadec --disable-lzmainfo --disable-scripts --disable-doc --disable-nls"
     do_make_and_make_install
   cd ..
