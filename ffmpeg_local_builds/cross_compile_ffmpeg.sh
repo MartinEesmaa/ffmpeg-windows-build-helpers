@@ -468,8 +468,8 @@ gen_ld_script() {
 } # gen_ld_script libxxx.a -lxxx
 
 build_cmake() {
-  download_and_unpack_file https://cmake.org/files/v3.11/cmake-3.11.1.tar.gz
-  cd cmake-3.11.1
+  download_and_unpack_file https://cmake.org/files/v3.11/cmake-3.11.2.tar.gz
+  cd cmake-3.11.2
     if [[ ! -f CMakeLists.txt.bak ]]; then # https://gitlab.kitware.com/cmake/cmake/commit/99bf77f49c18f9947b2386c4f5b6308da793de9f.
       sed -i.bak "577s/CMAKE.*/DEFINED BUILD_CursesDialog)/;586,587d" CMakeLists.txt
     fi
