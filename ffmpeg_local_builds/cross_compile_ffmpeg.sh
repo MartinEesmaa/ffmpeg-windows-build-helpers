@@ -571,12 +571,12 @@ build_libwebp() {
 } # [dlfcn]
 
 build_freetype() {
-  #download_and_unpack_file https://sourceforge.net/projects/freetype/files/freetype2/2.9/freetype-2.9.tar.bz2
-  download_and_unpack_file https://download.savannah.gnu.org/releases/freetype/freetype-2.9.tar.bz2
-  cd freetype-2.9
+  do_git_checkout https://git.savannah.gnu.org/git/freetype/freetype2.git
+  cd freetype2_git
     if [[ ! -f builds/unix/install.mk.bak ]]; then # Library only.
-      sed -i.bak "/bindir) /s/\s*\\\//;/aclocal/d;/man1/d;/BUILD_DIR/d;/docs/d" builds/unix/install.mk
+      sed -i.bak "/config \\\/s/\s*\\\//;/bindir) /s/\s*\\\//;/aclocal/d;/man1/d;/BUILD_DIR/d;/docs/d" builds/unix/install.mk
     fi
+    ./autogen.sh
     generic_configure "--build=i686-pc-cygwin" # Without '--build=i686-pc-cygwin' you'd get: "could not open '/cygdrive/[...]/include/freetype/ttnameid.h' for writing".
     do_make_and_make_install
   cd ..
