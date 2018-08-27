@@ -625,13 +625,13 @@ build_mbedtls() {
 }
 
 build_openssl-1.0.2() {
-  download_and_unpack_file https://www.openssl.org/source/openssl-1.0.2o.tar.gz
-  cd openssl-1.0.2o
-    apply_patch file://$patch_dir/openssl-1.0.2o_lib-only.diff
+  download_and_unpack_file https://www.openssl.org/source/openssl-1.0.2p.tar.gz
+  cd openssl-1.0.2p
+    apply_patch file://$patch_dir/openssl-1.0.2p_lib-only.diff
     export CC="${cross_prefix}gcc"
     export AR="${cross_prefix}ar"
     export RANLIB="${cross_prefix}ranlib"
-    local config_options="--prefix=$mingw_w64_x86_64_prefix zlib --with-zlib-include=$mingw_w64_x86_64_prefix/include --with-zlib-lib=$mingw_w64_x86_64_prefix/lib mingw "
+    local config_options="--prefix=$mingw_w64_x86_64_prefix mingw zlib "
     if [ "$1" = "dllonly" ]; then
       config_options+="shared"
     else
@@ -643,7 +643,7 @@ build_openssl-1.0.2() {
       do_make "build_libs"
       do_strip .
       mkdir -p $redist_dir
-      archive="$redist_dir/openssl-x86-v1.0.2o"
+      archive="$redist_dir/openssl-x86-v1.0.2p"
       if [[ $original_cflags =~ "pentium3" ]]; then
         archive+="_legacy"
       fi
