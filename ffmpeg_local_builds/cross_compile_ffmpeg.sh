@@ -1341,30 +1341,33 @@ build_openssl-dlls() {
 }
 
 build_curl() {
-  build_gmp
-  build_libnettle
-  build_gnutls
+  build_mbedtls
   #build_openssl-1.0.2
   #build_openssl-1.1.0
 
-  download_and_unpack_file https://curl.haxx.se/download/curl-7.59.0.tar.bz2
-  cd curl-7.59.0
-    export PKG_CONFIG="pkg-config --static" # Automatically detect all GnuTLS's dependencies.
-    generic_configure "--without-ssl --with-gnutls --without-ca-bundle --with-ca-fallback" # Use GnuTLS's built-in CA store instead of a separate 'ca-bundle.crt'.
+  download_and_unpack_file https://curl.haxx.se/download/curl-7.61.0.tar.bz2
+  cd curl-7.61.0
+    generic_configure "--without-ssl --with-mbedtls --with-ca-bundle=ca-bundle.crt" # --with-ca-fallback only works with OpenSSL or GnuTLS.
     do_make # 'curl.exe' only. Don't install.
-    unset PKG_CONFIG
+    do_strip src/curl.exe
+    if [[ ! -f src/ca-bundle.crt ]]; then # For 'ca-bundle.crt' see https://superuser.com/a/442797.
+      echo "Downloading 'https://curl.haxx.se/ca/cacert.pem' and renaming to 'ca-bundle.crt'"
+      curl -o src/ca-bundle.crt https://curl.haxx.se/ca/cacert.pem
+    fi
 
-    mkdir -p $redist_dir # Strip and pack 'curl.exe'.
-    archive="$redist_dir/curl-7.59.0_gnutls_zlib-win32-static"
+    mkdir -p $redist_dir # Pack 'curl.exe'.
+    archive="$redist_dir/curl-7.61.0_mbedtls_zlib-win32-static"
     if [[ $original_cflags =~ "pentium3" ]]; then
       archive+="_legacy"
     fi
     if [[ ! -f $archive.7z ]]; then
       sed "s/$/\r/" COPYING > src/COPYING.txt
-      7z a -mx=9 $archive.7z src/curl.exe src/COPYING.txt && rm -f src/COPYING.txt
+      cd src
+        7z a -mx=9 $archive.7z curl.exe ca-bundle.crt COPYING.txt && rm -f COPYING.txt
+      cd ..
     fi
   cd ..
-} # gnutls/openssl, [zlib, dlfcn]
+} # mbedtls/openssl, [zlib, dlfcn]
 
 reset_cflags() {
   export CFLAGS=$original_cflags
