@@ -978,8 +978,8 @@ build_vamp_plugin() {
 } # [libsndfile (only for 'vamp-simple-host.exe'), dlfcn]
 
 build_fftw() {
-  download_and_unpack_file http://fftw.org/fftw-3.3.7.tar.gz
-  cd fftw-3.3.7
+  download_and_unpack_file http://fftw.org/fftw-3.3.8.tar.gz
+  cd fftw-3.3.8
     if [[ ! -f Makefile.in.bak ]]; then # Library only.
       sed -i.bak "/^SUBDIRS/s/api.*/api/;/^libbench2/d" Makefile.in
     fi
