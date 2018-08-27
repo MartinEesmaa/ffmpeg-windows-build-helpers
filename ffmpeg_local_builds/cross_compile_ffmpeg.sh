@@ -306,7 +306,7 @@ do_make() {
   local name=$(get_small_touchfile_name already_ran_make "$extra_make_options" )
   if [ ! -f $name ]; then
     echo
-    echo "Doing make in $(basename $(pwd)) as make $extra_make_options."
+    echo "Compiling $(basename $(pwd)) as make $extra_make_options."
     echo
     if [ ! -f configure ]; then
       nice make clean -j $cpu_count # just in case helpful if old junk left around and this is a 're make' and wasn't cleaned at reconfigure time
@@ -433,12 +433,12 @@ generic_configure_make_install() {
 do_strip() {
   if [ ! -f "already_ran_strip" ]; then
     if [ -f "$1" ]; then
-      echo "Doing ${host_target}-strip $2 $(basename $1)"
+      echo "Stripping $(basename $1) as ${host_target}-strip $2 $1"
       ${cross_prefix}strip $2 $1 || exit 1
     else
       for files in $1/*.{dll,exe}; do
         [ -f "$files" ] || continue
-        echo "Doing ${host_target}-strip $2 $(basename $files)"
+        echo "Stripping $(basename $files) as ${host_target}-strip $2 $1"
         ${cross_prefix}strip $2 $files || exit 1
       done
     fi
