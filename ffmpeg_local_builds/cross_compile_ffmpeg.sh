@@ -345,10 +345,8 @@ do_cmake() {
   fi
   local name=$(get_small_touchfile_name already_ran_cmake "$1")
   if [ ! -f $name ]; then
-    rm -f already_* # reset so that make will run again if option just changed
-    echo "Doing cmake in $(basename $dir) as cmake –G”Unix Makefiles” $dir -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB=${cross_prefix}ranlib.exe -DCMAKE_C_COMPILER=${cross_prefix}gcc.exe -DCMAKE_CXX_COMPILER=${cross_prefix}g++.exe -DCMAKE_RC_COMPILER=${cross_prefix}windres.exe -DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix $1."
-    cmake –G”Unix Makefiles” $dir -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RANLIB=${cross_prefix}ranlib.exe -DCMAKE_C_COMPILER=${cross_prefix}gcc.exe -DCMAKE_CXX_COMPILER=${cross_prefix}g++.exe -DCMAKE_RC_COMPILER=${cross_prefix}windres.exe -DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix $1 || exit 1
-    touch $name || exit 1
+    echo "Compiling $(basename $dir) as cmake –G\"Unix Makefiles\" $dir -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_FIND_ROOT_PATH=$mingw_w64_x86_64_prefix -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY -DCMAKE_RANLIB=${cross_prefix}ranlib.exe -DCMAKE_C_COMPILER=${cross_prefix}gcc.exe -DCMAKE_CXX_COMPILER=${cross_prefix}g++.exe -DCMAKE_RC_COMPILER=${cross_prefix}windres.exe -DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix $1."
+    cmake –G\"Unix Makefiles\" $dir -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_FIND_ROOT_PATH=$mingw_w64_x86_64_prefix -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY -DCMAKE_RANLIB=${cross_prefix}ranlib.exe -DCMAKE_C_COMPILER=${cross_prefix}gcc.exe -DCMAKE_CXX_COMPILER=${cross_prefix}g++.exe -DCMAKE_RC_COMPILER=${cross_prefix}windres.exe -DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix $1 || exit 1
   fi
 }
 
@@ -468,11 +466,8 @@ gen_ld_script() {
 } # gen_ld_script libxxx.a -lxxx
 
 build_cmake() {
-  download_and_unpack_file https://cmake.org/files/v3.11/cmake-3.11.2.tar.gz
-  cd cmake-3.11.2
-    if [[ ! -f CMakeLists.txt.bak ]]; then # https://gitlab.kitware.com/cmake/cmake/commit/99bf77f49c18f9947b2386c4f5b6308da793de9f.
-      sed -i.bak "577s/CMAKE.*/DEFINED BUILD_CursesDialog)/;586,587d" CMakeLists.txt
-    fi
+  download_and_unpack_file https://cmake.org/files/v3.12/cmake-3.12.1.tar.gz
+  cd cmake-3.12.1
     do_configure "--prefix=/usr -- -DBUILD_CursesDialog=0 -DBUILD_TESTING=0" # Don't build 'ccmake' (ncurses), or './configure' will fail otherwise.
     # Options after "--" are passed to CMake (Usage: ./bootstrap [<options>...] [-- <cmake-options>...])
     do_make
@@ -650,7 +645,7 @@ build_mbedtls() {
   do_git_checkout https://github.com/ARMmbed/mbedtls.git
   mkdir -p mbedtls_git/build_dir
   cd mbedtls_git/build_dir # Out-of-source build.
-    do_cmake "-DENABLE_PROGRAMS=0 -DENABLE_TESTING=0 -DENABLE_ZLIB_SUPPORT=1 -DZLIB_INCLUDE_DIR=$mingw_w64_x86_64_prefix/include -DZLIB_LIBRARY_RELEASE=$mingw_w64_x86_64_prefix/lib/libz.a" "$(dirname $(pwd))"
+    do_cmake "-DENABLE_PROGRAMS=0 -DENABLE_TESTING=0 -DENABLE_ZLIB_SUPPORT=1" "$(dirname $(pwd))"
     do_make_and_make_install
   cd ../..
 }
@@ -911,8 +906,7 @@ build_libgme() {
       sed -i.bak "/EXCLUDE_FROM_ALL/d" CMakeLists.txt # Library only.
       sed -i.bak "s/ __declspec.*//" gme/blargg_source.h # Needed for building shared FFmpeg libraries.
     fi
-    do_cmake_and_install "-DBUILD_SHARED_LIBS=0 -DENABLE_UBSAN=0 -DZLIB_INCLUDE_DIR=$mingw_w64_x86_64_prefix/include -DZLIB_LIBRARY=$mingw_w64_x86_64_prefix/lib/libz.a"
-    # Otherwise they default to: "ZLIB_INCLUDE_DIR:PATH=/usr/include" and "ZLIB_LIBRARY:FILEPATH=/usr/lib/libz.a" and cmake would thus pick Cygwin's zlib, which leads to "warning: "errno" redefined" (LibGME) and "undefined reference to `__assert_func'" (FFmpeg).
+    do_cmake_and_install "-DBUILD_SHARED_LIBS=0 -DENABLE_UBSAN=0"
   cd ..
 } # zlib
 
@@ -1067,8 +1061,7 @@ build_libmysofa() {
     if [[ ! -f CMakeLists.txt.bak ]]; then # Library only.
       sed -i.bak "/^install(.*)/d" CMakeLists.txt
     fi
-    do_cmake_and_install "-DBUILD_SHARED_LIBS=0 -DBUILD_TESTS=0 -DMATH=$mingw_w64_x86_64_prefix/lib/libm.a -DZLIB_INCLUDE_DIR=$mingw_w64_x86_64_prefix/include -DZLIB_LIBRARY=$mingw_w64_x86_64_prefix/lib/libz.a"
-    # Otherwise they default to: "MATH:FILEPATH=/usr/lib/libm.a", "ZLIB_INCLUDE_DIR:PATH=/usr/include" and "ZLIB_LIBRARY:FILEPATH=/usr/lib/libz.dll.a"
+    do_cmake_and_install "-DBUILD_SHARED_LIBS=0 -DBUILD_TESTS=0"
   cd ..
 } # [dlfcn]
 
