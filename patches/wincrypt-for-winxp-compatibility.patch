@@ -1,8 +1,8 @@
 diff --git a/configure b/configure
-index 22eeca2..98d141e 100755
+index b9c9d0b..7cb73de 100755
 --- a/configure
 +++ b/configure
-@@ -2148,10 +2148,10 @@ SYSTEM_FUNCS="
+@@ -2155,10 +2155,10 @@ SYSTEM_FUNCS="
  "
  
  SYSTEM_LIBRARIES="
@@ -14,7 +14,7 @@ index 22eeca2..98d141e 100755
  "
  
  TOOLCHAIN_FEATURES="
-@@ -3458,7 +3458,7 @@ avformat_deps="avcodec avutil"
+@@ -3480,7 +3480,7 @@ avformat_deps="avcodec avutil"
  avformat_suggest="libm network zlib"
  avresample_deps="avutil"
  avresample_suggest="libm"
@@ -23,7 +23,7 @@ index 22eeca2..98d141e 100755
  postproc_deps="avutil gpl"
  postproc_suggest="libm"
  swresample_deps="avutil"
-@@ -5846,10 +5846,9 @@ check_header asm/types.h
+@@ -5870,10 +5870,9 @@ check_header asm/types.h
  check_builtin stdatomic stdatomic.h "atomic_int foo, bar = ATOMIC_VAR_INIT(-1); atomic_store(&foo, 0); foo += bar"
  
  check_lib advapi32 "windows.h"            RegCloseKey          -ladvapi32
