@@ -663,12 +663,12 @@ build_openssl-1.0.2() {
 }
 
 build_openssl-1.1.0() {
-  download_and_unpack_file https://www.openssl.org/source/openssl-1.1.0h.tar.gz
-  cd openssl-1.1.0h
+  download_and_unpack_file https://www.openssl.org/source/openssl-1.1.0i.tar.gz
+  cd openssl-1.1.0i
     export CC="${cross_prefix}gcc"
     export AR="${cross_prefix}ar"
     export RANLIB="${cross_prefix}ranlib"
-    local config_options="--prefix=$mingw_w64_x86_64_prefix zlib --with-zlib-include=$mingw_w64_x86_64_prefix/include --with-zlib-lib=$mingw_w64_x86_64_prefix/lib mingw no-async "
+    local config_options="--prefix=$mingw_w64_x86_64_prefix mingw zlib no-async "
     # "Note: on older OSes, like CentOS 5, BSD 5, and Windows XP or Vista, you will need to configure with no-async when building OpenSSL 1.1.0 and above. The configuration system does not detect lack of the Posix feature on the platforms." (https://wiki.openssl.org/index.php/Compilation_and_Installation)
     if [ "$1" = "dllonly" ]; then
       config_options+="shared"
@@ -681,7 +681,7 @@ build_openssl-1.1.0() {
     if [ "$1" = "dllonly" ]; then # Strip and pack shared libraries.
       do_strip .
       mkdir -p $redist_dir
-      archive="$redist_dir/openssl-x86-v1.1.0h"
+      archive="$redist_dir/openssl-x86-v1.1.0i"
       if [[ $original_cflags =~ "pentium3" ]]; then
         archive+="_legacy"
       fi
