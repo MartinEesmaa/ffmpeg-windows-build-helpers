@@ -615,36 +615,10 @@ build_gmp() {
   cd ..
 } # [dlfcn]
 
-build_libnettle() {
-  download_and_unpack_file https://ftp.gnu.org/gnu/nettle/nettle-3.4.tar.gz
-  cd nettle-3.4
-    if [[ ! -f Makefile.in.bak ]]; then # Library only
-      sed -i.bak "/^SUBDIRS/s/=.*/=/" Makefile.in
-    fi
-    generic_configure "--disable-documentation"
-    do_make_and_make_install
-  cd ..
-} # gmp >= 3.0, [dlfcn]
-
-build_gnutls() {
-  download_and_unpack_file https://www.gnupg.org/ftp/gcrypt/gnutls/v3.6/gnutls-3.6.2.tar.xz
-  cd gnutls-3.6.2
-    # --disable-cxx don't need the c++ version, in an effort to cut down on size... XXXX test size difference...
-    # --enable-local-libopts to allow building with local autogen installed,
-    # --disable-guile is so that if it finds guile installed (cygwin did/does) it won't try and link/build to it and fail...
-    if [[ ! -f lib/gnutls.pc.in.bak ]]; then
-      sed -i.bak "s/Libs.private.*/& -lcrypt32/" lib/gnutls.pc.in
-    fi
-    # FFmpeg's 'configure' needs '-lcrypt32' for GnuTLS. Otherwise you'll get "undefined reference to `_imp__Cert[...]'" and "ERROR: gnutls not found using pkg-config" (https://gitlab.com/gnutls/gnutls/issues/412). Configuring FFmpeg with '--extra-libs=-lcrypt32' is another option.
-    generic_configure "--disable-doc --disable-tools --disable-cxx --disable-tests --disable-gtk-doc-html --disable-libdane --disable-nls --enable-local-libopts --disable-guile --with-included-libtasn1 --with-included-unistring --without-p11-kit"
-    do_make_and_make_install
-  cd ..
-} # nettle >= 3.1, hogweed(=nettle) >= 3.1, [zlib, dlfcn]
-
 build_mbedtls() {
-  do_git_checkout https://github.com/ARMmbed/mbedtls.git
-  mkdir -p mbedtls_git/build_dir
-  cd mbedtls_git/build_dir # Out-of-source build.
+  download_and_unpack_file https://github.com/ARMmbed/mbedtls/archive/mbedtls-2.12.0.tar.gz mbedtls-mbedtls-2.12.0
+  mkdir -p mbedtls-mbedtls-2.12.0/build_dir
+  cd mbedtls-mbedtls-2.12.0/build_dir # Out-of-source build.
     do_cmake "-DENABLE_PROGRAMS=0 -DENABLE_TESTING=0 -DENABLE_ZLIB_SUPPORT=1" "$(dirname $(pwd))"
     do_make_and_make_install
   cd ../..
@@ -1401,10 +1375,8 @@ build_dependencies() {
   build_libxml2 # For DASH support configure FFmpeg with --enable-libxml2.
   build_fontconfig
   build_gmp # For RTMP support configure FFmpeg with --enable-gmp.
-  #build_libnettle
-  #build_gnutls # For HTTPS TLS 1.2 support on WinXP configure FFmpeg with --enable-gnutls.
   build_mbedtls # For HTTPS TLS 1.2 support on WinXP configure FFmpeg with --enable-mbedtls.
-  #if [[ "$non_free" = "y" ]]; then # Nonfree alternative to GnuTLS.
+  #if [[ "$non_free" = "y" ]]; then # Nonfree alternative to MbedTLS.
   #  build_openssl-1.0.2
   #  build_openssl-1.1.0
   #fi
