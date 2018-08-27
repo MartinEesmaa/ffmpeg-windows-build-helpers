@@ -833,8 +833,8 @@ build_fdk-aac() {
 
 build_libopencore() {
   generic_download_and_make_and_install https://sourceforge.net/projects/opencore-amr/files/opencore-amr/opencore-amr-0.1.5.tar.gz
-  #generic_download_and_make_and_install https://sourceforge.net/projects/opencore-amr/files/vo-amrwbenc/vo-amrwbenc-0.1.3.tar.gz
-  generic_download_and_make_and_install https://github.com/mstorsjo/vo-amrwbenc/archive/v0.1.3.tar.gz vo-amrwbenc-0.1.3
+  generic_download_and_make_and_install https://sourceforge.net/projects/opencore-amr/files/vo-amrwbenc/vo-amrwbenc-0.1.3.tar.gz
+  #generic_download_and_make_and_install https://github.com/mstorsjo/vo-amrwbenc/archive/v0.1.3.tar.gz vo-amrwbenc-0.1.3
 } # [dlfcn]
 
 build_libilbc() {
