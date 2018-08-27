@@ -1115,103 +1115,6 @@ build_libass() {
   do_git_checkout_and_make_install https://github.com/libass/libass.git
 } # freetype >= 9.10.3 (see https://bugs.launchpad.net/ubuntu/+source/freetype1/+bug/78573 o_O), fribidi >= 0.19.0, [fontconfig >= 2.10.92, iconv, dlfcn]
 
-#========================================== Tesseract ==========================================
-build_libpng() {
-  do_git_checkout https://github.com/glennrp/libpng.git
-  cd libpng_git
-    if [[ ! -f Makefile.am.bak ]]; then # Library only.
-      sed -i.bak "/# test programs/,/bin_PROGRAMS/d;/pngtest_SOURCES/,/pngcp_LDADD/d;/# man pages/,+2d" Makefile.am
-    fi
-    generic_configure_make_install
-  cd ..
-} # zlib >= 1.0.4, [dlfcn]
-
-build_libopenjpeg() {
-  do_git_checkout https://github.com/uclouvain/openjpeg.git
-  cd openjpeg_git
-    if [[ ! -f CMakeLists.txt.bak ]]; then # Library only.
-      sed -i.bak "/#.*OPENJPEGTargets/,/#.*/d" CMakeLists.txt
-    fi
-    do_cmake_and_install "-DBUILD_SHARED_LIBS=0 -DBUILD_CODEC=0"
-  cd ..
-}
-
-build_libjpeg() {
-  download_and_unpack_file http://www.ijg.org/files/jpegsrc.v9c.tar.gz jpeg-9c
-  cd jpeg-9c
-    if [[ ! -f Makefile.in.bak ]]; then # Library only.
-      sed -i.bak "633,652d;/^install-data-am/s/ install-man//;/^install-exec-am/s/ install-binPROGRAMS//;/^all-am/s/ \$(PROGRAMS) \$(MANS)//" Makefile.in
-    fi
-    generic_configure_make_install
-  cd ..
-} # [dlfcn]
-
-build_giflib() {
-  download_and_unpack_file https://sourceforge.net/projects/giflib/files/giflib-5.1.4.tar.bz2
-  cd giflib-5.1.4
-    if [[ ! -f Makefile.in.bak ]]; then # Library only.
-      sed -i.bak "/^SUBDIRS/s/lib.*/lib/" Makefile.in
-    fi
-    generic_configure_make_install
-  cd ..
-} # [dlfcn]
-
-build_libtiff() {
-  download_and_unpack_file http://download.osgeo.org/libtiff/tiff-4.0.9.tar.gz
-  cd tiff-4.0.9
-    if [[ ! -f Makefile.in.bak ]]; then # Library only.
-      sed -i.bak "/^SUBDIRS/s/tools.*//;/^install-data-am/s/ install-dist_docDATA//" Makefile.in
-    fi
-    generic_configure "--disable-jpeg --disable-old-jpeg --disable-jbig"
-    do_make_and_make_install
-  cd ..
-} # [zlib, jpeg, jpeg12, jbig, liblzma, dlfcn]
-
-build_libleptonica() {
-  do_git_checkout https://github.com/DanBloomberg/leptonica.git
-  cd leptonica_git
-    export PKG_CONFIG="pkg-config --static" # Automatically detect all Leptonica's dependencies.
-    if [ "$1" = "binary" ]; then
-      generic_configure "--disable-programs CPPFLAGS=-DOPJ_STATIC"
-    else
-      generic_configure "--disable-programs --without-jpeg --without-giflib --without-libwebp --without-libopenjpeg"
-    fi
-    do_make_and_make_install
-    unset PKG_CONFIG
-  cd ..
-} # [zlib, libpng, jpeg, giflib, libtiff, libwebp, libopenjpeg, dlfcn]
-
-build_libtesseract() {
-  do_git_checkout https://github.com/tesseract-ocr/tesseract.git tesseract_git b7b6b28ecff15030a2c98ea3150be2df0cd526cc
-  # With the next commit (https://github.com/tesseract-ocr/tesseract/commit/d88a6b5c1992d13ada92750407438175ae425533#diff-c2f87d92d6aa4f0f542b36a6e5c41161) you'd get "mainblk.cpp:72:24: error: '_splitpath_s' was not declared in this scope". Probably because I have to compile MinGW-w64 without the secure API.
-  cd tesseract_git
-    if [[ ! -f tesseract.pc.in.bak ]]; then
-      sed -i.bak "/Libs.private/s/-lpthread/@LIBS@/" tesseract.pc.in # Add "-lstdc++ -lws2_32" to the pkg-config file.
-    fi
-    if [[ ! -f Makefile.am.bak ]]; then
-      sed -i.bak "s/ doc unittest//;s/ doc testing//;/doc:/,/rm.*doc\/html\/\*/d" Makefile.am # Library only. Otherwise you'd get "asciidoc: Command not found" in the doc dir and there's no other way to disable the documentation.
-    fi
-    export LIBS="-lstdc++ -lws2_32"
-    if [ "$1" = "binary" ]; then
-      generic_configure
-      do_make
-      do_strip api/tesseract.exe
-      if [[ ! -f api/eng.traineddata ]]; then
-        echo "Downloading 'https://github.com/tesseract-ocr/tessdata_fast/raw/master/eng.traineddata'"
-        curl -L -o api/eng.traineddata https://github.com/tesseract-ocr/tessdata_fast/raw/master/eng.traineddata
-      fi
-      echo "Done! You will find a 32-bit $1 'tesseract.exe' in '$(pwd)/api'."
-    else
-      if [[ ! -f api/Makefile.am.bak ]]; then # Don't build 'tesseract.exe'.
-        sed -i.bak "/bin_PROGRAMS/,\$d" api/Makefile.am
-      fi
-      generic_configure_make_install
-    fi
-    unset LIBS
-  cd ..
-} # leptonica, libtiff, libpng(?) [icu_uc, icu_i18n, pango, cairo, dlfcn]
-#===============================================================================================
-
 build_libxavs() {
   do_svn_checkout https://svn.code.sf.net/p/xavs/code/trunk xavs_svn
   cd xavs_svn
@@ -1311,7 +1214,7 @@ build_ffmpeg() {
       sed -i.bak "/enabled libfdk_aac/s/&.*/\&\& { check_header fdk-aac\/aacenc_lib.h || die \"ERROR: aacenc_lib.h not found\"; }/;/require libfdk_aac/,/without pkg-config/d;/    libfdk_aac/d;/    libflite/i\    libfdk_aac" configure # Load 'libfdk-aac-1.dll' dynamically.
     fi
     init_options="--arch=x86 --target-os=mingw32 --cross-prefix=$cross_prefix --pkg-config=pkg-config --pkg-config-flags=--static --extra-version=Reino --enable-gray --enable-version3 --disable-debug --disable-doc --disable-htmlpages --disable-manpages --disable-podpages --disable-txtpages --disable-w32threads"
-    config_options="$init_options --enable-avisynth --enable-frei0r --enable-filter=frei0r --enable-gmp --enable-gpl --enable-libaom --enable-libass --enable-libbluray --enable-libbs2b --enable-libcaca --extra-cflags=-DCACA_STATIC --enable-libfdk-aac --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libgme --enable-libgsm --enable-libilbc --enable-libmp3lame --enable-libmysofa --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libopenh264 --enable-libopenmpt --enable-libopus --enable-librubberband --enable-libsnappy --enable-libsoxr --enable-libspeex --enable-libtesseract --enable-libtheora --enable-libtwolame --extra-cflags=-DLIBTWOLAME_STATIC --enable-libvidstab --enable-libvo-amrwbenc --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxavs --enable-libxml2 --enable-libxvid --enable-libzimg --enable-libzvbi --enable-mbedtls"
+    config_options="$init_options --enable-avisynth --enable-frei0r --enable-filter=frei0r --enable-gmp --enable-gpl --enable-libaom --enable-libass --enable-libbluray --enable-libbs2b --enable-libcaca --extra-cflags=-DCACA_STATIC --enable-libfdk-aac --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libgme --enable-libgsm --enable-libilbc --enable-libmp3lame --enable-libmysofa --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libopenh264 --enable-libopenmpt --enable-libopus --enable-librubberband --enable-libsnappy --enable-libsoxr --enable-libspeex --enable-libtheora --enable-libtwolame --extra-cflags=-DLIBTWOLAME_STATIC --enable-libvidstab --enable-libvo-amrwbenc --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxavs --enable-libxml2 --enable-libxvid --enable-libzimg --enable-libzvbi --enable-mbedtls"
     # 'configure' needs '--extra-cflags=-DCACA_STATIC ' for libcaca. Otherwise you'll get "undefined reference to `_imp__caca_create_canvas'" and "ERROR: caca not found using pkg-config".
     # 'configure' needs '--extra-cflags=-DLIBTWOLAME_STATIC' for libtwolame. Otherwise you'll get "undefined reference to `_imp__twolame_init'" and "ERROR: libtwolame not found". 'twolame.pc' does contain "Cflags.private: -DLIBTWOLAME_STATIC" nowadays, but pkg-config doesn't support this entry.
     if [[ "$non_free" = "y" ]]; then
@@ -1415,7 +1318,6 @@ build_dependencies() {
   build_zvbi
   build_fribidi
   build_libass
-  build_tesseract
   build_libxavs
   build_libxvid # FFmpeg now has native support, but libxvid still provides a better image.
   build_libopenh264
@@ -1436,26 +1338,6 @@ build_apps() {
 build_openssl-dlls() {
   build_openssl-1.0.2 dllonly # Only for building 'libeay32.dll' and 'ssleay32.dll' (for Xidel).
   build_openssl-1.1.0 dllonly # Only for building 'libeay64.dll' and 'ssleay64.dll'.
-}
-
-build_tesseract() {
-  if [ "$1" = "binary" ]; then
-    build_dlfcn
-    build_zlib
-    build_libpng
-    build_libopenjpeg
-    build_libjpeg
-    build_libwebp
-    build_giflib
-    build_libtiff
-    build_libleptonica binary
-    build_libtesseract binary
-  else
-    build_libpng
-    build_libtiff
-    build_libleptonica
-    build_libtesseract
-  fi
 }
 
 build_curl() {
