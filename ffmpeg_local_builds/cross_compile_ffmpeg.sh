@@ -1358,10 +1358,10 @@ build_curl() {
   #build_openssl-1.0.2
   #build_openssl-1.1.1
 
-  download_and_unpack_file https://curl.haxx.se/download/curl-7.61.0.tar.bz2
-  cd curl-7.61.0
+  download_and_unpack_file https://curl.haxx.se/download/curl-7.63.0.tar.bz2
+  cd curl-7.63.0
     generic_configure "--without-ssl --with-mbedtls --with-ca-bundle=ca-bundle.crt" # --with-ca-fallback only works with OpenSSL or GnuTLS.
-    do_make # 'curl.exe' only. Don't install.
+    do_make # 'curl.exe' only. No install.
     do_strip src/curl.exe
     if [[ ! -f src/ca-bundle.crt ]]; then # For 'ca-bundle.crt' see https://superuser.com/a/442797.
       echo "Downloading 'https://curl.haxx.se/ca/cacert.pem' and renaming to 'ca-bundle.crt'"
@@ -1369,7 +1369,7 @@ build_curl() {
     fi
 
     mkdir -p $redist_dir # Pack 'curl.exe'.
-    archive="$redist_dir/curl-7.61.0_mbedtls_zlib-win32-static"
+    archive="$redist_dir/curl-7.63.0_mbedtls_zlib-win32-static"
     if [[ $original_cflags =~ "pentium3" ]]; then
       archive+="_legacy"
     fi
