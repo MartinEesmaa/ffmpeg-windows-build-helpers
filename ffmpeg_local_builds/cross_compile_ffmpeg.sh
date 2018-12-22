@@ -439,7 +439,7 @@ do_strip() {
     else
       for files in $1/*.{dll,exe}; do
         [ -f "$files" ] || continue
-        echo "Stripping $(basename $files) as ${host_target}-strip $2 $1"
+        echo "Stripping $(basename $files) as ${host_target}-strip $2 $files"
         ${cross_prefix}strip $2 $files || exit 1
       done
     fi
