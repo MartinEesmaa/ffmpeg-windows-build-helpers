@@ -1,0 +1,53 @@
+diff --git a/aom_ports/aom_once.h b/aom_ports/aom_once.h
+index d1a031b..6bcb9f6 100644
+--- a/aom_ports/aom_once.h
++++ b/aom_ports/aom_once.h
+@@ -40,22 +40,23 @@
+ 
+ #if CONFIG_MULTITHREAD && defined(_WIN32)
+ #include <windows.h>
++#include <stdlib.h>
+ /* Declare a per-compilation-unit state variable to track the progress
+  * of calling func() only once. This must be at global scope because
+  * local initializers are not thread-safe in MSVC prior to Visual
+  * Studio 2015.
+  */
+-static INIT_ONCE aom_init_once = INIT_ONCE_STATIC_INIT;
+-
++static LONG aom_once_state;
+ static void aom_once(void (*func)(void)) {
+-  BOOL pending;
+-  InitOnceBeginInitialize(&aom_init_once, 0, &pending, NULL);
+-  if (!pending) {
+-    // Initialization has already completed.
++  if (InterlockedCompareExchange(&aom_once_state, 1, 0) == 0) {
++    func();
++    InterlockedIncrement(&aom_once_state);
+     return;
+   }
+-  func();
+-  InitOnceComplete(&aom_init_once, 0, NULL);
++  while (InterlockedCompareExchange(&aom_once_state, 2, 2) != 2) {
++    Sleep(0);
++  }
++  return;
+ }
+ 
+ #elif CONFIG_MULTITHREAD && defined(__OS2__)
+diff --git a/build/cmake/aom_configure.cmake b/build/cmake/aom_configure.cmake
+index cb64713..c2fa6ad 100644
+--- a/build/cmake/aom_configure.cmake
++++ b/build/cmake/aom_configure.cmake
+@@ -178,12 +178,6 @@ if("${AOM_TARGET_SYSTEM}" MATCHES "Darwin\|Linux\|Windows")
+   set(CONFIG_OS_SUPPORT 1)
+ endif()
+ 
+-# The default _WIN32_WINNT value in MinGW is 0x0502 (Windows XP with SP2). Set
+-# it to 0x0601 (Windows 7).
+-if("${AOM_TARGET_SYSTEM}" STREQUAL "Windows")
+-  add_compiler_flag_if_supported("-D_WIN32_WINNT=0x0601")
+-endif()
+-
+ #
+ # Fix CONFIG_* dependencies. This must be done before including cpu.cmake to
+ # ensure RTCD_CONFIG_* are properly set.

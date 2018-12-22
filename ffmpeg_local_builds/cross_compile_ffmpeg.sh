@@ -1187,10 +1187,13 @@ build_libvpx() {
 build_libaom() {
   do_git_checkout https://aomedia.googlesource.com/aom libaom_git
   mkdir -p libaom_git/aom_build
-  cd libaom_git/aom_build # Out-of-source build.
-    do_cmake "-DCMAKE_TOOLCHAIN_FILE=build/cmake/toolchains/x86-mingw-gcc.cmake -DENABLE_DOCS=0 -DENABLE_EXAMPLES=0 -DENABLE_NASM=1 -DENABLE_TOOLS=0 -DCONFIG_UNIT_TESTS=0" "$(dirname $(pwd))"
-    do_make_and_make_install
-  cd ../..
+  cd libaom_git
+    apply_patch file://$patch_dir/libaom_restore-winxp-compatibility.patch -p1 # See https://aomedia.googlesource.com/aom/+/64545cb00a29ff872473db481a57cdc9bc4f1f82%5E!/#F1 and https://aomedia.googlesource.com/aom/+/e5eec6c5eb14e66e2733b135ef1c405c7e6424bf%5E!/#F0.
+    cd aom_build # Out-of-source build.
+      do_cmake "-DCMAKE_TOOLCHAIN_FILE=build/cmake/toolchains/x86-mingw-gcc.cmake -DENABLE_DOCS=0 -DENABLE_EXAMPLES=0 -DENABLE_NASM=1 -DENABLE_TESTS=0 -DENABLE_TOOLS=0" "$(dirname $(pwd))"
+      do_make_and_make_install
+    cd ..
+  cd ..
 } # cmake >= 3.5
 
 build_ffmpeg() {
