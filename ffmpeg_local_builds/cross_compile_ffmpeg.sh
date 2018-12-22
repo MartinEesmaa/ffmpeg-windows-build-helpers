@@ -577,7 +577,9 @@ build_freetype() {
     if [[ ! -f builds/unix/install.mk.bak ]]; then # Library only.
       sed -i.bak "/config \\\/s/\s*\\\//;/bindir) /s/\s*\\\//;/aclocal/d;/man1/d;/BUILD_DIR/d;/docs/d" builds/unix/install.mk
     fi
-    ./autogen.sh
+    if [[ ! -f config.mk ]]; then # Library only.
+      ./autogen.sh
+    fi
     generic_configure "--build=i686-pc-cygwin" # Without '--build=i686-pc-cygwin' you'd get: "could not open '/cygdrive/[...]/include/freetype/ttnameid.h' for writing".
     do_make_and_make_install
   cd ..
