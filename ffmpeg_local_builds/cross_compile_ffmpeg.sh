@@ -815,9 +815,9 @@ build_twolame() {
 build_fdk-aac() {
   do_git_checkout https://github.com/mstorsjo/fdk-aac.git
   cd fdk-aac_git
-    do_configure "--host=$host_target --prefix=$mingw_w64_x86_64_prefix --disable-static" # Build shared library ('libfdk-aac-1.dll').
+    do_configure "--host=$host_target --prefix=$mingw_w64_x86_64_prefix --disable-static" # Build shared library ('libfdk-aac-2.dll').
     do_make
-    do_strip .libs/libfdk-aac-1.dll
+    do_strip .libs/libfdk-aac-2.dll
     do_make_install
 
     mkdir -p $redist_dir
@@ -827,7 +827,7 @@ build_fdk-aac() {
     fi
     if [[ ! -f $archive.7z ]]; then # Pack shared library.
       sed "s/$/\r/" NOTICE > NOTICE.txt
-      7z a -mx=9 $archive.7z $(pwd)/.libs/libfdk-aac-1.dll NOTICE.txt && rm -f NOTICE.txt
+      7z a -mx=9 $archive.7z $(pwd)/.libs/libfdk-aac-2.dll NOTICE.txt && rm -f NOTICE.txt
     else
       echo "Already made '$(basename $archive.7z)'."
     fi
