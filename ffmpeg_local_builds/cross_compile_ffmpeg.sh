@@ -597,10 +597,10 @@ build_libxml2() {
 } # [zlib, liblzma, iconv, dlfcn]
 
 build_fontconfig() {
-  download_and_unpack_file https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.13.0.tar.bz2
-  cd fontconfig-2.13.0
+  download_and_unpack_file https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.13.1.tar.bz2
+  cd fontconfig-2.13.1
     if [[ ! -f Makefile.in.bak ]]; then # Library only.
-      sed -i.bak "/^SUBDIRS/s/fc.*/src/;456,457d;/^install-data-am/s/:.*/: install-pkgconfigDATA/;/\tinstall-xmlDATA$/d" Makefile.in
+      sed -i.bak "/^SUBDIRS/s/fc.*/src/;458,459d;/^install-data-am/s/:.*/: install-pkgconfigDATA/;/\tinstall-xmlDATA$/d" Makefile.in
     fi
     generic_configure "--enable-libxml2 --disable-docs" # Use Libxml2 instead of Expat.
     do_make_and_make_install
