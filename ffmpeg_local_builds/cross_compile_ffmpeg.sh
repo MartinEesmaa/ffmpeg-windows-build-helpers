@@ -1213,11 +1213,11 @@ build_ffmpeg() {
   fi
   do_git_checkout https://github.com/FFmpeg/FFmpeg.git $output_dir $ffmpeg_git_checkout_version
   cd $output_dir
-    apply_patch file://$patch_dir/wincrypt-for-winxp-compatibility.patch -p1 # WinXP doesn't have 'bcrypt' (see https://github.com/FFmpeg/FFmpeg/commit/aedbf1640ced8fc09dc980ead2a387a59d8f7f68).
-    apply_patch file://$patch_dir/libfdk-aac_load-shared-library-dynamically.diff
-    apply_patch file://$patch_dir/frei0r_load-shared-libraries-dynamically.diff
+    apply_patch file://$patch_dir/ffmpeg-wincrypt_restore-winxp-compatibility.patch -p1 # WinXP doesn't have 'bcrypt' (see https://github.com/FFmpeg/FFmpeg/commit/aedbf1640ced8fc09dc980ead2a387a59d8f7f68).
+    apply_patch file://$patch_dir/ffmpeg-libfdk-aac_load-shared-library-dynamically.patch -p1 # See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0001-dynamic-loading-of-shared-fdk-aac-library.patch.
+    apply_patch file://$patch_dir/ffmpeg-frei0r_load-shared-libraries-dynamically.patch -p1 # See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0002-avfilters-better-behavior-of-frei0r-on-win32.patch.
     if [[ ! -f configure.bak ]]; then
-      sed -i.bak "/enabled libfdk_aac/s/&.*/\&\& { check_header fdk-aac\/aacenc_lib.h || die \"ERROR: aacenc_lib.h not found\"; }/;/require libfdk_aac/,/without pkg-config/d;/    libfdk_aac/d;/    libflite/i\    libfdk_aac" configure # Load 'libfdk-aac-1.dll' dynamically.
+      sed -i.bak "/enabled libfdk_aac/s/&.*/\&\& require_headers fdk-aac\/aacenc_lib.h/;/require libfdk_aac/,/without pkg-config/d;/    libfdk_aac/d;/    libflite/i\    libfdk_aac" configure # Load 'libfdk-aac-1.dll' dynamically.
     fi
     init_options="--arch=x86 --target-os=mingw32 --cross-prefix=$cross_prefix --pkg-config=pkg-config --pkg-config-flags=--static --extra-version=Reino --enable-gray --enable-version3 --disable-debug --disable-doc --disable-htmlpages --disable-manpages --disable-podpages --disable-txtpages --disable-w32threads"
     config_options="$init_options --enable-avisynth --enable-frei0r --enable-filter=frei0r --enable-gmp --enable-gpl --enable-libaom --enable-libass --enable-libbluray --enable-libbs2b --enable-libcaca --extra-cflags=-DCACA_STATIC --enable-libfdk-aac --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libgme --enable-libgsm --enable-libilbc --enable-libmp3lame --enable-libmysofa --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libopenh264 --enable-libopenmpt --enable-libopus --enable-librubberband --enable-libsnappy --enable-libsoxr --enable-libspeex --enable-libtheora --enable-libtwolame --extra-cflags=-DLIBTWOLAME_STATIC --enable-libvidstab --enable-libvo-amrwbenc --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxavs --enable-libxml2 --enable-libxvid --enable-libzimg --enable-libzvbi --enable-mbedtls"
@@ -1247,13 +1247,20 @@ build_ffmpeg() {
         archive+="_legacy"
       fi
       if [[ $1 == "shared" ]]; then
-        do_make_install "" "install-libs" # Because of '--prefix=$(pwd)/${output_dir}' the dlls are stripped and installed to 'ffmpeg_git_shared/bin'.
+        do_make_install # Because of '--prefix=$(pwd)/${output_dir}' the dlls are stripped and installed to 'ffmpeg_git_shared/bin'.
         echo "Done! You will find 32-bit $1 binaries in $(pwd) and libraries in $(pwd)/bin."
         if [[ ! -f $archive.7z ]]; then # Pack shared build.
           sed "s/$/\r/" COPYING.GPLv3 > COPYING.GPLv3.txt
           7z a -mx=9 $archive.7z ffmpeg.exe ffplay.exe ffprobe.exe $(pwd)/bin/*.dll COPYING.GPLv3.txt && rm -f COPYING.GPLv3.txt
         else
           echo "Already made '$(basename $archive.7z)'."
+        fi
+        if [[ ! -f ${archive/shared/dev}.7z ]]; then # Pack dev build.
+          mv bin/*.lib lib
+          rm -r lib/pkgconfig
+          7z a -mx=9 ${archive/shared/dev}.7z include lib share
+        else
+          echo "Already made '$(basename ${archive/shared/dev}.7z)'."
         fi
       else
         echo "Done! You will find 32-bit $1 binaries in $(pwd)."

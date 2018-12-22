@@ -1,6 +1,7 @@
-diff -ur libavfilter/vf_frei0r.c.bak libavfilter/vf_frei0r.c
---- libavfilter/vf_frei0r.c.bak	2017-05-12 01:34:21.609375000 +0200
-+++ libavfilter/vf_frei0r.c	2017-05-18 19:14:46.515625000 +0200
+diff --git a/libavfilter/vf_frei0r.c b/libavfilter/vf_frei0r.c
+index c775ed1..9148f8d 100644
+--- a/libavfilter/vf_frei0r.c
++++ b/libavfilter/vf_frei0r.c
 @@ -42,6 +42,10 @@
  #include "internal.h"
  #include "video.h"
@@ -12,7 +13,7 @@ diff -ur libavfilter/vf_frei0r.c.bak libavfilter/vf_frei0r.c
  typedef f0r_instance_t (*f0r_construct_f)(unsigned int width, unsigned int height);
  typedef void (*f0r_destruct_f)(f0r_instance_t instance);
  typedef void (*f0r_deinit_f)(void);
-@@ -235,11 +239,31 @@
+@@ -240,11 +244,31 @@ static av_cold int frei0r_init(AVFilterContext *ctx,
          if (ret < 0)
              return ret;
      }
