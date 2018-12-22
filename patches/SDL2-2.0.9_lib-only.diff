@@ -1,6 +1,6 @@
 diff -ur Makefile.in.bak Makefile.in
---- Makefile.in.bak	2017-10-23 21:27:45.000000000 +0200
-+++ Makefile.in	2017-11-03 20:43:26.859375000 +0100
+--- Makefile.in.bak	2018-10-31 16:07:22.000000000 +0100
++++ Makefile.in	2018-12-14 16:02:47.828125000 +0100
 @@ -39,9 +39,6 @@
  SDLMAIN_TARGET = libSDL2main.la
  SDLMAIN_OBJECTS = @SDLMAIN_OBJECTS@
@@ -10,8 +10,8 @@ diff -ur Makefile.in.bak Makefile.in
 -
  WAYLAND_SCANNER = @WAYLAND_SCANNER@
  
- SRC_DIST = *.txt acinclude Android.mk autogen.sh android-project build-scripts cmake cmake_uninstall.cmake.in configure configure.in debian docs include Makefile.* sdl2-config.cmake.in sdl2-config.in sdl2.m4 sdl2.pc.in SDL2.spec.in SDL2Config.cmake src test VisualC.html VisualC VisualC-WinRT Xcode Xcode-iOS
-@@ -124,7 +121,7 @@
+ SRC_DIST = *.txt acinclude Android.mk autogen.sh android-project build-scripts cmake cmake_uninstall.cmake.in configure configure.in debian docs include Makefile.* sdl2-config.cmake.in sdl2-config.in sdl2.m4 sdl2.pc.in SDL2.spec.in SDL2Config.cmake src test VisualC.html VisualC VisualC-WinRT Xcode Xcode-iOS wayland-protocols
+@@ -125,7 +122,7 @@
  LT_REVISION = @LT_REVISION@
  LT_LDFLAGS  = -no-undefined -rpath $(libdir) -release $(LT_RELEASE) -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE)
  
@@ -20,7 +20,7 @@ diff -ur Makefile.in.bak Makefile.in
  
  $(srcdir)/configure: $(srcdir)/configure.in
  	@echo "Warning, configure is out of date, please re-run autogen.sh"
-@@ -148,9 +145,6 @@
+@@ -149,9 +146,6 @@
  $(objects)/$(SDLMAIN_TARGET): $(SDLMAIN_OBJECTS)
  	$(RUN_CMD_LTLINK)$(LIBTOOL) --tag=CC --mode=link $(CC) -static -o $@ $(SDLMAIN_OBJECTS) -rpath $(libdir)
  
@@ -30,7 +30,7 @@ diff -ur Makefile.in.bak Makefile.in
  install: all install-bin install-hdrs install-lib install-data
  install-bin:
  	$(SHELL) $(auxdir)/mkinstalldirs $(DESTDIR)$(bindir)
-@@ -167,18 +161,13 @@
+@@ -168,18 +162,13 @@
  	    $(INSTALL) -m 644 $(srcdir)/include/SDL_revision.h $(DESTDIR)$(includedir)/SDL2/SDL_revision.h; \
  	fi
  
@@ -50,7 +50,7 @@ diff -ur Makefile.in.bak Makefile.in
  
  uninstall: uninstall-bin uninstall-hdrs uninstall-lib uninstall-data
  uninstall-bin:
-@@ -193,11 +182,8 @@
+@@ -194,11 +183,8 @@
  uninstall-lib:
  	$(LIBTOOL) --mode=uninstall rm -f $(DESTDIR)$(libdir)/$(TARGET)
  	rm -f $(DESTDIR)$(libdir)/$(SDLMAIN_TARGET)

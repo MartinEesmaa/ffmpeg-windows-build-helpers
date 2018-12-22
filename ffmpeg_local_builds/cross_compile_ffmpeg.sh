@@ -545,9 +545,9 @@ build_iconv() {
 } # [dlfcn]
 
 build_sdl2() {
-  download_and_unpack_file https://libsdl.org/release/SDL2-2.0.8.tar.gz
-  cd SDL2-2.0.8
-    apply_patch file://$patch_dir/SDL2-2.0.8_lib-only.diff
+  download_and_unpack_file https://libsdl.org/release/SDL2-2.0.9.tar.gz
+  cd SDL2-2.0.9
+    apply_patch file://$patch_dir/SDL2-2.0.9_lib-only.diff
     if [[ ! -f configure.bak ]]; then
       sed -i.bak "s/ -mwindows//" configure # Allow ffmpeg to output anything to console.
       sed -i.bak "/#ifndef DECLSPEC/i\#define DECLSPEC" include/begin_code.h # Needed for building shared FFmpeg libraries.
