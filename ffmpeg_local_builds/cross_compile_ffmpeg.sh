@@ -665,9 +665,9 @@ build_openssl-1.0.2() {
   cd ..
 }
 
-build_openssl-1.1.0() {
-  download_and_unpack_file https://www.openssl.org/source/openssl-1.1.0i.tar.gz
-  cd openssl-1.1.0i
+build_openssl-1.1.1() {
+  download_and_unpack_file https://www.openssl.org/source/openssl-1.1.1a.tar.gz
+  cd openssl-1.1.1a
     export CC="${cross_prefix}gcc"
     export AR="${cross_prefix}ar"
     export RANLIB="${cross_prefix}ranlib"
@@ -684,7 +684,7 @@ build_openssl-1.1.0() {
     if [ "$1" = "dllonly" ]; then # Strip and pack shared libraries.
       do_strip .
       mkdir -p $redist_dir
-      archive="$redist_dir/openssl-x86-v1.1.0i"
+      archive="$redist_dir/openssl-x86-v1.1.1a"
       if [[ $original_cflags =~ "pentium3" ]]; then
         archive+="_legacy"
       fi
@@ -1294,7 +1294,7 @@ build_dependencies() {
   build_mbedtls # For HTTPS TLS 1.2 support on WinXP configure FFmpeg with --enable-mbedtls.
   #if [[ "$non_free" = "y" ]]; then # Nonfree alternative to MbedTLS.
   #  build_openssl-1.0.2
-  #  build_openssl-1.1.0
+  #  build_openssl-1.1.1
   #fi
   build_libogg
   build_libvorbis
@@ -1350,13 +1350,13 @@ build_apps() {
 
 build_openssl-dlls() {
   build_openssl-1.0.2 dllonly # Only for building 'libeay32.dll' and 'ssleay32.dll' (for Xidel).
-  build_openssl-1.1.0 dllonly # Only for building 'libeay64.dll' and 'ssleay64.dll'.
+  build_openssl-1.1.1 dllonly # Only for building 'libcrypto-1_1.dll' and 'libssl-1_1.dll'.
 }
 
 build_curl() {
   build_mbedtls
   #build_openssl-1.0.2
-  #build_openssl-1.1.0
+  #build_openssl-1.1.1
 
   download_and_unpack_file https://curl.haxx.se/download/curl-7.61.0.tar.bz2
   cd curl-7.61.0
