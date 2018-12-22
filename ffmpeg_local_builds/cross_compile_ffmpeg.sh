@@ -619,9 +619,9 @@ build_gmp() {
 } # [dlfcn]
 
 build_mbedtls() {
-  download_and_unpack_file https://github.com/ARMmbed/mbedtls/archive/mbedtls-2.12.0.tar.gz mbedtls-mbedtls-2.12.0
-  mkdir -p mbedtls-mbedtls-2.12.0/build_dir
-  cd mbedtls-mbedtls-2.12.0/build_dir # Out-of-source build.
+  download_and_unpack_file https://github.com/ARMmbed/mbedtls/archive/mbedtls-2.16.0.tar.gz mbedtls-mbedtls-2.16.0
+  mkdir -p mbedtls-mbedtls-2.16.0/build_dir
+  cd mbedtls-mbedtls-2.16.0/build_dir # Out-of-source build.
     do_cmake "-DENABLE_PROGRAMS=0 -DENABLE_TESTING=0 -DENABLE_ZLIB_SUPPORT=1" "$(dirname $(pwd))"
     do_make_and_make_install
   cd ../..
