@@ -467,8 +467,8 @@ gen_ld_script() {
 } # gen_ld_script libxxx.a -lxxx
 
 build_cmake() {
-  download_and_unpack_file https://cmake.org/files/v3.12/cmake-3.12.1.tar.gz
-  cd cmake-3.12.1
+  download_and_unpack_file https://cmake.org/files/v3.13/cmake-3.13.2.tar.gz
+  cd cmake-3.13.2
     do_configure "--prefix=/usr -- -DBUILD_CursesDialog=0 -DBUILD_TESTING=0" # Don't build 'ccmake' (ncurses), or './configure' will fail otherwise.
     # Options after "--" are passed to CMake (Usage: ./bootstrap [<options>...] [-- <cmake-options>...])
     do_make
