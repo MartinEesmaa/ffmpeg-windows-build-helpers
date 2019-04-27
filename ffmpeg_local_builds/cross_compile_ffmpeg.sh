@@ -983,9 +983,9 @@ build_libsnappy() {
 } # [zlib (only for 'unittests'), dlfcn]
 
 build_vamp_plugin() {
-  download_and_unpack_file https://github.com/c4dm/vamp-plugin-sdk/archive/vamp-plugin-sdk-v2.7.1.tar.gz vamp-plugin-sdk-vamp-plugin-sdk-v2.7.1
-  cd vamp-plugin-sdk-vamp-plugin-sdk-v2.7.1
-    apply_patch file://$patch_dir/vamp-plugin-sdk-2.7.1_static-lib.diff # Create install-static target.
+  download_and_unpack_file https://github.com/c4dm/vamp-plugin-sdk/archive/vamp-plugin-sdk-v2.8.tar.gz vamp-plugin-sdk-vamp-plugin-sdk-v2.8
+  cd vamp-plugin-sdk-vamp-plugin-sdk-v2.8
+    apply_patch file://$patch_dir/vamp-plugin-sdk-2.8_static-lib.diff # Create install-static target.
     if [[ ! -f configure.bak ]]; then # Fix for "'M_PI' was not declared in this scope" (see https://stackoverflow.com/a/29264536).
       sed -i.bak "s/c++98/gnu++98/" configure
     fi
