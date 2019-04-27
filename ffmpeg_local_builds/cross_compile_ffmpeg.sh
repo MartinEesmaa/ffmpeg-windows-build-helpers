@@ -640,9 +640,9 @@ build_mbedtls() {
 }
 
 build_openssl-1.0.2() {
-  download_and_unpack_file https://www.openssl.org/source/openssl-1.0.2q.tar.gz
-  cd openssl-1.0.2q
-    apply_patch file://$patch_dir/openssl-1.0.2q_lib-only.diff
+  download_and_unpack_file https://www.openssl.org/source/openssl-1.0.2r.tar.gz
+  cd openssl-1.0.2r
+    apply_patch file://$patch_dir/openssl-1.0.2r_lib-only.diff
     export CC="${cross_prefix}gcc"
     export AR="${cross_prefix}ar"
     export RANLIB="${cross_prefix}ranlib"
@@ -658,7 +658,7 @@ build_openssl-1.0.2() {
       do_make "build_libs"
       do_strip .
       mkdir -p $redist_dir
-      archive="$redist_dir/openssl-x86-v1.0.2q"
+      archive="$redist_dir/openssl-x86-v1.0.2r"
       if [[ $original_cflags =~ "pentium3" ]]; then
         archive+="_legacy"
       fi
