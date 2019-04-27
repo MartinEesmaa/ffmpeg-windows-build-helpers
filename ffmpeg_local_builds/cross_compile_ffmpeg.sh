@@ -584,8 +584,8 @@ build_freetype() {
 } # [zlib, bzip2, libpng]
 
 build_libxml2() {
-  download_and_unpack_file http://xmlsoft.org/sources/libxml2-2.9.8.tar.gz
-  cd libxml2-2.9.8
+  download_and_unpack_file http://xmlsoft.org/sources/libxml2-2.9.9.tar.gz
+  cd libxml2-2.9.9
     if [[ ! -f Makefile.in.bak ]]; then # Library only.
       sed -i.bak "/^PROGRAMS/s/=.*/=/;/^SUBDIRS/s/ doc.*//;/^install-data-am/s/:.*/: install-pkgconfigDATA/;/\tinstall-m4dataDATA/d;/^install-exec-am/s/:.*/: install-libLTLIBRARIES/;/install-confexecDATA install-libLTLIBRARIES/d" Makefile.in
     fi
