@@ -478,8 +478,8 @@ build_cmake() {
 }
 
 build_nasm() {
-  download_and_unpack_file https://www.nasm.us/pub/nasm/releasebuilds/2.14/nasm-2.14.tar.xz
-  cd nasm-2.14
+  download_and_unpack_file https://www.nasm.us/pub/nasm/releasebuilds/2.14.02/nasm-2.14.02.tar.xz
+  cd nasm-2.14.02
     if [[ ! -f Makefile.in.bak ]]; then # Library only.
       sed -i.bak "/man1/d" Makefile.in
     fi
