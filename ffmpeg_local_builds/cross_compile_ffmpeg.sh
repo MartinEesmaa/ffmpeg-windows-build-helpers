@@ -432,18 +432,19 @@ generic_configure_make_install() {
 }
 
 do_strip() {
-  if [ ! -f "already_ran_strip" ]; then
+  local name=$(get_small_touchfile_name already_ran_strip "$2 $1")
+  if [ ! -f $name ]; then
     if [ -f "$1" ]; then
       echo "Stripping $(basename $1) as ${host_target}-strip $2 $1"
       ${cross_prefix}strip $2 $1 || exit 1
     else
-      for files in $1/*.{dll,exe}; do
-        [ -f "$files" ] || continue
-        echo "Stripping $(basename $files) as ${host_target}-strip $2 $files"
-        ${cross_prefix}strip $2 $files || exit 1
+      for file in $1/*.{dll,exe}; do
+        [ -f "$file" ] || continue
+        echo "Stripping $(basename $file) as ${host_target}-strip $2 $file"
+        ${cross_prefix}strip $2 $file || exit 1
       done
     fi
-    touch "already_ran_strip" || exit 1
+    touch $name || exit 1
   else
     if [ -f "$1" ]; then
       echo "Already stripped $(basename $1)."
