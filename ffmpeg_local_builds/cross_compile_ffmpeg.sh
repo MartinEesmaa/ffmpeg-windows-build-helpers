@@ -467,6 +467,20 @@ gen_ld_script() {
   fi
 } # gen_ld_script libxxx.a -lxxx
 
+build_mingw_std_threads() {
+  do_git_checkout https://github.com/meganz/mingw-std-threads.git
+  cd mingw-std-threads_git
+    for file in *.h; do
+      if [ ! -f "$mingw_w64_x86_64_prefix/include/$file" ] || [ "$file" -nt "$mingw_w64_x86_64_prefix/include/$file" ]; then
+        rm -f $mingw_w64_x86_64_prefix/include/$file
+        cp -v *.h $mingw_w64_x86_64_prefix/include
+      else
+        echo "$file is up-to-date."
+      fi
+    done
+  cd ..
+}
+
 build_cmake() {
   download_and_unpack_file https://cmake.org/files/v3.14/cmake-3.14.3.tar.gz
   cd cmake-3.14.3
@@ -873,7 +887,8 @@ build_libopenmpt() {
     generic_configure "--disable-openmpt123 --disable-examples --disable-tests"
     do_make_and_make_install
   cd ..
-} # zlib, libmpg123, libogg, libvorbis, [dlfcn]
+} # zlib, libmpg123, libogg, libvorbis, [dlfcn, mingw-std-threads]
+# Without mingw-std-threads you'll get "libopenmpt/libopenmpt_impl.cpp:85:2: warning: #warning "Warning: Building libopenmpt with MinGW-w64 without std::thread support is not recommended and is deprecated. Please use MinGW-w64 with posix threading model (as opposed to win32 threading model), or build with mingw-std-threads." [-Wcpp]".
 
 build_libgme() {
   do_git_checkout https://bitbucket.org/mpyne/game-music-emu.git
@@ -1277,6 +1292,7 @@ build_ffmpeg() {
 } # SDL2 (only for FFplay)
 
 build_dependencies() {
+  build_mingw_std_threads
   build_cmake
   build_nasm
   build_dlfcn
