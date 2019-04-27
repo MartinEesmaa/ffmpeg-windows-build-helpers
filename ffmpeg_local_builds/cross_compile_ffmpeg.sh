@@ -864,8 +864,9 @@ build_libmpg123() {
 } # [dlfcn]
 
 build_libopenmpt() {
-  download_and_unpack_file https://lib.openmpt.org/files/libopenmpt/src/libopenmpt-0.3.13+release.autotools.tar.gz
-  cd libopenmpt-0.3.13+release.autotools
+  download_and_unpack_file https://lib.openmpt.org/files/libopenmpt/src/libopenmpt-0.4.4+release.autotools.tar.gz
+  cd libopenmpt-0.4.4+release.autotools
+    apply_patch file://$patch_dir/libopenmpt_mingw-mptalloc-v1.patch # See https://forum.openmpt.org/index.php?topic=6156.0.
     if [[ ! -f Makefile.in.bak ]]; then # Library only
       sed -i.bak "/^all-am/s/DATA/pkgconfig_DATA/;/^install-data-am/s/:.*/: \\\/;s/\tinstall-nobase_dist_docDATA /\t/" Makefile.in
     fi
