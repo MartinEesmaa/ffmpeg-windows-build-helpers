@@ -678,8 +678,8 @@ build_openssl-1.0.2() {
 }
 
 build_openssl-1.1.1() {
-  download_and_unpack_file https://www.openssl.org/source/openssl-1.1.1a.tar.gz
-  cd openssl-1.1.1a
+  download_and_unpack_file https://www.openssl.org/source/openssl-1.1.1b.tar.gz
+  cd openssl-1.1.1b
     export CC="${cross_prefix}gcc"
     export AR="${cross_prefix}ar"
     export RANLIB="${cross_prefix}ranlib"
@@ -696,7 +696,7 @@ build_openssl-1.1.1() {
     if [ "$1" = "dllonly" ]; then # Strip and pack shared libraries.
       do_strip .
       mkdir -p $redist_dir
-      archive="$redist_dir/openssl-x86-v1.1.1a"
+      archive="$redist_dir/openssl-x86-v1.1.1b"
       if [[ $original_cflags =~ "pentium3" ]]; then
         archive+="_legacy"
       fi
