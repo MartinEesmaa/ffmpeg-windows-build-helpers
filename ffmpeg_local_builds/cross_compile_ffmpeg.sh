@@ -1242,7 +1242,7 @@ build_ffmpeg() {
       # Other possible options: '--enable-openssl'.
     fi
     for i in $CFLAGS; do
-      config_options+=" --extra-cflags=$i" # Adds "-march=pentium3 -O2 -mfpmath=sse -msse" to the buildconf.
+      config_options+=" --extra-cflags=$i" # Adds "-march=pentium3 -mtune=athlon-xp -O2 -mfpmath=sse -msse" to the buildconf.
     done
     config_options+=" $postpend_configure_opts"
     do_configure "$config_options"
