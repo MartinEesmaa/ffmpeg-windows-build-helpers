@@ -1366,8 +1366,8 @@ build_curl() {
   #build_openssl-1.0.2
   #build_openssl-1.1.1
 
-  download_and_unpack_file https://curl.haxx.se/download/curl-7.64.1.tar.bz2
-  cd curl-7.64.1
+  download_and_unpack_file https://curl.haxx.se/download/curl-7.65.1.tar.bz2
+  cd curl-7.65.1
     generic_configure "--without-ssl --with-mbedtls --with-ca-bundle=ca-bundle.crt" # --with-ca-fallback only works with OpenSSL or GnuTLS.
     do_make # 'curl.exe' only. No install.
     do_strip src/curl.exe
