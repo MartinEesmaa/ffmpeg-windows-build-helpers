@@ -482,8 +482,8 @@ build_mingw_std_threads() {
 }
 
 build_cmake() {
-  download_and_unpack_file https://cmake.org/files/v3.14/cmake-3.14.3.tar.gz
-  cd cmake-3.14.3
+  download_and_unpack_file https://cmake.org/files/v3.14/cmake-3.14.5.tar.gz
+  cd cmake-3.14.5
     do_configure "--prefix=/usr -- -DBUILD_CursesDialog=0 -DBUILD_TESTING=0" # Don't build 'ccmake' (ncurses), or './configure' will fail otherwise.
     # Options after "--" are passed to CMake (Usage: ./bootstrap [<options>...] [-- <cmake-options>...])
     do_make
