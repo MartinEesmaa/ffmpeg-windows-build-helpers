@@ -473,7 +473,7 @@ build_mingw_std_threads() {
     for file in *.h; do
       if [ ! -f "$mingw_w64_x86_64_prefix/include/$file" ] || [ "$file" -nt "$mingw_w64_x86_64_prefix/include/$file" ]; then
         rm -f $mingw_w64_x86_64_prefix/include/$file
-        cp -v *.h $mingw_w64_x86_64_prefix/include
+        cp -v $file $mingw_w64_x86_64_prefix/include
       else
         echo "$file is up-to-date."
       fi
