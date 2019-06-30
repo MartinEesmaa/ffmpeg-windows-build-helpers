@@ -247,7 +247,7 @@ do_hg_checkout() {
     #hg merge "$3" || exit 1 # get incoming changes to a branch
   else
     if [[ $git_get_latest = "y" ]]; then
-      if [[ $(hg id) != $(hg id -r default $1) ]]; then # 'hg id http://hg.videolan.org/x265' defaults to the "stable" branch!
+      if [[ $(hg id -i) != $(hg id -r default $1) ]]; then # 'hg id http://hg.videolan.org/x265' defaults to the "stable" branch!
         echo "Got upstream changes. Updating $dir to latest hg version."
         hg revert -a --no-backup # Return files to their original state.
         hg purge # Clean the working tree; build- as well as untracked files.
