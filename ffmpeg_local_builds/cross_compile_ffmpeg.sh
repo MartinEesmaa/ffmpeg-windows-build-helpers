@@ -634,8 +634,7 @@ build_mbedtls() {
   download_and_unpack_file https://github.com/ARMmbed/mbedtls/archive/mbedtls-2.16.1.tar.gz mbedtls-mbedtls-2.16.1
   mkdir -p mbedtls-mbedtls-2.16.1/build_dir
   cd mbedtls-mbedtls-2.16.1/build_dir # Out-of-source build.
-    do_cmake "-DENABLE_PROGRAMS=0 -DENABLE_TESTING=0 -DENABLE_ZLIB_SUPPORT=1" "$(dirname $(pwd))"
-    do_make_and_make_install
+    do_cmake_and_install "-DENABLE_PROGRAMS=0 -DENABLE_TESTING=0 -DENABLE_ZLIB_SUPPORT=1" "$(dirname $(pwd))"
   cd ../..
 }
 
@@ -1180,8 +1179,7 @@ build_libx264() {
 build_libx265() {
   do_hg_checkout http://hg.videolan.org/x265
   cd x265_hg/source
-    do_cmake "-DENABLE_SHARED=0 -DENABLE_CLI=0 -DWINXP_SUPPORT=1" # No '-DHIGH_BIT_DEPTH=1'. See 'x265_hg/source/CMakeLists.txt' why.
-    do_make_and_make_install
+    do_cmake_and_install "-DENABLE_SHARED=0 -DENABLE_CLI=0 -DWINXP_SUPPORT=1" # No '-DHIGH_BIT_DEPTH=1'. See 'x265_hg/source/CMakeLists.txt' why.
   cd ../..
 } # nasm >= 2.13 (unless '-DENABLE_ASSEMBLY=0' is specified)
 
@@ -1204,8 +1202,7 @@ build_libaom() {
   cd libaom_git
     apply_patch file://$patch_dir/libaom_restore-winxp-compatibility.patch -p1 # See https://aomedia.googlesource.com/aom/+/64545cb00a29ff872473db481a57cdc9bc4f1f82%5E!/#F1 and https://aomedia.googlesource.com/aom/+/e5eec6c5eb14e66e2733b135ef1c405c7e6424bf%5E!/#F0.
     cd aom_build # Out-of-source build.
-      do_cmake "-DCMAKE_TOOLCHAIN_FILE=build/cmake/toolchains/x86-mingw-gcc.cmake -DENABLE_DOCS=0 -DENABLE_EXAMPLES=0 -DENABLE_NASM=1 -DENABLE_TESTS=0 -DENABLE_TOOLS=0" "$(dirname $(pwd))"
-      do_make_and_make_install
+      do_cmake_and_install "-DCMAKE_TOOLCHAIN_FILE=build/cmake/toolchains/x86-mingw-gcc.cmake -DENABLE_DOCS=0 -DENABLE_EXAMPLES=0 -DENABLE_NASM=1 -DENABLE_TESTS=0 -DENABLE_TOOLS=0" "$(dirname $(pwd))"
     cd ..
   cd ..
 } # cmake >= 3.5
