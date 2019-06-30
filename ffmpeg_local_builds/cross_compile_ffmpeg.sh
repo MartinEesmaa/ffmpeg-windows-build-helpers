@@ -674,8 +674,8 @@ build_openssl-1.0.2() {
 }
 
 build_openssl-1.1.1() {
-  download_and_unpack_file https://www.openssl.org/source/openssl-1.1.1b.tar.gz
-  cd openssl-1.1.1b
+  download_and_unpack_file https://www.openssl.org/source/openssl-1.1.1c.tar.gz
+  cd openssl-1.1.1c
     export CC="${cross_prefix}gcc"
     export AR="${cross_prefix}ar"
     export RANLIB="${cross_prefix}ranlib"
