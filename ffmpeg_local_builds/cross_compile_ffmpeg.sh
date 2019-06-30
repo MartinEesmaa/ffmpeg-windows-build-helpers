@@ -639,9 +639,9 @@ build_mbedtls() {
 }
 
 build_openssl-1.0.2() {
-  download_and_unpack_file https://www.openssl.org/source/openssl-1.0.2r.tar.gz
-  cd openssl-1.0.2r
-    apply_patch file://$patch_dir/openssl-1.0.2r_lib-only.diff
+  download_and_unpack_file https://www.openssl.org/source/openssl-1.0.2s.tar.gz
+  cd openssl-1.0.2s
+    apply_patch file://$patch_dir/openssl-1.0.2s_lib-only.diff
     export CC="${cross_prefix}gcc"
     export AR="${cross_prefix}ar"
     export RANLIB="${cross_prefix}ranlib"
