@@ -657,10 +657,7 @@ build_openssl-1.0.2() {
       do_make "build_libs"
       do_strip .
       mkdir -p $redist_dir
-      archive="$redist_dir/openssl-x86-v1.0.2r"
-      if [[ $original_cflags =~ "pentium3" ]]; then
-        archive+="_legacy"
-      fi
+      archive="$redist_dir/openssl-1.0.2s-win32-xpmod-sse"
       if [[ ! -f $archive.7z ]]; then
         sed "s/$/\r/" LICENSE > LICENSE.txt
         7z a -mx=9 $archive.7z *.dll LICENSE.txt && rm -f LICENSE.txt
@@ -695,10 +692,7 @@ build_openssl-1.1.1() {
     if [ "$1" = "dllonly" ]; then # Strip and pack shared libraries.
       do_strip .
       mkdir -p $redist_dir
-      archive="$redist_dir/openssl-x86-v1.1.1b"
-      if [[ $original_cflags =~ "pentium3" ]]; then
-        archive+="_legacy"
-      fi
+      archive="$redist_dir/openssl-1.1.1c-win32-xpmod-sse"
       if [[ ! -f $archive.7z ]]; then
         sed "s/$/\r/" LICENSE > LICENSE.txt
         7z a -mx=9 $archive.7z *.dll LICENSE.txt && rm -f LICENSE.txt
@@ -832,10 +826,7 @@ build_fdk-aac() {
     do_make_install
 
     mkdir -p $redist_dir
-    archive="$redist_dir/libfdk-aac-x86-$(git describe --tags)"
-    if [[ $original_cflags =~ "pentium3" ]]; then
-      archive+="_legacy"
-    fi
+    archive="$redist_dir/libfdk-aac-$(git describe | tail -c +2)-win32-xpmod-sse"
     if [[ ! -f $archive.7z ]]; then # Pack shared library.
       sed "s/$/\r/" NOTICE > NOTICE.txt
       7z a -mx=9 $archive.7z $(pwd)/.libs/libfdk-aac-2.dll NOTICE.txt && rm -f NOTICE.txt
@@ -1062,10 +1053,7 @@ build_frei0r() {
     do_strip $mingw_w64_x86_64_prefix/lib/frei0r-1
 
     mkdir -p $redist_dir # Pack shared libraries.
-    archive="$redist_dir/frei0r-plugins-x86-$(git describe --tags)"
-    if [[ $original_cflags =~ "pentium3" ]]; then
-      archive+="_legacy"
-    fi
+    archive="$redist_dir/frei0r-plugins-$(git describe --tags | tail -c +2)-win32-xpmod-sse"
     if [[ ! -f $archive.7z ]]; then
       for doc in AUTHORS ChangeLog COPYING README.md; do
         sed "s/$/\r/" $doc > $mingw_w64_x86_64_prefix/lib/frei0r-1/$doc.txt
@@ -1253,10 +1241,7 @@ build_ffmpeg() {
       fi
     else
       mkdir -p $redist_dir
-      archive="$redist_dir/ffmpeg-$(git describe --tags --match N)-win32-$1"
-      if [[ $original_cflags =~ "pentium3" ]]; then
-        archive+="_legacy"
-      fi
+      archive="$redist_dir/ffmpeg-$(git describe --tags | tail -c +2)-win32-$1-xpmod-sse"
       if [[ $1 == "shared" ]]; then
         do_make_install # Because of '--prefix=$(pwd)/${output_dir}' the dlls are stripped and installed to 'ffmpeg_git_shared/bin'.
         echo "Done! You will find 32-bit $1 binaries in $(pwd) and libraries in $(pwd)/bin."
@@ -1381,10 +1366,7 @@ build_curl() {
     fi
 
     mkdir -p $redist_dir # Pack 'curl.exe'.
-    archive="$redist_dir/curl-7.64.1_mbedtls_zlib-win32-static"
-    if [[ $original_cflags =~ "pentium3" ]]; then
-      archive+="_legacy"
-    fi
+    archive="$redist_dir/curl-7.65.1_mbedtls_zlib-win32-static-xpmod-sse"
     if [[ ! -f $archive.7z ]]; then
       sed "s/$/\r/" COPYING > src/COPYING.txt
       cd src
