@@ -778,7 +778,7 @@ build_lame() {
 build_twolame() {
   do_git_checkout https://github.com/njh/twolame.git
   if [[ ! -f Makefile.am.bak ]]; then # Library only.
-    sed -i.bak "/^SUBDIRS/s/ frontend.*//" Makefile.am
+    sed -i.bak "/^SUBDIRS/s/ frontend.*//;/pkgdocdir/,+6d;/pkgdoc_DATA/d" Makefile.am
   fi
   generic_configure_make_install
   cd ..
