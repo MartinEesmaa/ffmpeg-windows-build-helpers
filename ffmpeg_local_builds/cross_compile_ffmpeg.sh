@@ -499,14 +499,14 @@ build_dlfcn() {
 }
 
 build_bzip2() {
-  download_and_unpack_file https://fossies.org/linux/misc/bzip2-1.0.6.tar.gz
-  apply_patch file://$patch_dir/bzip2-1.0.6_brokenstuff.diff
+  download_and_unpack_file https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz
+  apply_patch file://$patch_dir/bzip2-1.0.8_mingw-cross.diff
   if [[ ! -f $mingw_w64_x86_64_prefix/lib/libbz2.a ]]; then # Library only.
     do_make "$make_prefix_options libbz2.a"
     install -m644 libbz2.a $mingw_w64_x86_64_prefix/lib/libbz2.a
     install -m644 bzlib.h $mingw_w64_x86_64_prefix/include/bzlib.h
   else
-    echo "Already made bzip2-1.0.6."
+    echo "Already made bzip2-1.0.8."
   fi
   cd ..
 }
