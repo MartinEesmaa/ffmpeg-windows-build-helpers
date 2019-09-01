@@ -932,7 +932,7 @@ build_libsnappy() {
 build_vamp_plugin() {
   download_and_unpack_file https://github.com/c4dm/vamp-plugin-sdk/archive/vamp-plugin-sdk-v2.8.tar.gz vamp-plugin-sdk-vamp-plugin-sdk-v2.8
   apply_patch file://$patch_dir/vamp-plugin-sdk-2.8_static-lib.diff # Create install-static target.
-  if [[ ! -f configure.bak ]]; then # Fix for "'M_PI' was not declared in this scope" (see https://stackoverflow.com/a/29264536).
+  if [[ ! -f configure.bak ]]; then # Fix for "'M_PI' was not declared in this scope". See https://stackoverflow.com/a/29264536.
     sed -i.bak "s/c++98/gnu++98/" configure
   fi
   do_configure "--host=$host_target --prefix=$mingw_w64_x86_64_prefix --disable-programs"
@@ -1081,9 +1081,9 @@ build_libxavs() {
     sed -i.bak "/^install/s/:.*/:/;/install xavs/d" Makefile # Library only.
     sed -i.bak "s/O4/O2/" configure # Change CFLAGS.
   fi
-  do_configure "--host=$host_target --prefix=$mingw_w64_x86_64_prefix --cross-prefix=$cross_prefix" # see https://github.com/rdp/ffmpeg-windows-build-helpers/issues/3
+  do_configure "--host=$host_target --prefix=$mingw_w64_x86_64_prefix --cross-prefix=$cross_prefix" # See https://github.com/rdp/ffmpeg-windows-build-helpers/issues/3.
   do_make_and_make_install "$make_prefix_options"
-  rm -f NUL # cygwin causes windows explorer to not be able to delete this folder if it has this oddly named file in it...
+  rm -f NUL # Cygwin causes windows explorer to not be able to delete this folder if it has this oddly named file in it...
   cd ..
 }
 
@@ -1146,22 +1146,8 @@ build_libaom() {
 } # cmake >= 3.5
 
 build_ffmpeg() {
-  local output_dir=$2
-  if [[ -z $output_dir ]]; then
-    output_dir="ffmpeg_git"
-  fi
-  if [[ "$non_free" = "y" ]]; then
-    output_dir+="_with_fdk_aac"
-  fi
-  # can't mix and match --enable-static --enable-shared unfortunately, or the final executable seems to just use shared if the're both present
-  if [[ $1 == "shared" ]]; then
-    output_dir+="_shared"
-    local postpend_configure_opts="--enable-shared --disable-static --prefix=$(pwd)/${output_dir}"
-  else
-    local postpend_configure_opts="--enable-static --disable-shared --prefix=$mingw_w64_x86_64_prefix"
-  fi
-  do_git_checkout https://github.com/FFmpeg/FFmpeg.git $output_dir $ffmpeg_git_checkout_version
-  apply_patch file://$patch_dir/ffmpeg-wincrypt_restore-winxp-compatibility.patch -p1 # WinXP doesn't have 'bcrypt' (see https://github.com/FFmpeg/FFmpeg/commit/aedbf1640ced8fc09dc980ead2a387a59d8f7f68).
+  do_git_checkout https://github.com/FFmpeg/FFmpeg.git FFmpeg_git $ffmpeg_git_checkout_version
+  apply_patch file://$patch_dir/ffmpeg-wincrypt_restore-winxp-compatibility.patch -p1 # WinXP doesn't have 'bcrypt'. See https://github.com/FFmpeg/FFmpeg/commit/aedbf1640ced8fc09dc980ead2a387a59d8f7f68.
   apply_patch file://$patch_dir/ffmpeg-libfdk-aac_load-shared-library-dynamically.patch -p1 # See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0001-dynamic-loading-of-shared-fdk-aac-library.patch.
   apply_patch file://$patch_dir/ffmpeg-frei0r_load-shared-libraries-dynamically.patch -p1 # See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0002-avfilters-better-behavior-of-frei0r-on-win32.patch.
   if [[ ! -f configure.bak ]]; then
@@ -1178,7 +1164,11 @@ build_ffmpeg() {
   for i in $CFLAGS; do
     config_options+=" --extra-cflags=$i" # Adds "-march=pentium3 -mtune=athlon-xp -O2 -mfpmath=sse -msse" to the buildconf.
   done
-  config_options+=" $postpend_configure_opts"
+  if [[ $1 == "shared" ]]; then
+    config_options+=" --enable-shared --disable-static --prefix=$(pwd)"
+  else
+    config_options+=" --enable-static --disable-shared --prefix=$mingw_w64_x86_64_prefix"
+  fi
   do_configure "$config_options"
   do_make # 'ffmpeg.exe', 'ffplay.exe' and 'ffprobe.exe' only. No install.
 
