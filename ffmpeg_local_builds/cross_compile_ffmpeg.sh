@@ -159,15 +159,21 @@ do_svn_checkout() {
     if [[ $3 ]]; then
       svn checkout -r $3 $1 $dir.tmp || exit 1
     else
-      svn checkout $1 $dir.tmp --non-interactive --trust-server-cert || exit 1
+      svn checkout $1 $dir.tmp --non-interactive --trust-server-cert-failures=unknown-ca || exit 1
     fi
     mv $dir.tmp $dir
+    cd $dir
   else
     cd $dir
-    echo "Not updating svn $dir, because svn repo's aren't updated frequently enough."
-    # XXX accomodate for desired revision here if I ever uncomment the next line...
-    # svn up
-    cd ..
+    if [[ $(svn info --show-item revision) != $(svn info --show-item revision $1) ]]; then
+      echo "Got upstream changes. Updating $dir to latest svn revision."
+      svn revert . -R # Return files to their original state.
+      svn cleanup --remove-ignored # Clean the working tree; build- ...
+      svn cleanup --remove-unversioned # ...as well as untracked files.
+      svn update || exit 1
+    else
+      echo "Got no code changes. Local $dir repo is up-to-date."
+    fi
   fi
 }
 
