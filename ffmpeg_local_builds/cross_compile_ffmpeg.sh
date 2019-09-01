@@ -1295,7 +1295,7 @@ build_curl() {
   #build_openssl-1.0.2
   #build_openssl-1.1.1
 
-  download_and_unpack_file https://curl.haxx.se/download/curl-7.65.1.tar.bz2
+  download_and_unpack_file https://curl.haxx.se/download/curl-7.65.3.tar.bz2
   generic_configure "--without-ssl --with-mbedtls --with-ca-bundle=ca-bundle.crt" # --with-ca-fallback only works with OpenSSL or GnuTLS.
   do_make # 'curl.exe' only. No install.
   do_strip src/curl.exe
@@ -1305,7 +1305,7 @@ build_curl() {
   fi
 
   mkdir -p $redist_dir # Pack 'curl.exe'.
-  archive="$redist_dir/curl-7.65.1_mbedtls_zlib-win32-static-xpmod-sse"
+  archive="$redist_dir/curl-7.65.3_mbedtls_zlib-win32-static-xpmod-sse"
   if [[ ! -f $archive.7z ]]; then
     sed "s/$/\r/" COPYING > src/COPYING.txt
     cd src
