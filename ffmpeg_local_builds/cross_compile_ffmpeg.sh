@@ -832,7 +832,8 @@ build_libmpg123() {
 } # [dlfcn]
 
 build_libopenmpt() {
-  download_and_unpack_file https://lib.openmpt.org/files/libopenmpt/src/libopenmpt-0.4.5+release.autotools.tar.gz
+  download_and_unpack_file https://lib.openmpt.org/files/libopenmpt/src/libopenmpt-0.4.6+release.autotools.tar.gz
+  apply_patch file://$patch_dir/libopenmpt_fix-detection-of-libstdc++.diff # See https://forum.openmpt.org/index.php?topic=6156.msg46363#msg46363 and https://github.com/OpenMPT/openmpt/commit/5925bcfbcf577ce4b04699f5adb23029f6741072.
   if [[ ! -f Makefile.in.bak ]]; then # Library only
     sed -i.bak "/^all-am/s/DATA/pkgconfig_DATA/;/^install-data-am/s/:.*/: \\\/;s/\tinstall-nobase_dist_docDATA /\t/" Makefile.in
   fi
