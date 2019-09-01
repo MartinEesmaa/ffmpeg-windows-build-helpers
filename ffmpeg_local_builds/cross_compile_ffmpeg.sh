@@ -818,7 +818,7 @@ build_libilbc() {
 } # [dlfcn]
 
 build_libmpg123() {
-  download_and_unpack_file https://downloads.sourceforge.net/project/mpg123/mpg123/1.25.10/mpg123-1.25.10.tar.bz2
+  download_and_unpack_file https://sourceforge.net/projects/mpg123/files/mpg123/1.25.12/mpg123-1.25.12.tar.bz2
   if [[ ! -f libmpg123.pc.in.bak ]]; then
     sed -i.bak "/Libs/a\Libs.private: @LIBS@" libmpg123.pc.in
   fi
