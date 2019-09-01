@@ -187,11 +187,7 @@ do_git_checkout() {
     cd $dir
   else
     cd $dir
-    if [[ $git_get_latest = "y" ]]; then
-      git fetch # need this no matter what
-    else
-      echo "Not doing git get latest pull for latest code $dir."
-    fi
+    git fetch # need this no matter what
   fi
 
   if [[ $3 ]]; then
@@ -201,16 +197,14 @@ do_git_checkout() {
     git checkout "$3" || exit 1
     git merge "$3" || exit 1 # get incoming changes to a branch
   else
-    if [[ $git_get_latest = "y" ]]; then
-      if [[ $(git rev-parse HEAD) != $(git ls-remote -h $1 master | sed "s/\s.*//") ]]; then
-        echo "Got upstream changes. Updating $dir to latest git version 'origin/master'."
-        git reset --hard # Return files to their original state.
-        git clean -fdx # Clean the working tree; build- as well as untracked files.
-        git checkout master || exit 1
-        git merge origin/master || exit 1
-      else
-        echo "Got no code changes. Local $dir repo is up-to-date."
-      fi
+    if [[ $(git rev-parse HEAD) != $(git ls-remote -h $1 master | sed "s/\s.*//") ]]; then
+      echo "Got upstream changes. Updating $dir to latest git version 'origin/master'."
+      git reset --hard # Return files to their original state.
+      git clean -fdx # Clean the working tree; build- as well as untracked files.
+      git checkout master || exit 1
+      git merge origin/master || exit 1
+    else
+      echo "Got no code changes. Local $dir repo is up-to-date."
     fi
   fi
   cd ..
@@ -232,11 +226,7 @@ do_hg_checkout() {
     cd $dir
   else
     cd $dir
-    if [[ $git_get_latest = "y" ]]; then
-      hg pull # need this no matter what
-    else
-      echo "Not doing hg get latest pull for latest code $dir."
-    fi
+    hg pull # need this no matter what
   fi
 
   if [[ $3 ]]; then
@@ -246,16 +236,14 @@ do_hg_checkout() {
     hg update "$3" || exit 1
     #hg merge "$3" || exit 1 # get incoming changes to a branch
   else
-    if [[ $git_get_latest = "y" ]]; then
-      if [[ $(hg id -i) != $(hg id -r default $1) ]]; then # 'hg id http://hg.videolan.org/x265' defaults to the "stable" branch!
-        echo "Got upstream changes. Updating $dir to latest hg version."
-        hg revert -a --no-backup # Return files to their original state.
-        hg purge # Clean the working tree; build- as well as untracked files.
-        hg pull -u || exit 1
-        hg update || exit 1
-      else
-        echo "Got no code changes. Local $dir repo is up-to-date."
-      fi
+    if [[ $(hg id -i) != $(hg id -r default $1) ]]; then # 'hg id http://hg.videolan.org/x265' defaults to the "stable" branch!
+      echo "Got upstream changes. Updating $dir to latest hg version."
+      hg revert -a --no-backup # Return files to their original state.
+      hg purge # Clean the working tree; build- as well as untracked files.
+      hg pull -u || exit 1
+      hg update || exit 1
+    else
+      echo "Got no code changes. Local $dir repo is up-to-date."
     fi
   fi
   cd ..
@@ -1412,7 +1400,6 @@ fi
 
 # variables with their defaults
 build_ffmpeg_static=y
-git_get_latest=y
 #disable_nonfree=n # have no value by default to force user selection
 original_cflags='-march=pentium3 -mtune=athlon-xp -O2 -mfpmath=sse -msse' # See https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html, https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html and https://stackoverflow.com/questions/19689014/gcc-difference-between-o3-and-os.
 ffmpeg_git_checkout_version=
@@ -1429,16 +1416,14 @@ while true; do
       --sandbox-ok=n [skip sandbox prompt if y]
       -d [meaning \"defaults\" skip all prompts, just build ffmpeg static with some reasonable defaults like no git updates]
       --cflags=[default is $original_cflags, which works on any cpu, see README for options]
-      --git-get-latest=y [do a git pull for latest code from repositories like FFmpeg--can force a rebuild if changes are detected]
       --debug Make this script  print out each line as it executes
        "; exit 0 ;;
     --sandbox-ok=* ) sandbox_ok="${1#*=}"; shift ;;
     --ffmpeg-git-checkout-version=* ) ffmpeg_git_checkout_version="${1#*=}"; shift ;;
-    --git-get-latest=* ) git_get_latest="${1#*=}"; shift ;;
     --cflags=* )
        original_cflags="${1#*=}"; echo "setting cflags as $original_cflags"; shift ;;
     --disable-nonfree=* ) disable_nonfree="${1#*=}"; shift ;;
-    -d         ) gcc_cpu_count=$cpu_count; disable_nonfree="y"; sandbox_ok="y"; git_get_latest="n"; shift ;;
+    -d         ) gcc_cpu_count=$cpu_count; disable_nonfree="y"; sandbox_ok="y"; shift ;;
     --build-ffmpeg-static=* ) build_ffmpeg_static="${1#*=}"; shift ;;
     --debug ) set -x; shift ;;
     -- ) shift; break ;;
