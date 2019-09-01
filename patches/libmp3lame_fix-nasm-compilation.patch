@@ -1,0 +1,152 @@
+Index: libmp3lame/i386/choose_table.nas
+===================================================================
+--- libmp3lame/i386/choose_table.nas	(revision 6448)
++++ libmp3lame/i386/choose_table.nas	(working copy)
+@@ -21,7 +21,7 @@
+ mul_add		dd	0x00010010, 0x00010010
+ mul_add23	dd	0x00010003, 0x00010003
+ mul_add56	dd	0x00010004, 0x00010004
+-tableDEF
++tableDEF:
+ 	dd	0x00010003,0x01,0x00050005,0x05,0x00070006,0x07,0x00090008,0x08,0x000a0008, 0x09
+ 	dd	0x000a0009,0x0a,0x000b000a,0x0a,0x000b000a,0x0b,0x000c000a,0x0a,0x000c000b, 0x0b
+ 	dd	0x000c000b,0x0c,0x000d000c,0x0c,0x000d000c,0x0d,0x000d000c,0x0d,0x000e000d, 0x0e
+@@ -75,7 +75,7 @@
+ 	dd	0x000e000e,0x12,0x000e000e,0x12,0x000e000f,0x15,0x000e000f,0x14,0x000e000f, 0x15
+ 	dd	0x000c000f,0x12
+ 
+-tableABC
++tableABC:
+ 	dd	0x00020004,0x1,0x00040004,0x4,0x00060006,0x7,0x00080008,0x9,0x00090009,0xa,0x000a000a,0xa
+ 	dd	0x0009000a,0xa,0x000a000a,0xb,0x00000000,0x0,0x00020003,0x1,0x00040004,0x4,0x00070006,0x7
+ 	dd	0x00090007,0x9,0x00090009,0x9,0x000a000a,0xa,0x00000000,0x0,0x00040004,0x4,0x00050005,0x6
+@@ -99,7 +99,7 @@
+ 	dd	0x00000000,0x0,0x00000000,0x0,0x00000000,0x0,0x00000000,0x0,0x00000000,0x0,0x00000000,0x0
+ 	dd	0x0,0x00000000, 0x0,0x00000000
+ 
+-linbits32
++linbits32:
+ 	dd	0x00040004,0x10001,0x00040004,0x20002,0x00040004,0x30003,0x00040004,0x40004
+ 	dd	0x00050005,0x60006,0x00060006,0x60006,0x00070007,0x80008,0x00080008,0x80008
+ 	dd	0x00090009,0xa000a,0x000b000b,0xa000a,0x000b000b,0xd000d,0x000d000d,0xd000d
+@@ -106,7 +106,7 @@
+ 	dd	0x000d000d,0xd000d
+ 
+ 
+-choose_table_H
++choose_table_H:
+ 	dw	0x1810, 0x1811, 0x1812, 0x1813, 0x1914, 0x1a14, 0x1b15, 0x1c15
+ 	dw	0x1d16, 0x1e16, 0x1e17, 0x1f17, 0x1f17
+ 
+@@ -338,7 +338,7 @@
+ 	jz	.choose3_exit
+ 
+ 	align	4
+-.choose3_lp1
++.choose3_lp1:
+ 	movq	mm0,[edx+eax]
+ 	movq	mm1,[edx+eax+8]
+ 	add	eax,16
+@@ -350,7 +350,7 @@
+ 	movd	ebx,mm0
+ 	paddd	mm2, [ecx+ebx*8]
+ 	jnz	.choose3_lp1
+-.choose3_exit
++.choose3_exit:
+ ;	xor	eax,eax
+ 	movd	ebx, mm2
+ 	punpckhdq	mm2,mm2
+@@ -411,7 +411,7 @@
+ 	jz	.choose2_exit
+ 
+ 	align	4
+-.choose2_lp1
++.choose2_lp1:
+ 	movq	mm0,[edx+eax]
+ 	movq	mm1,[edx+eax+8]
+ 	packssdw	mm0,mm1 ;mm0 = ix[0]|ix[1]|ix[2]|ix[3]
+@@ -423,7 +423,7 @@
+ 	add	edi, [ecx+ebx*4]
+ 	add	eax,16
+ 	jnc	.choose2_lp1
+-.choose2_exit
++.choose2_exit:
+ 	mov	ecx, edi
+ 	pop	edi
+ 	pop	ebx
+@@ -444,4 +444,4 @@
+ 	pop	ebp
+ 	ret
+ 
+-	end
++	end:
+Index: libmp3lame/i386/cpu_feat.nas
+===================================================================
+--- libmp3lame/i386/cpu_feat.nas	(revision 6448)
++++ libmp3lame/i386/cpu_feat.nas	(working copy)
+@@ -104,4 +104,4 @@
+ 	xor	eax,eax
+ 	ret
+         
+-        end
++        end:
+Index: libmp3lame/i386/fft3dn.nas
+===================================================================
+--- libmp3lame/i386/fft3dn.nas	(revision 6448)
++++ libmp3lame/i386/fft3dn.nas	(working copy)
+@@ -48,7 +48,7 @@
+ 	pmov	mm7, [r3]
+ 
+ 	loopalign 16
+-.do1
++.do1:
+ 	lea	r3, [r3+16]	;tri += 2;
+ 	pmov	mm6, [PIC_EBP_REL(costab+8)]
+ 	lea	r2, [r4+r4*2]		;k3*fsize/2
+@@ -264,7 +264,7 @@
+ 	lea	r4, [r4*4]	;kx *= 4
+ 
+ 	jb near	.do1
+-.exitttt
++.exitttt:
+ 	femms
+ 	add	esp,20
+ 	popd	ebp, ebx, esi, edi
+@@ -292,7 +292,7 @@
+ 	pmov	mm7, [r3]
+ 
+ 	loopalign 16
+-.do1
++.do1:
+ 	lea	r3, [r3+16]	;tri += 2;
+ 	pmov	mm6, [PIC_EBP_REL(costab+8)]
+ 	lea	r2, [r4+r4*2]		;k3*fsize/2
+@@ -481,7 +481,7 @@
+ 	lea	r4, [r4*4]	;kx *= 4
+ 
+ 	jb near	.do1
+-.exitttt
++.exitttt:
+ 	femms
+ 	add	esp,20
+ 	popd	ebp, ebx, esi, edi
+Index: libmp3lame/i386/fftsse.nas
+===================================================================
+--- libmp3lame/i386/fftsse.nas	(revision 6448)
++++ libmp3lame/i386/fftsse.nas	(working copy)
+@@ -419,4 +419,4 @@
+ 	pop	ebx
+ 	ret
+ 
+-	end
++	end:
+Index: libmp3lame/i386/nasm.h
+===================================================================
+--- libmp3lame/i386/nasm.h	(revision 6448)
++++ libmp3lame/i386/nasm.h	(working copy)
+@@ -1,4 +1,4 @@
+-﻿
++
+ ;	Copyright (C) 1999 URURI
+ 
+ ;	nasm�ѥޥ���
