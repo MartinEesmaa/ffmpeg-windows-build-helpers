@@ -562,7 +562,7 @@ build_libwebp() {
 } # [dlfcn]
 
 build_freetype() {
-  download_and_unpack_file https://download.savannah.gnu.org/releases/freetype/freetype-2.10.0.tar.gz
+  download_and_unpack_file https://download.savannah.gnu.org/releases/freetype/freetype-2.10.1.tar.xz
   if [[ ! -f builds/unix/install.mk.bak ]]; then # Library only.
     sed -i.bak "/config \\\/s/\s*\\\//;/bindir) /s/\s*\\\//;/aclocal/d;/man1/d;/BUILD_DIR/d;/docs/d" builds/unix/install.mk
   fi
