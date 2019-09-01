@@ -266,7 +266,7 @@ do_configure() {
   local name=$(get_small_touchfile_name already_configured "$1 $configure_name")
   if [ ! -f "$name" ]; then # This is to generate 'configure', 'Makefile.in' and some other files.
     if [ ! -f $configure_name ] && [ -f autogen.sh ]; then
-      ./autogen.sh
+      NOCONFIGURE=1 ./autogen.sh
     fi
     if [ ! -f $configure_name ] && [ -f autobuild ]; then
       ./autobuild
