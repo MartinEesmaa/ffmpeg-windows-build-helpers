@@ -605,8 +605,8 @@ build_mbedtls() {
 }
 
 build_openssl-1.0.2() {
-  download_and_unpack_file https://www.openssl.org/source/openssl-1.0.2s.tar.gz
-  apply_patch file://$patch_dir/openssl-1.0.2s_lib-only.diff
+  download_and_unpack_file https://www.openssl.org/source/openssl-1.0.2u.tar.gz
+  apply_patch file://$patch_dir/openssl-1.0.2u_lib-only.diff
   export CC="${cross_prefix}gcc"
   export AR="${cross_prefix}ar"
   export RANLIB="${cross_prefix}ranlib"
@@ -622,7 +622,7 @@ build_openssl-1.0.2() {
     do_make "build_libs"
     do_strip .
     mkdir -p $redist_dir
-    archive="$redist_dir/openssl-1.0.2s-win32-xpmod-sse"
+    archive="$redist_dir/openssl-1.0.2u-win32-xpmod-sse"
     if [[ ! -f $archive.7z ]]; then
       sed "s/$/\r/" LICENSE > LICENSE.txt
       7z a -mx=9 $archive.7z *.dll LICENSE.txt && rm -f LICENSE.txt
