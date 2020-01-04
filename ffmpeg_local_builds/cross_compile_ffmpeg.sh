@@ -732,7 +732,7 @@ build_fdk-aac() {
 } # [dlfcn]
 
 build_libmpg123() {
-  download_and_unpack_file https://sourceforge.net/projects/mpg123/files/mpg123/1.25.12/mpg123-1.25.12.tar.bz2
+  download_and_unpack_file https://sourceforge.net/projects/mpg123/files/mpg123/1.25.13/mpg123-1.25.13.tar.bz2
   if [[ ! -f libmpg123.pc.in.bak ]]; then
     sed -i.bak "/Libs/a\Libs.private: @LIBS@" libmpg123.pc.in
   fi
