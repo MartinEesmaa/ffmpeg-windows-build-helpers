@@ -255,7 +255,7 @@ do_configure() {
   local name=$(get_small_touchfile_name already_configured "$1 $configure_name")
   if [ ! -f "$name" ]; then # This is to generate 'configure', 'Makefile.in' and some other files.
     if [ ! -f $configure_name ] && [ -f autogen.sh ]; then
-      NOCONFIGURE=1 ./autogen.sh
+      ./autogen.sh
     fi
     if [ ! -f $configure_name ] && [ -f autobuild ]; then
       ./autobuild
@@ -702,57 +702,6 @@ build_libopus() {
   cd ..
 } # [dlfcn]
 
-build_libspeexdsp() {
-  do_git_checkout https://github.com/xiph/speexdsp.git
-  if [[ ! -f Makefile.am.bak ]]; then # Library only.
-    sed -i.bak "s/ doc.*//" Makefile.am
-  fi
-  generic_configure "--disable-examples"
-  do_make_and_make_install
-  cd ..
-} # [libogg (only for 'examples'), dlfcn]
-
-build_libspeex() {
-  do_git_checkout https://github.com/xiph/speex.git
-  if [[ ! -f Makefile.am.bak ]]; then # Library only.
-    sed -i.bak "/m4data/,+2d;/^SUBDIRS/s/ doc.*//" Makefile.am
-  fi
-  generic_configure "--disable-binaries" # If you do want the binaries, then 'speexdec.exe' needs 'LDFLAGS=-lwinmm'.
-  do_make_and_make_install
-  cd ..
-} # [libspeexdsp, dlfcn]
-
-build_libtheora() {
-  do_git_checkout https://github.com/xiph/theora.git
-  if [[ ! -f Makefile.am.bak ]]; then # Library only.
-    sed -i.bak "s/ doc.*//" Makefile.am
-  fi
-  generic_configure "--disable-doc --disable-oggtest --disable-vorbistest --disable-examples"
-  # 'examples/encoder_example.c' would otherwise cause problems; "encoder_example.c:56:15: error: static declaration of 'rint' follows non-static declaration".
-  do_make_and_make_install
-  cd ..
-} # libogg >= 1.1, [(libvorbis >= 1.0.1, sdl and libpng only for 'test', 'programs' and 'examples'), dlfcn]
-
-build_libsndfile() {
-  do_git_checkout https://github.com/erikd/libsndfile.git
-  if [[ ! -f Makefile.am.bak ]]; then # Library only.
-    sed -i.bak "/^SUBDIRS/s/=.*/= src/" Makefile.am
-  fi
-  generic_configure "--disable-sqlite --disable-external-libs --disable-full-suite"
-  do_make_and_make_install
-  if [ "$1" = "install-libgsm" ]; then
-    if [ ! -f "$mingw_w64_x86_64_prefix/lib/libgsm.a" ] || [ "src/GSM610/.libs/libgsm.a" -nt "$mingw_w64_x86_64_prefix/lib/libgsm.a" ]; then
-      rm -f $mingw_w64_x86_64_prefix/lib/libgsm.a
-      echo "Installing GSM 6.10."
-      install -m644 src/GSM610/.libs/libgsm.a $mingw_w64_x86_64_prefix/lib/libgsm.a
-      install -m644 src/GSM610/gsm.h $mingw_w64_x86_64_prefix/include/gsm.h
-    else
-      echo "Already installed GSM 6.10."
-    fi
-  fi
-  cd ..
-} # [(libogg >= 1.1.3 and libvorbis >= 1.2.3 only for external support), dlfcn]
-
 build_lame() {
   do_svn_checkout https://svn.code.sf.net/p/lame/svn/trunk/lame lame_svn
   apply_patch file://$patch_dir/libmp3lame_fix-nasm-compilation.patch # Fix NASM compilation error by changing 'nasm.h' from UTF-8 BOM to UTF-8 and mute several warnings. See https://sourceforge.net/p/lame/patches/81/.
@@ -763,15 +712,6 @@ build_lame() {
   do_make_and_make_install
   cd ..
 } # [dlfcn]
-
-build_twolame() {
-  do_git_checkout https://github.com/njh/twolame.git
-  if [[ ! -f Makefile.am.bak ]]; then # Library only.
-    sed -i.bak "/^SUBDIRS/s/ frontend.*//;/pkgdocdir/,+6d;/pkgdoc_DATA/d" Makefile.am
-  fi
-  generic_configure_make_install
-  cd ..
-} # [libsndfile >= 1.0.0, dlfcn]
 
 build_fdk-aac() {
   do_git_checkout https://github.com/mstorsjo/fdk-aac.git
@@ -788,21 +728,6 @@ build_fdk-aac() {
   else
     echo "Already made '$(basename $archive.7z)'."
   fi
-  cd ..
-} # [dlfcn]
-
-build_libopencore() {
-  generic_download_and_make_and_install https://sourceforge.net/projects/opencore-amr/files/opencore-amr/opencore-amr-0.1.5.tar.gz
-  generic_download_and_make_and_install https://sourceforge.net/projects/opencore-amr/files/vo-amrwbenc/vo-amrwbenc-0.1.3.tar.gz
-  #generic_download_and_make_and_install https://github.com/mstorsjo/vo-amrwbenc/archive/v0.1.3.tar.gz vo-amrwbenc-0.1.3
-} # [dlfcn]
-
-build_libilbc() {
-  do_git_checkout https://github.com/TimothyGu/libilbc.git
-  if [[ ! -f Makefile.am.bak ]]; then # Library only.
-    sed -i.bak "/dist_doc/,+3d" Makefile.am
-  fi
-  generic_configure_make_install
   cd ..
 } # [dlfcn]
 
@@ -842,47 +767,6 @@ build_libgme() {
   cd ..
 } # zlib
 
-build_libbluray() {
-  do_git_checkout https://git.videolan.org/git/libbluray.git
-  if [[ ! -d .git/modules ]]; then
-    git submodule update --init --remote # For UDF support (default=enabled), which strangely enough is in another repository.
-    # This can also be done with 'git clone --recursive', but since libbluray is the only one that actually requires a submodule, it's undesirable to have it in 'do_git_checkout()'.
-  else
-    if [[ $(git --git-dir=.git/modules/contrib/libudfread rev-parse HEAD) != $(git ls-remote -h git://git.videolan.org/libudfread.git | sed "s/\s.*//") ]]; then
-      git submodule foreach -q 'git reset --hard' # Return files to their original state.
-      git submodule foreach -q 'git clean -fdx' # Clean the working tree; build- as well as untracked files.
-      echo "Got upstream changes. Updating the libudfread submodule to latest git version 'origin/master'."
-      git submodule update --remote
-      rm -f already_* # Force recompiling libbluray.
-    else
-      echo "Got no code changes. The libudfread submodule is up-to-date."
-    fi
-  fi
-  cd contrib/libudfread
-    if [[ ! -f src/udfread.c.bak ]]; then
-      sed -i.bak "/WIN32$/,+4d" src/udfread.c # Fix WinXP incompatibility.
-    fi
-    if [[ ! -f src/udfread-version.h ]]; then
-      generic_configure # Generate 'udfread-version.h', or building LibBluray fails otherwise.
-    fi
-  cd ../..
-  if [[ ! -f jni/win32/jni_md.h.bak ]]; then
-    sed -i.bak "s/ __declspec.*//" jni/win32/jni_md.h # Needed for building shared FFmpeg libraries.
-  fi
-  generic_configure "--disable-examples --disable-bdjava-jar"
-  do_make_and_make_install
-  cd ..
-} # libxml >= 2.6, freetype, [fontconfig (-lgdi32 is used instead), dlfcn]
-
-build_libbs2b() {
-  download_and_unpack_file https://downloads.sourceforge.net/project/bs2b/libbs2b/3.1.0/libbs2b-3.1.0.tar.gz
-  if [[ ! -f src/Makefile.in.bak ]]; then
-    sed -i.bak "/^bin_PROGRAMS/s/=.*/=/" src/Makefile.in # Library only.
-  fi
-  generic_configure_make_install
-  cd ..
-} # libsndfile, [dlfcn]
-
 build_libsoxr() {
   do_git_checkout https://git.code.sf.net/p/soxr/code soxr_git
   if [[ ! -f CMakeLists.txt.bak ]]; then # Library only.
@@ -909,64 +793,6 @@ build_libflite() {
   cd ..
 }
 
-build_libsnappy() {
-  do_git_checkout https://github.com/google/snappy.git
-  if [[ ! -f CMakeLists.txt.bak ]]; then # Library only.
-    sed -i.bak "/CMakePackageConfigHelpers/,\$d" CMakeLists.txt
-  fi
-  do_cmake_and_install "-DSNAPPY_BUILD_TESTS=0"
-  cd ..
-} # [zlib (only for 'unittests'), dlfcn]
-
-build_vamp_plugin() {
-  download_and_unpack_file https://github.com/c4dm/vamp-plugin-sdk/archive/vamp-plugin-sdk-v2.8.tar.gz vamp-plugin-sdk-vamp-plugin-sdk-v2.8
-  apply_patch file://$patch_dir/vamp-plugin-sdk-2.8_static-lib.diff # Create install-static target.
-  if [[ ! -f configure.bak ]]; then # Fix for "'M_PI' was not declared in this scope". See https://stackoverflow.com/a/29264536.
-    sed -i.bak "s/c++98/gnu++98/" configure
-  fi
-  do_configure "--host=$host_target --prefix=$mingw_w64_x86_64_prefix --disable-programs"
-  do_make "install-static" # No need for 'do_make_install', because 'install-static' already has install-instructions.
-  cd ..
-} # [libsndfile (only for 'vamp-simple-host.exe'), dlfcn]
-
-build_fftw() {
-  download_and_unpack_file http://fftw.org/fftw-3.3.8.tar.gz
-  if [[ ! -f Makefile.in.bak ]]; then # Library only.
-    sed -i.bak "/^SUBDIRS/s/api.*/api/;/^libbench2/d" Makefile.in
-  fi
-  generic_configure "--disable-doc"
-  do_make_and_make_install
-  cd ..
-} # [dlfcn]
-
-build_libsamplerate() {
-  do_git_checkout https://github.com/erikd/libsamplerate.git
-  generic_configure
-  if [[ ! -f Makefile.bak ]]; then # Library only.
-    sed -i.bak "/^all-am/s/ \$(PROGRAMS)//;/install-data-am/s/ install-dist_htmlDATA//;/install-exec-am/s/ install-binPROGRAMS//" Makefile
-  fi
-  do_make_and_make_install
-  cd ..
-} # [libsndfile >= 1.0.6 and fftw >= 0.15.0 only for 'tests'), dlfcn]
-
-build_librubberband() {
-  do_git_checkout https://github.com/breakfastquay/rubberband.git
-  apply_patch file://$patch_dir/rubberband_git_static-lib.patch -p1 # Create install-static target and add missing libraries in the pkg-config file.
-  do_configure "--host=$host_target --prefix=$mingw_w64_x86_64_prefix"
-  do_make "install-static" # No need for 'do_make_install', because 'install-static' already has install-instructions.
-  cd ..
-} # libsamplerate, libsndfile, fftw, vamp_plugin.
-# Eventhough librubberband doesn't necessarily need them (libsndfile only for 'rubberband.exe' and vamp_plugin only for "Vamp audio analysis plugin"), './configure' will fail otherwise. How to use the bundled libraries '-DUSE_SPEEX' and '-DUSE_KISSFFT'?
-
-build_libzimg() {
-  do_git_checkout https://github.com/sekrit-twc/zimg.git
-  if [[ ! -f Makefile.am.bak ]]; then # Library only.
-    sed -i.bak "/dist_doc_DATA/,+19d" Makefile.am
-  fi
-  generic_configure_make_install
-  cd ..
-} # [dlfcn]
-
 build_vidstab() {
   do_git_checkout https://github.com/georgmartius/vid.stab.git vid.stab_git
   if [[ ! -f CMakeLists.txt.bak ]]; then # Change CFLAGS.
@@ -975,15 +801,6 @@ build_vidstab() {
   do_cmake_and_install "-DBUILD_SHARED_LIBS=0 -DUSE_OMP=0" # '-DUSE_OMP' is on by default, but somehow libgomp ('cygwin_local_install/lib/gcc/i686-pc-cygwin/5.4.0/include/omp.h') can't be found, so '-DUSE_OMP=0' to prevent a compilation error.
   cd ..
 }
-
-build_libmysofa() {
-  do_git_checkout https://github.com/hoene/libmysofa.git
-  if [[ ! -f CMakeLists.txt.bak ]]; then # Library only.
-    sed -i.bak "/^install(.*)/d" CMakeLists.txt
-  fi
-  do_cmake_and_install "-DBUILD_SHARED_LIBS=0 -DBUILD_TESTS=0"
-  cd ..
-} # [dlfcn]
 
 build_frei0r() {
   do_git_checkout https://github.com/dyne/frei0r.git
@@ -1003,43 +820,6 @@ build_frei0r() {
   cd ..
 } # dlfcn
 
-build_libcaca() {
-  do_git_checkout https://github.com/cacalabs/libcaca.git
-  apply_patch file://$patch_dir/libcaca_git_stdio-cruft.patch -p1 # Fix WinXP incompatibility.
-  if [[ ! -f Makefile.am.bak ]]; then # Library only.
-    sed -i.bak "/^SUBDIRS/s/ src.*//;/cxx.*doc/d" Makefile.am
-    sed -i.bak "/^SUBDIRS/s/ t//" caca/Makefile.am
-  fi
-  generic_configure "--libdir=$mingw_w64_x86_64_prefix/lib --disable-csharp --disable-java --disable-cxx --disable-python --disable-ruby --disable-doc"
-  do_make_and_make_install
-  cd ..
-} # [zlib, dlfcn]
-
-build_libdecklink() {
-  if [[ ! -f $mingw_w64_x86_64_prefix/include/DeckLinkAPIVersion.h ]]; then
-    # smaller files don't worry about partials for now, plus we only care about the last file anyway here...
-    curl -4 file://$patch_dir/DeckLinkAPI.h --fail > $mingw_w64_x86_64_prefix/include/DeckLinkAPI.h || exit 1
-    curl -4 file://$patch_dir/DeckLinkAPI_i.c --fail > $mingw_w64_x86_64_prefix/include/DeckLinkAPI_i.c.tmp || exit 1
-    mv $mingw_w64_x86_64_prefix/include/DeckLinkAPI_i.c.tmp $mingw_w64_x86_64_prefix/include/DeckLinkAPI_i.c
-    curl -4 file://$patch_dir/DeckLinkAPIVersion.h --fail > $mingw_w64_x86_64_prefix/include/DeckLinkAPIVersion.h || exit 1
-  fi
-}
-
-build_zvbi() {
-  download_and_unpack_file https://sourceforge.net/projects/zapping/files/zvbi/0.2.35/zvbi-0.2.35.tar.bz2
-  apply_patch file://$patch_dir/zvbi-win32.patch
-  #apply_patch file://$patch_dir/zvbi-ioctl.patch # Concerns 'contrib/ntsc-cc.c', but subdir 'contrib' doesn't get built, because it isn't needed for 'libzvbi.a'.
-  if [[ ! -f Makefile.in.bak ]]; then # Library only.
-    sed -i.bak "/^SUBDIRS/s/\\\/src/;/\tm4/,/\tdoc/d" Makefile.in
-  fi
-  # 'contrib/ntsc-cc.c' (with 'zvbi-ioctl.patch' applied) would otherwise cause problems; "ntsc-cc.c:1330:4: error: unknown type name 'fd_set'".
-  # It probably needs '#include <sys/select.h>', because 'fd_set' is defined in 'cygwin_local_install/lib/gcc/i686-pc-cygwin/5.4.0/include/select.h'. It still fails though after having done so.
-  generic_configure " --disable-dvb --disable-bktr --disable-proxy --disable-nls --without-doxygen --without-libiconv-prefix"
-  # Without '--without-libiconv-prefix' 'configure' would otherwise search for and only accept a shared Libiconv library.
-  do_make_and_make_install
-  cd ..
-} # [iconv, libpng, dlfcn]
-
 build_fribidi() {
   do_git_checkout https://github.com/behdad/fribidi.git
   if [[ ! -f Makefile.am.bak ]]; then # Library only.
@@ -1053,48 +833,6 @@ build_fribidi() {
 build_libass() {
   do_git_checkout_and_make_install https://github.com/libass/libass.git
 } # freetype >= 9.10.3 (see https://bugs.launchpad.net/ubuntu/+source/freetype1/+bug/78573 o_O), fribidi >= 0.19.0, [fontconfig >= 2.10.92, iconv, dlfcn]
-
-build_libvmaf() {
-  do_git_checkout https://github.com/Netflix/vmaf.git
-  apply_patch file://$patch_dir/libvmaf.various.patch -p1
-  if [[ ! -f wrapper/libvmaf.pc.bak ]]; then
-    sed -i.bak "/prefix/s:/usr/local:$mingw_w64_x86_64_prefix:;/libdir/s:/usr/local:\${exec_prefix}:;/includedir/s:/usr/local:\${prefix}:" wrapper/libvmaf.pc
-  fi
-  do_make_and_make_install "$make_prefix_options INSTALL_PREFIX=$mingw_w64_x86_64_prefix"
-  cd .. 
-}
-
-build_libxavs() {
-  do_svn_checkout https://svn.code.sf.net/p/xavs/code/trunk xavs_svn
-  if [[ ! -f Makefile.bak ]]; then
-    sed -i.bak "/^install/s/:.*/:/;/install xavs/d" Makefile # Library only.
-    sed -i.bak "s/O4/O2/" configure # Change CFLAGS.
-  fi
-  do_configure "--host=$host_target --prefix=$mingw_w64_x86_64_prefix --cross-prefix=$cross_prefix" # See https://github.com/rdp/ffmpeg-windows-build-helpers/issues/3.
-  do_make_and_make_install "$make_prefix_options"
-  rm -f NUL # Cygwin causes windows explorer to not be able to delete this folder if it has this oddly named file in it...
-  cd ..
-}
-
-build_libxvid() {
-  download_and_unpack_file https://downloads.xvid.com/downloads/xvidcore-1.3.5.tar.gz xvidcore
-  cd build/generic
-    apply_patch file://$patch_dir/xvidcore-1.3.5_static-lib.diff
-    export ac_yasm=no # Force the use of NASM.
-    do_configure "--host=$host_target --prefix=$mingw_w64_x86_64_prefix"
-    do_make_and_make_install
-    unset ac_yasm
-  cd ../../..
-}
-
-build_libopenh264() {
-  do_git_checkout "https://github.com/cisco/openh264.git"
-  if [[ ! -f Makefile.bak ]]; then # Change CFLAGS and Library only.
-    sed -i.bak "s/O3/O2/;/^all:/s/ binaries//" Makefile
-  fi
-  do_make "$make_prefix_options OS=mingw_nt ARCH=i686 ASM=nasm install-static" # No need for 'do_make_install', because 'install-static' already has install-instructions.
-  cd ..
-}
 
 build_libx264() {
   do_git_checkout http://git.videolan.org/git/x264.git
@@ -1143,9 +881,7 @@ build_ffmpeg() {
     sed -i.bak "/enabled libfdk_aac/s/&.*/\&\& require_headers fdk-aac\/aacenc_lib.h/;/require libfdk_aac/,/without pkg-config/d;/    libfdk_aac/d;/    libflite/i\    libfdk_aac" configure # Load 'libfdk-aac-1.dll' dynamically.
   fi
   init_options="--arch=x86 --target-os=mingw32 --cross-prefix=$cross_prefix --pkg-config=pkg-config --pkg-config-flags=--static --extra-version=Reino --enable-gray --enable-version3 --disable-debug --disable-doc --disable-htmlpages --disable-manpages --disable-podpages --disable-txtpages --disable-w32threads"
-  config_options="$init_options --enable-avisynth --enable-frei0r --enable-filter=frei0r --enable-gmp --enable-gpl --enable-libaom --enable-libass --enable-libbluray --enable-libbs2b --enable-libcaca --extra-cflags=-DCACA_STATIC --enable-libfdk-aac --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libgme --enable-libgsm --enable-libilbc --enable-libmp3lame --enable-libmysofa --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libopenh264 --enable-libopenmpt --enable-libopus --enable-librubberband --enable-libsnappy --enable-libsoxr --enable-libspeex --enable-libtheora --enable-libtwolame --extra-cflags=-DLIBTWOLAME_STATIC --enable-libvidstab --enable-libvmaf --enable-libvo-amrwbenc --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxavs --enable-libxml2 --enable-libxvid --enable-libzimg --enable-libzvbi --enable-mbedtls"
-  # 'configure' needs '--extra-cflags=-DCACA_STATIC ' for libcaca. Otherwise you'll get "undefined reference to `_imp__caca_create_canvas'" and "ERROR: caca not found using pkg-config".
-  # 'configure' needs '--extra-cflags=-DLIBTWOLAME_STATIC' for libtwolame. Otherwise you'll get "undefined reference to `_imp__twolame_init'" and "ERROR: libtwolame not found". 'twolame.pc' does contain "Cflags.private: -DLIBTWOLAME_STATIC" nowadays, but pkg-config doesn't support this entry.
+  config_options="$init_options --enable-avisynth --enable-frei0r --enable-filter=frei0r --enable-gmp --enable-gpl --enable-libaom --enable-libass --enable-libfdk-aac --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libgme --enable-libmp3lame --enable-libopenmpt --enable-libopus --enable-libsoxr --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxml2 --enable-mbedtls"
   for i in $CFLAGS; do
     config_options+=" --extra-cflags=$i" # Adds "-march=pentium3 -mtune=athlon-xp -O2 -mfpmath=sse -msse" to the buildconf.
   done
@@ -1208,39 +944,17 @@ build_dependencies() {
   build_libogg
   build_libvorbis
   build_libopus
-  build_libspeexdsp
-  build_libspeex
-  build_libtheora
-  build_libsndfile install-libgsm # 'build_libsndfile install-libgsm' to install the bundled LibGSM 6.10.
   build_lame
-  build_twolame
   build_fdk-aac
-  build_libopencore
-  build_libilbc
   build_libmpg123
   build_libopenmpt
   build_libgme
-  build_libbluray
-  build_libbs2b
   build_libsoxr
   build_libflite
-  build_libsnappy
-  build_vamp_plugin
-  build_fftw
-  build_libsamplerate
-  build_librubberband
-  build_libzimg
   build_vidstab
-  build_libmysofa # Needed for FFmpeg's SOFAlizer filter (https://ffmpeg.org/ffmpeg-filters.html#sofalizer).
   build_frei0r
-  build_libcaca
-  build_zvbi
   build_fribidi
   build_libass
-  build_libvmaf
-  build_libxavs
-  build_libxvid # FFmpeg now has native support, but libxvid still provides a better image.
-  build_libopenh264
   build_libx264
   build_libx265
   build_libvpx
