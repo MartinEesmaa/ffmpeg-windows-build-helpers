@@ -98,17 +98,6 @@ EOL
   fi
   mkdir -p "$cur_dir"
   cd "$cur_dir"
-  if [[ $disable_nonfree = "y" ]]; then
-    non_free="n"
-  else
-    if  [[ $disable_nonfree = "n" ]]; then
-      non_free="y"
-    else
-      yes_no_sel "Would you like to include non-free (non GPL compatible) libraries, like many high quality aac encoders [libfdk_aac]
-The resultant binary may not be distributable, but can be useful for in-house use. Include these non-free-license libraries [y/N]?" "n"
-      non_free="$user_input" # save it away
-    fi
-  fi
 }
 
 # made into a method so I don't/don't have to download this script every time if only doing just 32 or just6 64 bit builds...
@@ -1157,10 +1146,6 @@ build_ffmpeg() {
   config_options="$init_options --enable-avisynth --enable-frei0r --enable-filter=frei0r --enable-gmp --enable-gpl --enable-libaom --enable-libass --enable-libbluray --enable-libbs2b --enable-libcaca --extra-cflags=-DCACA_STATIC --enable-libfdk-aac --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libgme --enable-libgsm --enable-libilbc --enable-libmp3lame --enable-libmysofa --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libopenh264 --enable-libopenmpt --enable-libopus --enable-librubberband --enable-libsnappy --enable-libsoxr --enable-libspeex --enable-libtheora --enable-libtwolame --extra-cflags=-DLIBTWOLAME_STATIC --enable-libvidstab --enable-libvmaf --enable-libvo-amrwbenc --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxavs --enable-libxml2 --enable-libxvid --enable-libzimg --enable-libzvbi --enable-mbedtls"
   # 'configure' needs '--extra-cflags=-DCACA_STATIC ' for libcaca. Otherwise you'll get "undefined reference to `_imp__caca_create_canvas'" and "ERROR: caca not found using pkg-config".
   # 'configure' needs '--extra-cflags=-DLIBTWOLAME_STATIC' for libtwolame. Otherwise you'll get "undefined reference to `_imp__twolame_init'" and "ERROR: libtwolame not found". 'twolame.pc' does contain "Cflags.private: -DLIBTWOLAME_STATIC" nowadays, but pkg-config doesn't support this entry.
-  if [[ "$non_free" = "y" ]]; then
-    config_options+=" --enable-nonfree --enable-decklink"
-    # Other possible options: '--enable-openssl'.
-  fi
   for i in $CFLAGS; do
     config_options+=" --extra-cflags=$i" # Adds "-march=pentium3 -mtune=athlon-xp -O2 -mfpmath=sse -msse" to the buildconf.
   done
@@ -1172,42 +1157,34 @@ build_ffmpeg() {
   do_configure "$config_options"
   do_make # 'ffmpeg.exe', 'ffplay.exe' and 'ffprobe.exe' only. No install.
 
-  if [[ $non_free == "y" ]]; then
-    if [[ $1 == "shared" ]]; then
-      echo "Done! You will find 32-bit $1 non-redistributable binaries in '$(pwd)/bin'."
+  mkdir -p $redist_dir
+  archive="$redist_dir/ffmpeg-$(git describe --tags | tail -c +2)-win32-$1-xpmod-sse"
+  if [[ $1 == "shared" ]]; then
+    do_make_install # Because of '--prefix=$(pwd)' the dlls are stripped and installed to 'ffmpeg_git_shared/bin'.
+    echo "Done! You will find 32-bit $1 binaries in $(pwd) and libraries in $(pwd)/bin."
+    if [[ ! -f $archive.7z ]]; then # Pack shared build.
+      sed "s/$/\r/" COPYING.GPLv3 > COPYING.GPLv3.txt
+      7z a -mx=9 $archive.7z ffmpeg.exe ffplay.exe ffprobe.exe $(pwd)/bin/*.dll COPYING.GPLv3.txt && rm -f COPYING.GPLv3.txt
     else
-      echo "Done! You will find 32-bit $1 non-redistributable binaries in '$(pwd)'."
+      echo "Already made '$(basename $archive.7z)'."
+    fi
+    if [[ ! -f ${archive/shared/dev}.7z ]]; then # Pack dev build.
+      mv bin/*.lib lib
+      rm -r lib/pkgconfig
+      7z a -mx=9 ${archive/shared/dev}.7z include lib share
+    else
+      echo "Already made '$(basename ${archive/shared/dev}.7z)'."
     fi
   else
-    mkdir -p $redist_dir
-    archive="$redist_dir/ffmpeg-$(git describe --tags | tail -c +2)-win32-$1-xpmod-sse"
-    if [[ $1 == "shared" ]]; then
-      do_make_install # Because of '--prefix=$(pwd)' the dlls are stripped and installed to 'ffmpeg_git_shared/bin'.
-      echo "Done! You will find 32-bit $1 binaries in $(pwd) and libraries in $(pwd)/bin."
-      if [[ ! -f $archive.7z ]]; then # Pack shared build.
-        sed "s/$/\r/" COPYING.GPLv3 > COPYING.GPLv3.txt
-        7z a -mx=9 $archive.7z ffmpeg.exe ffplay.exe ffprobe.exe $(pwd)/bin/*.dll COPYING.GPLv3.txt && rm -f COPYING.GPLv3.txt
-      else
-        echo "Already made '$(basename $archive.7z)'."
-      fi
-      if [[ ! -f ${archive/shared/dev}.7z ]]; then # Pack dev build.
-        mv bin/*.lib lib
-        rm -r lib/pkgconfig
-        7z a -mx=9 ${archive/shared/dev}.7z include lib share
-      else
-        echo "Already made '$(basename ${archive/shared/dev}.7z)'."
-      fi
+    echo "Done! You will find 32-bit $1 binaries in $(pwd)."
+    if [[ ! -f $archive.7z ]]; then # Pack static build.
+      sed "s/$/\r/" COPYING.GPLv3 > COPYING.GPLv3.txt
+      7z a -mx=9 $archive.7z ffmpeg.exe ffplay.exe ffprobe.exe COPYING.GPLv3.txt && rm -f COPYING.GPLv3.txt
     else
-      echo "Done! You will find 32-bit $1 binaries in $(pwd)."
-      if [[ ! -f $archive.7z ]]; then # Pack static build.
-        sed "s/$/\r/" COPYING.GPLv3 > COPYING.GPLv3.txt
-        7z a -mx=9 $archive.7z ffmpeg.exe ffplay.exe ffprobe.exe COPYING.GPLv3.txt && rm -f COPYING.GPLv3.txt
-      else
-        echo "Already made '$(basename $archive.7z)'."
-      fi
+      echo "Already made '$(basename $archive.7z)'."
     fi
-    echo "You will find redistributable archives in $redist_dir."
   fi
+  echo "You will find redistributable archives in $redist_dir."
   echo `date`
   cd ..
 } # SDL2 (only for FFplay)
@@ -1228,10 +1205,6 @@ build_dependencies() {
   build_fontconfig
   build_gmp # For RTMP support configure FFmpeg with --enable-gmp.
   build_mbedtls # For HTTPS TLS 1.2 support on WinXP configure FFmpeg with --enable-mbedtls.
-  #if [[ "$non_free" = "y" ]]; then # Nonfree alternative to MbedTLS.
-  #  build_openssl-1.0.2
-  #  build_openssl-1.1.1
-  #fi
   build_libogg
   build_libvorbis
   build_libopus
@@ -1261,9 +1234,6 @@ build_dependencies() {
   build_libmysofa # Needed for FFmpeg's SOFAlizer filter (https://ffmpeg.org/ffmpeg-filters.html#sofalizer).
   build_frei0r
   build_libcaca
-  if [[ "$non_free" = "y" ]]; then
-    build_libdecklink
-  fi
   build_zvbi
   build_fribidi
   build_libass
@@ -1340,7 +1310,6 @@ fi
 
 # variables with their defaults
 build_ffmpeg_static=y
-#disable_nonfree=n # have no value by default to force user selection
 original_cflags='-march=pentium3 -mtune=athlon-xp -O2 -mfpmath=sse -msse' # See https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html, https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html and https://stackoverflow.com/questions/19689014/gcc-difference-between-o3-and-os.
 ffmpeg_git_checkout_version=
 export ac_cv_func_vsnprintf_s=no # Mark vsnprintf_s as unavailable, as windows xp mscrt doesn't have it.
@@ -1352,7 +1321,6 @@ while true; do
       --build-ffmpeg-static=y  (ffmpeg.exe, ffplay.exe and ffprobe.exe)
       --build-ffmpeg-static=n  (ffmpeg.exe, ffplay.exe, ffprobe.exe and dll-files)
       --ffmpeg-git-checkout-version=[master] if you want to build a particular version of FFmpeg, ex: n3.1.1 or a specific git hash
-      --disable-nonfree=y (set to n to include nonfree like libfdk-aac)
       --sandbox-ok=n [skip sandbox prompt if y]
       -d [meaning \"defaults\" skip all prompts, just build ffmpeg static with some reasonable defaults like no git updates]
       --cflags=[default is $original_cflags, which works on any cpu, see README for options]
@@ -1362,8 +1330,7 @@ while true; do
     --ffmpeg-git-checkout-version=* ) ffmpeg_git_checkout_version="${1#*=}"; shift ;;
     --cflags=* )
        original_cflags="${1#*=}"; echo "setting cflags as $original_cflags"; shift ;;
-    --disable-nonfree=* ) disable_nonfree="${1#*=}"; shift ;;
-    -d         ) gcc_cpu_count=$cpu_count; disable_nonfree="y"; sandbox_ok="y"; shift ;;
+    -d         ) gcc_cpu_count=$cpu_count; sandbox_ok="y"; shift ;;
     --build-ffmpeg-static=* ) build_ffmpeg_static="${1#*=}"; shift ;;
     --debug ) set -x; shift ;;
     -- ) shift; break ;;
