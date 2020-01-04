@@ -26,7 +26,7 @@ IF NOT EXIST cygwin_local_install (
 	--no-desktop ^
 	--site http://cygwin-xp.portfolis.net/cygwin ^
 	--root !cd! ^
-	--packages autoconf,autogen,automake,bison,cmake,cvs,curl,ed,flex,gcc-core,gcc-g++,gettext-devel,git,gperf,libcurl4,libtool,make,mercurial,nasm,ncurses,p7zip,patch,pax,pkg-config,subversion,texinfo,unzip,wget,yasm,zlib1g-dev
+	--packages autoconf,autogen,automake,bison,cmake,cvs,curl,ed,flex,gcc-core,gcc-g++,gettext-devel,git,gperf,libcurl4,libtool,make,mercurial,ncurses,p7zip,patch,pax,pkg-config,subversion,texinfo,unzip,wget,yasm,zlib1g-dev
 	REM wget for the initial script download as well as zeranoe's uses it
 	REM curl is used in our script all over
 	REM libcurl4 is apparently required so that updating curl doesn't bwork it, reported as a bug to cygwin :|
