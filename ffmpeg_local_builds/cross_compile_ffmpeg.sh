@@ -868,7 +868,7 @@ build_libaom() {
   mkdir -p aom_build
   cd aom_build # Out-of-source build.
     do_cmake_and_install "-DCMAKE_TOOLCHAIN_FILE=build/cmake/toolchains/x86-mingw-gcc.cmake -DENABLE_DOCS=0 -DENABLE_EXAMPLES=0 -DENABLE_NASM=1 -DENABLE_TESTS=0 -DENABLE_TOOLS=0" "$(dirname $(pwd))"
-  cd ..
+  cd ../..
 } # cmake >= 3.5
 
 build_ffmpeg() {

@@ -35,10 +35,10 @@ index d1a031b..6bcb9f6 100644
  
  #elif CONFIG_MULTITHREAD && defined(__OS2__)
 diff --git a/build/cmake/aom_configure.cmake b/build/cmake/aom_configure.cmake
-index 30d95e7..9df3c23 100644
+index 6705c9f..c036f49 100644
 --- a/build/cmake/aom_configure.cmake
 +++ b/build/cmake/aom_configure.cmake
-@@ -186,12 +186,6 @@ if("${AOM_TARGET_SYSTEM}" MATCHES "Darwin\|Linux\|Windows\|Android")
+@@ -197,12 +197,6 @@ if("${AOM_TARGET_SYSTEM}" MATCHES "Darwin\|Linux\|Windows\|Android")
    set(CONFIG_OS_SUPPORT 1)
  endif()
  
