@@ -316,11 +316,6 @@ do_make_install() {
   fi
 }
 
-do_make_and_make_install() {
-  do_make "$1"
-  do_make_install "$1"
-}
-
 do_cmake() {
   local cmake_options=($1 -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_FIND_ROOT_PATH=$mingw_w64_x86_64_prefix -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY -DCMAKE_RANLIB=${cross_prefix}ranlib.exe -DCMAKE_C_COMPILER=${cross_prefix}gcc.exe -DCMAKE_CXX_COMPILER=${cross_prefix}g++.exe -DCMAKE_RC_COMPILER=${cross_prefix}windres.exe -DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix "${@:2}")
   local name=$(get_small_touchfile_name already_ran_cmake "${cmake_options[@]}")
@@ -329,11 +324,6 @@ do_cmake() {
     cmake –G"Unix Makefiles" "${cmake_options[@]}" || exit 1
     touch $name || exit 1
   fi
-}
-
-do_cmake_and_install() {
-  do_cmake "$1" "$2"
-  do_make_and_make_install
 }
 
 apply_patch() {
@@ -383,32 +373,6 @@ download_and_unpack_file() {
 
 generic_configure() {
   do_configure --host=$host_target --prefix=$mingw_w64_x86_64_prefix --disable-shared --enable-static "$@"
-}
-
-generic_download_and_make_and_install() {
-  if [[ $2 ]]; then
-    local name="$2"
-  else
-    local name=$(basename $1 | sed s/\.tar\.*//) # remove .tar.xx, take last part of url
-  fi
-  download_and_unpack_file $1 $name
-  cd $name || exit
-    generic_configure "$3"
-    do_make_and_make_install
-  cd ..
-}
-
-do_git_checkout_and_make_install() {
-  local git_checkout_name=$(basename $1 | sed s/\.git/_git/) # http://y/abc.git -> abc_git
-  do_git_checkout $1 $git_checkout_name
-  cd $git_checkout_name
-    generic_configure_make_install
-  cd ..
-}
-
-generic_configure_make_install() {
-  generic_configure # no parameters, force myself to break it up :)
-  do_make_and_make_install
 }
 
 do_strip() {
@@ -466,8 +430,7 @@ build_cmake() {
   cd cmake-3.16.2
     do_configure --prefix=/usr -- -DBUILD_CursesDialog=0 -DBUILD_TESTING=0 # Don't build 'ccmake' (ncurses), or './configure' will fail otherwise.
     # Options after "--" are passed to CMake (Usage: ./bootstrap [<options>...] [-- <cmake-options>...])
-    do_make
-    do_make_install install/strip # This overwrites Cygwin's 'cmake.exe', 'cpack.exe' and 'ctest.exe'.
+    do_make install/strip # This overwrites Cygwin's 'cmake.exe', 'cpack.exe' and 'ctest.exe'.
   cd ..
 }
 
@@ -492,7 +455,8 @@ build_dlfcn() {
       sed -i.bak "s/-O3/-O2/" Makefile
     fi
     do_configure --prefix=$mingw_w64_x86_64_prefix --cross-prefix=$cross_prefix # rejects some normal cross compile options so custom here
-    do_make_and_make_install
+    do_make
+    do_make_install
     gen_ld_script libdl.a -lpsapi # dlfcn-win32's 'README.md': "If you are linking to the static 'dl.lib' or 'libdl.a', then you would need to explicitly add 'psapi.lib' or '-lpsapi' to your linking command, depending on if MinGW is used."
   cd ..
 }
@@ -516,7 +480,7 @@ build_liblzma() {
   download_and_unpack_file https://github.com/xz-mirror/xz/archive/v5.2.4.tar.gz xz-5.2.4
   cd xz-5.2.4
     generic_configure --disable-xz --disable-xzdec --disable-lzmadec --disable-lzmainfo --disable-scripts --disable-doc --disable-nls
-    do_make_and_make_install
+    do_make install
   cd ..
 } # [dlfcn]
 
@@ -527,7 +491,7 @@ build_zlib() {
       sed -i.bak "/man3dir/d" Makefile.in
     fi
     do_configure --prefix=$mingw_w64_x86_64_prefix --static
-    do_make_and_make_install $make_prefix_options
+    do_make install $make_prefix_options
   cd ..
 }
 
@@ -548,7 +512,7 @@ build_sdl2() {
       sed -i.bak "/#ifndef DECLSPEC/i\#define DECLSPEC" include/begin_code.h # Needed for building shared FFmpeg libraries.
     fi
     generic_configure --bindir=$mingw_bin_path
-    do_make_and_make_install
+    do_make install
     if [[ ! -f $mingw_bin_path/${host_target}-sdl2-config ]]; then
       mv "$mingw_bin_path/sdl2-config" "$mingw_bin_path/${host_target}-sdl2-config" # At the moment FFmpeg's 'configure' doesn't use 'sdl2-config', because it gives priority to 'sdl2.pc', but when it does, it expects 'i686-w64-mingw32-sdl2-config' in 'cross_compilers/mingw-w64-i686/bin'.
     fi
@@ -562,7 +526,7 @@ build_libwebp() {
       sed -i.bak "/^SUBDIRS/s/=.*/= src/" Makefile.am
     fi
     generic_configure --disable-png --disable-jpeg --disable-tiff --disable-gif --disable-wic # These are only necessary for building the bundled tools/binaries.
-    do_make_and_make_install
+    do_make install
   cd ..
 } # [dlfcn]
 
@@ -573,7 +537,7 @@ build_freetype() {
       sed -i.bak "/config \\\/s/\s*\\\//;/bindir) /s/\s*\\\//;/aclocal/d;/man1/d;/BUILD_DIR/d;/docs/d" builds/unix/install.mk
     fi
     generic_configure --build=i686-pc-cygwin # Without '--build=i686-pc-cygwin' you'd get: "could not open '/cygdrive/[...]/include/freetype/ttnameid.h' for writing".
-    do_make_and_make_install
+    do_make install
   cd ..
 } # [zlib, bzip2, libpng]
 
@@ -584,7 +548,7 @@ build_libxml2() {
       sed -i.bak "/^PROGRAMS/s/=.*/=/;/^SUBDIRS/s/ doc.*//;/^install-data-am/s/:.*/: install-pkgconfigDATA/;/\tinstall-m4dataDATA/d;/^install-exec-am/s/:.*/: install-libLTLIBRARIES/;/install-confexecDATA install-libLTLIBRARIES/d" Makefile.in
     fi
     generic_configure --with-ftp=no --with-http=no --with-python=no
-    do_make_and_make_install
+    do_make install
   cd ..
 } # [zlib, liblzma, iconv, dlfcn]
 
@@ -595,7 +559,7 @@ build_fontconfig() {
       sed -i.bak "/^SUBDIRS/s/fc.*/src/;456,457d;/^install-data-am/s/:.*/: install-pkgconfigDATA/;/\tinstall-xmlDATA$/d" Makefile.in
     fi
     generic_configure --enable-libxml2 --disable-docs # Use Libxml2 instead of Expat.
-    do_make_and_make_install
+    do_make install
   cd ..
 } # freetype, libxml >= 2.6, [iconv, dlfcn]
 
@@ -606,7 +570,7 @@ build_gmp() {
       sed -i.bak "/^SUBDIRS/c\SUBDIRS = mpn mpz mpq mpf printf scanf rand cxx tune" Makefile.in
     fi
     generic_configure ABI=32
-    do_make_and_make_install
+    do_make install
   cd ..
 } # [dlfcn]
 
@@ -615,7 +579,8 @@ build_mbedtls() {
   cd mbedtls-mbedtls-2.16.3
     mkdir -p build_dir
     cd build_dir # Out-of-source build.
-      do_cmake_and_install ${PWD%/*} -DENABLE_PROGRAMS=0 -DENABLE_TESTING=0 -DENABLE_ZLIB_SUPPORT=1
+      do_cmake ${PWD%/*} -DENABLE_PROGRAMS=0 -DENABLE_TESTING=0 -DENABLE_ZLIB_SUPPORT=1
+      do_make install
     cd ..
   cd ..
 }
@@ -647,7 +612,8 @@ build_openssl-1.0.2() {
         echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
       fi
     else
-      do_make_and_make_install
+      do_make
+      do_make_install
     fi
     unset CC
     unset AR
@@ -682,7 +648,7 @@ build_openssl-1.1.1() {
         echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
       fi
     else
-      do_make_install "" "install_dev"
+      do_make install_dev
     fi
     unset CC
     unset AR
@@ -696,7 +662,8 @@ build_libogg() {
     if [[ ! -f Makefile.am.bak ]]; then # Library only.
       sed -i.bak "s/ doc//;/m4data/,+2d" Makefile.am
     fi
-    generic_configure_make_install
+    generic_configure
+    do_make install
   cd ..
 } # [dlfcn]
 
@@ -707,7 +674,7 @@ build_libvorbis() {
       sed -i.bak "s/ test.*//;/m4data/,+2d" Makefile.am
     fi
     generic_configure --disable-docs --disable-examples --disable-oggtest
-    do_make_and_make_install
+    do_make install
   cd ..
 } # libogg >= 1.0, [dlfcn]
 
@@ -719,7 +686,7 @@ build_libopus() {
     fi
     generic_configure --disable-doc --disable-extra-programs --disable-stack-protector
     # Without '--disable-stack-protector' FFmpeg's 'configure' fails with "undefined reference to `__stack_chk_fail'".
-    do_make_and_make_install
+    do_make install
   cd ..
 } # [dlfcn]
 
@@ -731,7 +698,7 @@ build_lame() {
       sed -i.bak "/^SUBDIRS/s/ frontend//;/^SUBDIRS/s/ doc//" Makefile.in
     fi
     generic_configure --enable-nasm --disable-decoder --disable-frontend
-    do_make_and_make_install
+    do_make install
   cd ..
 } # [dlfcn]
 
@@ -765,7 +732,7 @@ build_libmpg123() {
       sed -i.bak "/^all-am/s/\$(PROG.*/\\\/;/^install-data-am/s/ install-man//;/^install-exec-am/s/ install-binPROGRAMS//" Makefile.in
     fi
     generic_configure --enable-yasm
-    do_make_and_make_install
+    do_make install
   cd ..
 } # [dlfcn]
 
@@ -776,7 +743,7 @@ build_libopenmpt() {
       sed -i.bak "/^all-am/s/DATA/pkgconfig_DATA/;/^install-data-am/s/:.*/: \\\/;s/\tinstall-nobase_dist_docDATA /\t/" Makefile.in
     fi
     generic_configure --disable-openmpt123 --disable-examples --disable-tests
-    do_make_and_make_install
+    do_make install
   cd ..
 } # zlib, libmpg123, libogg, libvorbis, [dlfcn, mingw-std-threads]
 # Without mingw-std-threads you'll get "libopenmpt/libopenmpt_impl.cpp:85:2: warning: #warning "Warning: Building libopenmpt with MinGW-w64 without std::thread support is not recommended and is deprecated. Please use MinGW-w64 with posix threading model (as opposed to win32 threading model), or build with mingw-std-threads." [-Wcpp]".
@@ -788,7 +755,8 @@ build_libgme() {
       sed -i.bak "/EXCLUDE_FROM_ALL/d" CMakeLists.txt # Library only.
       sed -i.bak "s/ __declspec.*//" gme/blargg_source.h # Needed for building shared FFmpeg libraries.
     fi
-    do_cmake_and_install $PWD -DBUILD_SHARED_LIBS=0 -DENABLE_UBSAN=0
+    do_cmake $PWD -DBUILD_SHARED_LIBS=0 -DENABLE_UBSAN=0
+    do_make install
   cd ..
 } # zlib
 
@@ -798,7 +766,8 @@ build_libsoxr() {
     if [[ ! -f CMakeLists.txt.bak ]]; then # Library only.
       sed -i.bak "/^install/,+5d" CMakeLists.txt
     fi
-    do_cmake_and_install $PWD -DBUILD_SHARED_LIBS=0 -DHAVE_WORDS_BIGENDIAN_EXITCODE=0 -DWITH_OPENMP=0 -DBUILD_TESTS=0 -DBUILD_EXAMPLES=0
+    do_cmake $PWD -DBUILD_SHARED_LIBS=0 -DHAVE_WORDS_BIGENDIAN_EXITCODE=0 -DWITH_OPENMP=0 -DBUILD_TESTS=0 -DBUILD_EXAMPLES=0
+    do_make install
   cd ..
 }
 
@@ -816,7 +785,8 @@ build_libflite() {
       sed -i.bak "128,134d" main/Makefile # Library only.
     fi
     do_configure --host=$host_target --prefix=$mingw_w64_x86_64_prefix --disable-shared
-    do_make_and_make_install
+    do_make
+    do_make_install
   cd ..
 }
 
@@ -826,14 +796,16 @@ build_vidstab() {
     if [[ ! -f CMakeLists.txt.bak ]]; then # Change CFLAGS.
       sed -i.bak "s/O3/O2/;s/ -fPIC//" CMakeLists.txt
     fi
-    do_cmake_and_install $PWD -DBUILD_SHARED_LIBS=0 -DUSE_OMP=0 # '-DUSE_OMP' is on by default, but somehow libgomp ('cygwin_local_install/lib/gcc/i686-pc-cygwin/5.4.0/include/omp.h') can't be found, so '-DUSE_OMP=0' to prevent a compilation error.
+    do_cmake $PWD -DBUILD_SHARED_LIBS=0 -DUSE_OMP=0 # '-DUSE_OMP' is on by default, but somehow libgomp ('cygwin_local_install/lib/gcc/i686-pc-cygwin/5.4.0/include/omp.h') can't be found, so '-DUSE_OMP=0' to prevent a compilation error.
+    do_make install
   cd ..
 }
 
 build_frei0r() {
   do_git_checkout https://github.com/dyne/frei0r.git
   cd frei0r_git
-    do_cmake_and_install $PWD
+    do_cmake $PWD
+    do_make install
     do_strip $mingw_w64_x86_64_prefix/lib/frei0r-1
 
     mkdir -p $redist_dir # Pack shared libraries.
@@ -856,12 +828,16 @@ build_fribidi() {
       sed -i.bak "s/ bin.*//" Makefile.am
     fi
     generic_configure --disable-deprecated
-    do_make_and_make_install
+    do_make install
   cd ..
 } # [dlfcn]
 
 build_libass() {
-  do_git_checkout_and_make_install https://github.com/libass/libass.git
+  do_git_checkout https://github.com/libass/libass.git
+  cd libass_git
+    generic_configure
+    do_make install
+  cd
 } # freetype >= 9.10.3 (see https://bugs.launchpad.net/ubuntu/+source/freetype1/+bug/78573 o_O), fribidi >= 0.19.0, [fontconfig >= 2.10.92, iconv, dlfcn]
 
 build_libx264() {
@@ -871,14 +847,15 @@ build_libx264() {
       sed -i.bak "s/O3 -/O2 -/" configure
     fi
     do_configure --host=$host_target --cross-prefix=$cross_prefix --prefix=$mingw_w64_x86_64_prefix --enable-static --disable-cli --disable-win32thread # Use pthreads instead of win32threads.
-    do_make_and_make_install
+    do_make install-lib-static
   cd ..
 } # nasm >= 2.13 (unless '--disable-asm' is specified)
 
 build_libx265() {
   do_hg_checkout http://hg.videolan.org/x265
   cd x265_hg/source
-    do_cmake_and_install $PWD -DENABLE_SHARED=0 -DENABLE_CLI=0 -DWINXP_SUPPORT=1 # No '-DHIGH_BIT_DEPTH=1'. See 'x265_hg/source/CMakeLists.txt' why.
+    do_cmake $PWD -DENABLE_SHARED=0 -DENABLE_CLI=0 -DWINXP_SUPPORT=1 # No '-DHIGH_BIT_DEPTH=1'. See 'x265_hg/source/CMakeLists.txt' why.
+    do_make install
   cd ../..
 } # nasm >= 2.13 (unless '-DENABLE_ASSEMBLY=0' is specified)
 
@@ -890,7 +867,7 @@ build_libvpx() {
     fi
     export CROSS="$cross_prefix"
     do_configure --target=x86-win32-gcc --prefix=$mingw_w64_x86_64_prefix --enable-static --disable-shared --disable-examples --disable-tools --disable-docs --disable-unit-tests --enable-vp9-highbitdepth
-    do_make_and_make_install
+    do_make install
     unset CROSS
   cd ..
 }
@@ -901,7 +878,8 @@ build_libaom() {
     apply_patch file://$patch_dir/libaom_restore-winxp-compatibility.patch -p1 # See https://aomedia.googlesource.com/aom/+/64545cb00a29ff872473db481a57cdc9bc4f1f82%5E!/#F1 and https://aomedia.googlesource.com/aom/+/e5eec6c5eb14e66e2733b135ef1c405c7e6424bf%5E!/#F0.
     mkdir -p aom_build
     cd aom_build # Out-of-source build.
-      do_cmake_and_install ${PWD%/*} -DCMAKE_TOOLCHAIN_FILE=build/cmake/toolchains/x86-mingw-gcc.cmake -DENABLE_DOCS=0 -DENABLE_EXAMPLES=0 -DENABLE_NASM=1 -DENABLE_TESTS=0 -DENABLE_TOOLS=0
+      do_cmake ${PWD%/*} -DCMAKE_TOOLCHAIN_FILE=build/cmake/toolchains/x86-mingw-gcc.cmake -DENABLE_DOCS=0 -DENABLE_EXAMPLES=0 -DENABLE_NASM=1 -DENABLE_TESTS=0 -DENABLE_TOOLS=0
+      do_make install
     cd ..
   cd ..
 } # cmake >= 3.5
