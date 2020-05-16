@@ -664,11 +664,11 @@ build_libvorbis() {
 build_libopus() {
   do_git_checkout https://github.com/xiph/opus.git
   cd opus_git
-    if [[ ! -f Makefile.am.bak ]]; then # Library only.
-      sed -i.bak "/m4data/,+2d;/install-data-local/,+2d" Makefile.am
+    if [[ ! -f Makefile.am.bak ]]; then
+      sed -i.bak "/m4data/,+2d;/install-data-local/,+2d" Makefile.am # Library only.
+      sed -i.bak "s/@LIBM@/& -lssp/" opus.pc.in # Otherwise you'd get "undefined reference to `__memcpy_chk'" while configuring FFmpeg.
     fi
-    generic_configure --disable-doc --disable-extra-programs --disable-stack-protector
-    # Without '--disable-stack-protector' FFmpeg's 'configure' fails with "undefined reference to `__stack_chk_fail'".
+    generic_configure --disable-doc --disable-extra-programs
     do_make install
   cd ..
 } # [dlfcn]
