@@ -845,6 +845,13 @@ build_libass() {
   cd
 } # freetype >= 9.10.3 (see https://bugs.launchpad.net/ubuntu/+source/freetype1/+bug/78573 o_O), fribidi >= 0.19.0, [fontconfig >= 2.10.92, iconv, dlfcn]
 
+build_avisynth() {
+  do_git_checkout https://github.com/AviSynth/AviSynthPlus.git
+  cd AviSynthPlus_git
+    do_make_install "PREFIX=$mingw_w64_x86_64_prefix"
+  cd ..
+}
+
 build_libx264() {
   do_git_checkout http://git.videolan.org/git/x264.git
   cd x264_git
@@ -974,6 +981,7 @@ build_dependencies() {
   build_frei0r
   build_fribidi
   build_libass
+  build_avisynth
   build_libx264
   build_libx265
   build_libvpx
