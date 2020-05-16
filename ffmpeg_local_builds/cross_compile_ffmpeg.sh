@@ -809,12 +809,12 @@ build_vidstab() {
 build_frei0r() {
   do_git_checkout https://github.com/dyne/frei0r.git
   cd frei0r_git
-    do_cmake $PWD
+    do_cmake $PWD -DCMAKE_BUILD_TYPE=Release
     do_make install/strip
 
-    mkdir -p $redist_dir # Pack shared libraries.
+    mkdir -p $redist_dir
     archive="$redist_dir/frei0r-plugins-$(git describe --tags | tail -c +2)-win32-xpmod-sse"
-    if [[ ! -f $archive.7z ]]; then
+    if [[ ! -f $archive.7z ]]; then # Pack shared libraries.
       for doc in AUTHORS ChangeLog COPYING README.md; do
         sed "s/$/\r/" $doc > $mingw_w64_x86_64_prefix/lib/frei0r-1/$doc.txt
       done
