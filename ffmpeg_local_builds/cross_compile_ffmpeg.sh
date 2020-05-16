@@ -1039,6 +1039,26 @@ build_curl() {
   cd ..
 } # mbedtls/openssl, [zlib, dlfcn]
 
+build_hlsdl() {
+  build_curl openssl
+  do_git_checkout https://github.com/selsta/hlsdl.git
+  cd hlsdl_git
+    export LDFLAGS=-s # Strip 'hlsdl.exe' during make.
+    do_make $make_prefix_options
+    unset LDFLAGS
+
+    mkdir -p $redist_dir
+    archive="$redist_dir/hlsdl-$(grep -Po "(?<=hlsdl v)([0-9]+\.?)+" src/misc.c)-$(git rev-parse --short HEAD)-win32-static-xpmod-sse"
+    if [[ ! -f $archive.7z ]]; then # Pack static 'hlsdl.exe'.
+      sed "s/$/\r/" LICENSE > LICENSE.txt
+      7z a -mx=9 -bb3 $archive.7z hlsdl.exe LICENSE.txt README.md
+      rm -v LICENSE.txt
+    else
+      echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
+    fi
+  cd ..
+} # curl(openssl)
+
 reset_cflags() {
   export CFLAGS=$original_cflags
 }
