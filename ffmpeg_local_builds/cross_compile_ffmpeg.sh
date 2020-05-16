@@ -144,7 +144,7 @@ install_cross_compiler() {
 do_svn_checkout() {
   local dir="$2"
   if [ ! -d $dir ]; then
-    echo -e "\e[1;33mDownloading (via svn checkout) $dir from $1.\e[0m"
+    echo -e "\e[1;33mDownloading (via svn checkout) $dir from ${1##*/}.\e[0m"
     if [[ $3 ]]; then
       svn checkout -r $3 $1 $dir.tmp || exit 1
     else
@@ -170,7 +170,7 @@ do_git_checkout() {
   if [[ $2 ]]; then
     local dir="$2"
   else
-    local dir=$(basename $1 | sed s/\.git/_git/) # http://y/abc.git -> abc_git
+    local dir=$(basename ${1/.git/_git}) # http://y/abc.git -> abc_git
   fi
   if [ ! -d $dir ]; then
     echo -e "\e[1;33mDownloading (via git clone) $dir from $1.\e[0m"
@@ -209,7 +209,7 @@ do_hg_checkout() {
   if [[ $2 ]]; then
     local dir="$2"
   else
-    local dir=$(basename $1)_hg # http://y/abc -> abc_hg
+    local dir="${1##*/}_hg" # http://y/abc -> abc_hg
   fi
   if [ ! -d $dir ]; then
     echo -e "\e[1;33mDownloading (via hg clone) $dir from $1.\e[0m"
@@ -274,13 +274,13 @@ do_configure() {
     if [ ! -f $configure_name ]; then
       autoreconf -fiv
     fi
-    echo -e "\e[1;33mConfiguring $(basename $(pwd)) as $configure_name $1.\e[0m"
+    echo -e "\e[1;33mConfiguring ${PWD##*/} as $configure_name $1.\e[0m"
     "$configure_name" $1 || exit 1
     touch -- "$name"
     echo -e "\e[1;33mDoing preventative make clean.\e[0m"
     make clean -j $cpu_count # sometimes useful when files change, etc.
   #else
-  #  echo -e "\e[1;33mAlready configured $(basename $(pwd)).\e[0m"
+  #  echo -e "\e[1;33mAlready configured ${PWD##*/}.\e[0m"
   fi
 }
 
@@ -289,7 +289,7 @@ do_make() {
   local name=$(get_small_touchfile_name already_ran_make "$extra_make_options" )
   if [ ! -f $name ]; then
     echo
-    echo -e "\e[1;33mCompiling $(basename $(pwd)) as make $extra_make_options.\e[0m"
+    echo -e "\e[1;33mCompiling ${PWD##*/} as make $extra_make_options.\e[0m"
     echo
     if [ ! -f configure ]; then
       make clean -j $cpu_count # just in case helpful if old junk left around and this is a 're make' and wasn't cleaned at reconfigure time
@@ -297,7 +297,7 @@ do_make() {
     make $extra_make_options || exit 1
     touch $name || exit 1 # only touch if the build was OK
   else
-    echo -e "\e[1;33mAlready made $(basename $(pwd)).\e[0m"
+    echo -e "\e[1;33mAlready made ${PWD##*/}.\e[0m"
   fi
 }
 
@@ -309,7 +309,7 @@ do_make_install() {
   fi
   local name=$(get_small_touchfile_name already_ran_make_install "$make_install_options")
   if [ ! -f $name ]; then
-    echo -e "\e[1;33mInstalling $(basename $(pwd)) as make $make_install_options.\e[0m"
+    echo -e "\e[1;33mInstalling ${PWD##*/} as make $make_install_options.\e[0m"
     make $make_install_options || exit 1
     touch $name || exit 1
   fi
@@ -324,11 +324,11 @@ do_cmake() {
   if [[ $2 ]]; then
     local dir="$2"
   else
-    local dir=$(pwd)
+    local dir=$PWD
   fi
   local name=$(get_small_touchfile_name already_ran_cmake "$1")
   if [ ! -f $name ]; then
-    echo -e "\e[1;33mCompiling $(basename $dir) as cmake –G\"Unix Makefiles\" $dir -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_FIND_ROOT_PATH=$mingw_w64_x86_64_prefix -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY -DCMAKE_RANLIB=${cross_prefix}ranlib.exe -DCMAKE_C_COMPILER=${cross_prefix}gcc.exe -DCMAKE_CXX_COMPILER=${cross_prefix}g++.exe -DCMAKE_RC_COMPILER=${cross_prefix}windres.exe -DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix $1.\e[0m"
+    echo -e "\e[1;33mCompiling ${dir##*/} as cmake –G\"Unix Makefiles\" $dir -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_FIND_ROOT_PATH=$mingw_w64_x86_64_prefix -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY -DCMAKE_RANLIB=${cross_prefix}ranlib.exe -DCMAKE_C_COMPILER=${cross_prefix}gcc.exe -DCMAKE_CXX_COMPILER=${cross_prefix}g++.exe -DCMAKE_RC_COMPILER=${cross_prefix}windres.exe -DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix $1.\e[0m"
     cmake –G\"Unix Makefiles\" $dir -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_FIND_ROOT_PATH=$mingw_w64_x86_64_prefix -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY -DCMAKE_RANLIB=${cross_prefix}ranlib.exe -DCMAKE_C_COMPILER=${cross_prefix}gcc.exe -DCMAKE_CXX_COMPILER=${cross_prefix}g++.exe -DCMAKE_RC_COMPILER=${cross_prefix}windres.exe -DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix $1 || exit 1
     touch $name || exit 1
   fi
@@ -345,7 +345,7 @@ apply_patch() {
   else
     local type="-p0"
   fi
-  local name=$(basename $1)
+  local name="${1##*/}"
   if [[ ! -e $name.done ]]; then
     if [[ -f $name ]]; then
       rm $name || exit 1 # remove old version in case it has been since updated on the server...
@@ -361,11 +361,11 @@ apply_patch() {
 }
 
 download_and_unpack_file() {
-  local name=$(basename $1)
+  local name="${1##*/}"
   if [[ $2 ]]; then
     local dir="$2"
   else
-    local dir=$(echo $name | sed s/\.tar\.*//) # remove .tar.xx
+    local dir="${name/.tar*/}" # remove .tar.xx
   fi
   if [ ! -f "$dir/unpacked.successfully" ]; then
     echo -e "\e[1;33mDownloading $1.\e[0m"
@@ -618,7 +618,7 @@ build_mbedtls() {
   cd mbedtls-mbedtls-2.16.3
     mkdir -p build_dir
     cd build_dir # Out-of-source build.
-      do_cmake_and_install "-DENABLE_PROGRAMS=0 -DENABLE_TESTING=0 -DENABLE_ZLIB_SUPPORT=1" "$(dirname $(pwd))"
+      do_cmake_and_install "-DENABLE_PROGRAMS=0 -DENABLE_TESTING=0 -DENABLE_ZLIB_SUPPORT=1" "${PWD%/*}"
     cd ..
   cd ..
 }
@@ -647,7 +647,7 @@ build_openssl-1.0.2() {
         sed "s/$/\r/" LICENSE > LICENSE.txt
         7z a -mx=9 $archive.7z *.dll LICENSE.txt && rm -f LICENSE.txt
       else
-        echo -e "\e[1;33mAlready made '$(basename $archive.7z)'.\e[0m"
+        echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
       fi
     else
       do_make_and_make_install
@@ -682,7 +682,7 @@ build_openssl-1.1.1() {
         sed "s/$/\r/" LICENSE > LICENSE.txt
         7z a -mx=9 $archive.7z *.dll LICENSE.txt && rm -f LICENSE.txt
       else
-        echo -e "\e[1;33mAlready made '$(basename $archive.7z)'.\e[0m"
+        echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
       fi
     else
       do_make_install "" "install_dev"
@@ -750,9 +750,9 @@ build_fdk-aac() {
     archive="$redist_dir/libfdk-aac-$(git describe | tail -c +2)-win32-xpmod-sse"
     if [[ ! -f $archive.7z ]]; then # Pack shared library.
       sed "s/$/\r/" NOTICE > NOTICE.txt
-      7z a -mx=9 $archive.7z $(pwd)/.libs/libfdk-aac-2.dll NOTICE.txt && rm -f NOTICE.txt
+      7z a -mx=9 $archive.7z $PWD/.libs/libfdk-aac-2.dll NOTICE.txt && rm -f NOTICE.txt
     else
-      echo -e "\e[1;33mAlready made '$(basename $archive.7z)'.\e[0m"
+      echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
     fi
   cd ..
 } # [dlfcn]
@@ -847,7 +847,7 @@ build_frei0r() {
       done
       7z a -mx=9 $archive.7z $mingw_w64_x86_64_prefix/lib/frei0r-1 && rm -f $mingw_w64_x86_64_prefix/lib/frei0r-1/*.txt
     else
-      echo -e "\e[1;33mAlready made '$(basename $archive.7z)'.\e[0m"
+      echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
     fi
   cd ..
 } # dlfcn
@@ -904,7 +904,7 @@ build_libaom() {
     apply_patch file://$patch_dir/libaom_restore-winxp-compatibility.patch -p1 # See https://aomedia.googlesource.com/aom/+/64545cb00a29ff872473db481a57cdc9bc4f1f82%5E!/#F1 and https://aomedia.googlesource.com/aom/+/e5eec6c5eb14e66e2733b135ef1c405c7e6424bf%5E!/#F0.
     mkdir -p aom_build
     cd aom_build # Out-of-source build.
-      do_cmake_and_install "-DCMAKE_TOOLCHAIN_FILE=build/cmake/toolchains/x86-mingw-gcc.cmake -DENABLE_DOCS=0 -DENABLE_EXAMPLES=0 -DENABLE_NASM=1 -DENABLE_TESTS=0 -DENABLE_TOOLS=0" "$(dirname $(pwd))"
+      do_cmake_and_install "-DCMAKE_TOOLCHAIN_FILE=build/cmake/toolchains/x86-mingw-gcc.cmake -DENABLE_DOCS=0 -DENABLE_EXAMPLES=0 -DENABLE_NASM=1 -DENABLE_TESTS=0 -DENABLE_TOOLS=0" "${PWD%/*}"
     cd ..
   cd ..
 } # cmake >= 3.5
@@ -924,7 +924,7 @@ build_ffmpeg() {
       config_options+=" --extra-cflags=$i" # Adds "-march=pentium3 -mtune=athlon-xp -O2 -mfpmath=sse -msse" to the buildconf.
     done
     if [[ $1 == "shared" ]]; then
-      config_options+=" --enable-shared --disable-static --prefix=$(pwd)"
+      config_options+=" --enable-shared --disable-static --prefix=$PWD"
     else
       config_options+=" --enable-static --disable-shared --prefix=$mingw_w64_x86_64_prefix"
     fi
@@ -934,13 +934,13 @@ build_ffmpeg() {
     mkdir -p $redist_dir
     archive="$redist_dir/ffmpeg-$(git describe --tags | tail -c +2)-win32-$1-xpmod-sse"
     if [[ $1 == "shared" ]]; then
-      do_make_install # Because of '--prefix=$(pwd)' the dlls are stripped and installed to 'ffmpeg_git_shared/bin'.
-      echo -e "\e[1;33mDone! You will find 32-bit $1 binaries in $(pwd) and libraries in $(pwd)/bin.\e[0m"
+      do_make_install # Because of '--prefix=$PWD' the dlls are stripped and installed to 'ffmpeg_git_shared/bin'.
+      echo -e "\e[1;33mDone! You will find 32-bit $1 binaries in $PWD and libraries in $PWD/bin.\e[0m"
       if [[ ! -f $archive.7z ]]; then # Pack shared build.
         sed "s/$/\r/" COPYING.GPLv3 > COPYING.GPLv3.txt
-        7z a -mx=9 $archive.7z ffmpeg.exe ffplay.exe ffprobe.exe $(pwd)/bin/*.dll COPYING.GPLv3.txt && rm -f COPYING.GPLv3.txt
+        7z a -mx=9 $archive.7z ffmpeg.exe ffplay.exe ffprobe.exe $PWD/bin/*.dll COPYING.GPLv3.txt && rm -f COPYING.GPLv3.txt
       else
-        echo -e "\e[1;33mAlready made '$(basename $archive.7z)'.\e[0m"
+        echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
       fi
       if [[ ! -f ${archive/shared/dev}.7z ]]; then # Pack dev build.
         mv bin/*.lib lib
@@ -950,12 +950,12 @@ build_ffmpeg() {
         echo -e "\e[1;33mAlready made '$(basename ${archive/shared/dev}.7z)'.\e[0m"
       fi
     else
-      echo -e "\e[1;33mDone! You will find 32-bit $1 binaries in $(pwd).\e[0m"
+      echo -e "\e[1;33mDone! You will find 32-bit $1 binaries in $PWD.\e[0m"
       if [[ ! -f $archive.7z ]]; then # Pack static build.
         sed "s/$/\r/" COPYING.GPLv3 > COPYING.GPLv3.txt
         7z a -mx=9 $archive.7z ffmpeg.exe ffplay.exe ffprobe.exe COPYING.GPLv3.txt && rm -f COPYING.GPLv3.txt
       else
-        echo -e "\e[1;33mAlready made '$(basename $archive.7z)'.\e[0m"
+        echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
       fi
     fi
     echo -e "\e[1;33mYou will find redistributable archives in $redist_dir.\e[0m"
@@ -1043,9 +1043,9 @@ reset_cflags() {
 }
 
 # set some parameters initial values
-cur_dir="$(pwd)/sandbox"
-patch_dir="$(dirname $(pwd))/patches" # Or $(cd $(pwd)/../patches && pwd).
-redist_dir="$(dirname $(pwd))/redist"
+cur_dir="$PWD/sandbox"
+patch_dir="${PWD%/*}/patches"
+redist_dir="${PWD%/*}/redist"
 cpu_count=1
 
 set_box_memory_size_bytes
