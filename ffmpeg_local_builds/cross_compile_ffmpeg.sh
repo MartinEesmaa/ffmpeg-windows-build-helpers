@@ -375,29 +375,6 @@ generic_configure() {
   do_configure --host=$host_target --prefix=$mingw_w64_x86_64_prefix --disable-shared --enable-static "$@"
 }
 
-do_strip() {
-  local name=$(get_small_touchfile_name already_ran_strip "$2 $1")
-  if [ ! -f $name ]; then
-    if [ -f "$1" ]; then
-      echo -e "\e[1;33mStripping $(basename $1) as ${host_target}-strip $2 $1.\e[0m"
-      ${cross_prefix}strip $2 $1 || exit 1
-    else
-      for file in $1/*.{dll,exe}; do
-        [ -f "$file" ] || continue
-        echo -e "\e[1;33mStripping $(basename $file) as ${host_target}-strip $2 $file.\e[0m"
-        ${cross_prefix}strip $2 $file || exit 1
-      done
-    fi
-    touch $name || exit 1
-  else
-    if [ -f "$1" ]; then
-      echo -e "\e[1;33mAlready stripped $(basename $1).\e[0m"
-    else
-      echo -e "\e[1;33mAlready stripped $(basename $(pwd)).\e[0m"
-    fi
-  fi
-} # do_strip file/dir [strip-parameters]
-
 gen_ld_script() {
   lib=$mingw_w64_x86_64_prefix/lib/$1
   lib_s="${1:3:-2}_s"
@@ -437,14 +414,12 @@ build_cmake() {
 build_nasm() {
   download_and_unpack_file https://www.nasm.us/pub/nasm/releasebuilds/2.14.02/nasm-2.14.02.tar.xz
   cd nasm-2.14.02
-    if [[ ! -f Makefile.in.bak ]]; then # Library only.
-      sed -i.bak "/man1/d" Makefile.in
+    if [[ ! -f Makefile.in.bak ]]; then # Library only and install nasm stripped.
+      sed -i.bak '/man1/d;/install:/a\\t$(STRIP) --strip-unneeded nasm$(X) ndisasm$(X)' Makefile.in
     fi
     do_configure --prefix=/usr
     # No '--prefix=$mingw_w64_x86_64_prefix', because NASM has to be built with Cygwin's GCC. Otherwise it can't read Cygwin paths and you'd get errors like "nasm: fatal: unable to open output file `/cygdrive/c/DOCUME~1/Admin/LOCALS~1/Temp/ffconf.Ld8518el/test.o'" while configuring FFmpeg for instance.
-    do_make
-    do_strip . --strip-unneeded
-    do_make_install # 'nasm.exe' and 'ndisasm.exe' will be installed in '/usr/bin' (Cygwin's bin map).
+    do_make install # 'nasm.exe' and 'ndisasm.exe' will be installed in '/usr/bin' (Cygwin's bin map).
   cd ..
 }
 
@@ -602,11 +577,11 @@ build_openssl-1.0.2() {
     sed -i "s/-O3/-O2/" Makefile # Change CFLAGS.
     if [ "$1" = "dllonly" ]; then # Make, strip and pack shared libraries.
       do_make build_libs
-      do_strip .
       mkdir -p $redist_dir
       archive="$redist_dir/openssl-1.0.2u-win32-xpmod-sse"
       if [[ ! -f $archive.7z ]]; then
         sed "s/$/\r/" LICENSE > LICENSE.txt
+        ${cross_prefix}strip -ps libeay32.dll ssleay32.dll
         7z a -mx=9 $archive.7z *.dll LICENSE.txt && rm -f LICENSE.txt
       else
         echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
@@ -638,11 +613,11 @@ build_openssl-1.1.1() {
     sed -i "s/-O3/-O2/" Makefile # Change CFLAGS.
     do_make build_libs
     if [ "$1" = "dllonly" ]; then # Strip and pack shared libraries.
-      do_strip .
       mkdir -p $redist_dir
       archive="$redist_dir/openssl-1.1.1d-win32-xpmod-sse"
       if [[ ! -f $archive.7z ]]; then
         sed "s/$/\r/" LICENSE > LICENSE.txt
+        ${cross_prefix}strip -ps libcrypto-1_1.dll libssl-1_1.dll
         7z a -mx=9 $archive.7z *.dll LICENSE.txt && rm -f LICENSE.txt
       else
         echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
@@ -706,9 +681,7 @@ build_fdk-aac() {
   do_git_checkout https://github.com/mstorsjo/fdk-aac.git
   cd fdk-aac_git
     do_configure --host=$host_target --prefix=$mingw_w64_x86_64_prefix --disable-static # Build shared library ('libfdk-aac-2.dll').
-    do_make
-    do_strip .libs/libfdk-aac-2.dll
-    do_make_install
+    do_make install-strip
 
     mkdir -p $redist_dir
     archive="$redist_dir/libfdk-aac-$(git describe | tail -c +2)-win32-xpmod-sse"
@@ -805,8 +778,7 @@ build_frei0r() {
   do_git_checkout https://github.com/dyne/frei0r.git
   cd frei0r_git
     do_cmake $PWD
-    do_make install
-    do_strip $mingw_w64_x86_64_prefix/lib/frei0r-1
+    do_make install/strip
 
     mkdir -p $redist_dir # Pack shared libraries.
     archive="$redist_dir/frei0r-plugins-$(git describe --tags | tail -c +2)-win32-xpmod-sse"
@@ -991,9 +963,8 @@ build_curl() {
 
   download_and_unpack_file https://curl.haxx.se/download/curl-7.67.0.tar.bz2
   cd curl-7.67.0
-    generic_configure --without-ssl --with-mbedtls --with-ca-bundle=ca-bundle.crt # --with-ca-fallback only works with OpenSSL or GnuTLS.
+    generic_configure --without-ssl --with-mbedtls --with-ca-bundle=ca-bundle.crt LDFLAGS=-s # --with-ca-fallback only works with OpenSSL or GnuTLS.
     do_make # 'curl.exe' only. No install.
-    do_strip src/curl.exe
     if [[ ! -f src/ca-bundle.crt ]]; then # For 'ca-bundle.crt' see https://superuser.com/a/442797.
       echo -e "\e[1;33mDownloading 'https://curl.haxx.se/ca/cacert.pem' and renaming to 'ca-bundle.crt'.\e[0m"
       curl -o src/ca-bundle.crt https://curl.haxx.se/ca/cacert.pem
