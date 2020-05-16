@@ -707,7 +707,7 @@ build_fdk-aac() {
     archive="$redist_dir/libfdk-aac-$(git describe | tail -c +2)-win32-xpmod-sse"
     if [[ ! -f $archive.7z ]]; then # Pack shared library.
       sed "s/$/\r/" NOTICE > NOTICE.txt
-      7z a -mx=9 -bb3 $archive.7z $PWD/.libs/libfdk-aac-2.dll NOTICE.txt
+      7z a -mx=9 -bb3 $archive.7z $mingw_w64_x86_64_prefix/bin/libfdk-aac-2.dll NOTICE.txt
       rm -v NOTICE.txt
     else
       echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
