@@ -523,8 +523,9 @@ build_freetype() {
 build_libxml2() {
   download_and_unpack_file http://xmlsoft.org/sources/libxml2-2.9.10.tar.gz
   cd libxml2-2.9.10
-    if [[ ! -f Makefile.in.bak ]]; then # Library only.
-      sed -i.bak "/^PROGRAMS/s/=.*/=/;/^SUBDIRS/s/ doc.*//;/^install-data-am/s/:.*/: install-pkgconfigDATA/;/\tinstall-m4dataDATA/d;/^install-exec-am/s/:.*/: install-libLTLIBRARIES/;/install-confexecDATA install-libLTLIBRARIES/d" Makefile.in
+    if [[ ! -f Makefile.in.bak ]]; then
+      sed -i.bak "/^PROGRAMS/s/=.*/=/;/^SUBDIRS/s/ doc.*//;/^install-data-am/s/:.*/: install-pkgconfigDATA/;/\tinstall-m4dataDATA/d;/^install-exec-am/s/:.*/: install-libLTLIBRARIES/;/install-confexecDATA install-libLTLIBRARIES/d" Makefile.in # Library only.
+      sed -i.bak "/DOC_DISABLE/a\\\n#ifndef LIBXML_STATIC\\n#define LIBXML_STATIC\\n#endif" include/libxml/xmlexports.h # Static library.
     fi
     generic_configure --with-ftp=no --with-http=no --with-python=no
     do_make install
