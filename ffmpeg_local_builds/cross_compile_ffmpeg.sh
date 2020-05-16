@@ -172,37 +172,45 @@ do_git_checkout() {
   else
     local dir=$(basename ${1/.git/_git}) # http://y/abc.git -> abc_git
   fi
+  if [[ $3 ]]; then
+    local branch="$3"
+  else
+    local branch="master" # http://y/abc.git -> abc_git
+  fi
   if [ ! -d $dir ]; then
-    echo -e "\e[1;33mDownloading (via git clone) $dir from $1.\e[0m"
     rm -fr $dir.tmp # just in case it was interrupted previously...
-    git clone $1 $dir.tmp || exit 1
+    echo -e "\e[1;33mDownloading (git clone) $1 to $dir.\e[0m"
+    git clone --branch $branch --single-branch $1 $dir.tmp || exit 1
+    #git clone --depth 1 $1 $dir.tmp || exit 1
     # prevent partial checkouts by renaming it only after success
     mv $dir.tmp $dir
-    echo -e "\e[1;33mDone git cloning to $dir.\e[0m"
-    cd $dir
-  else
-    cd $dir
-    git fetch # need this no matter what
-  fi
-
-  if [[ $3 ]]; then
-    echo -e "\e[1;33mDoing git checkout $3.\e[0m"
-    git reset --hard
-    git clean -fdx
-    git checkout "$3" || exit 1
-    git merge "$3" || exit 1 # get incoming changes to a branch
-  else
-    if [[ $(git rev-parse HEAD) != $(git ls-remote -h $1 master | sed "s/\s.*//") ]]; then
-      echo -e "\e[1;33mGot upstream changes. Updating $dir to latest git version 'origin/master'.\e[0m"
-      git reset --hard # Return files to their original state.
-      git clean -fdx # Clean the working tree; build- as well as untracked files.
-      git checkout master || exit 1
-      git merge origin/master || exit 1
-    else
-      echo -e "\e[1;33mGot no code changes. Local $dir repo is up-to-date.\e[0m"
+    if [[ $4 ]]; then
+      cd $dir
+        echo -e "\e[1;33mChanging head of $dir to ${4:0:7}.\e[0m"
+        git checkout $4 || exit 1
+      cd ..
     fi
+  else
+    cd $dir
+      if [[ $4 ]]; then
+        if [[ $(git rev-parse HEAD) != $4 ]]; then
+          echo -e "\e[1;33mChanging head of $dir to ${4:0:7}.\e[0m"
+          git checkout $4 || exit 1
+        else
+          echo -e "\e[1;33mHead of $dir is already at ${4:0:7}.\e[0m"
+        fi
+      elif [[ $(git rev-parse HEAD) != $(git ls-remote -h $1 $branch | sed "s/\s.*//") ]]; then
+        echo -e "\e[1;33mUpdating $dir to latest git head on 'origin/$branch'.\e[0m"
+        git reset --hard # Return files to their original state.
+        git clean -fdx # Clean the working tree; build- as well as untracked files.
+        git fetch # Fetch list of changes.
+        git checkout $branch || exit 1 # Show amount of commits behind 'origin/$branch'.
+        git merge origin/$branch || exit 1 # Apply changes to local repo.
+      else
+        echo -e "\e[1;33mLocal $dir is up-to-date.\e[0m"
+      fi
+    cd ..
   fi
-  cd ..
 }
 
 do_hg_checkout() {
