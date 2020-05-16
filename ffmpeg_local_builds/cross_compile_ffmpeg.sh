@@ -429,8 +429,8 @@ build_nasm() {
 build_dlfcn() {
   do_git_checkout https://github.com/dlfcn-win32/dlfcn-win32.git
   cd dlfcn-win32_git
-    if [[ ! -f Makefile.bak ]]; then # Change CFLAGS.
-      sed -i.bak "s/-O3/-O2/" Makefile
+    if [[ ! -f Makefile.bak ]]; then # Change GCC optimization level.
+      sed -i.bak "s/CFLAGS =/CFLAGS +=/;s/-O3/-O2/" Makefile
     fi
     do_configure --prefix=$mingw_w64_x86_64_prefix --cross-prefix=$cross_prefix # rejects some normal cross compile options so custom here
     do_make
