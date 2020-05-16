@@ -16,15 +16,15 @@ IF NOT EXIST cygwin_local_install (
 	CD cygwin_local_install
 	ECHO Downloading Cygwin setup executable.
 	ECHO Keep an eye on this window for error warning messages from the Cygwin install. Some of them are expected.
-	powershell -command "$clnt = new-object System.Net.WebClient; $clnt.DownloadFile(\"http://cygwin-xp.portfolis.net/setup/setup-x86.exe\", \"setup-x86.exe\")"
-	START /wait setup-x86.exe ^
+	powershell -command "$clnt = new-object System.Net.WebClient; $clnt.DownloadFile(\"http://cygwinxp.cathedral-networks.org/cathedral/setup-x86-2.874.exe\", \"setup-x86-2.874.exe\")"
+	START /wait setup-x86-2.874.exe ^
 	-X ^
 	--quiet-mode ^
 	--no-admin ^
 	--no-startmenu ^
 	--no-shortcuts ^
 	--no-desktop ^
-	--site http://cygwin-xp.portfolis.net/cygwin ^
+	--site "http://cygwinxp.cathedral-networks.org/" ^
 	--root !cd! ^
 	--packages autoconf,autogen,automake,bison,cmake,cvs,curl,ed,flex,gcc-core,gcc-g++,gettext-devel,git,gperf,libcurl4,libtool,make,mercurial,ncurses,p7zip,patch,pax,pkg-config,subversion,texinfo,unzip,wget,yasm,zlib1g-dev
 	REM wget for the initial script download as well as zeranoe's uses it
