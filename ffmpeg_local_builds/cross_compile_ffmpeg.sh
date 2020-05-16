@@ -120,7 +120,7 @@ install_cross_compiler() {
       echo
 
       # --disable-shared allows c++ to be distributed at all...which seemed necessary for some random dependency which happens to use/require c++...
-      local zeranoe_script_name=mingw-w64-build-r26 # https://files.1f0.de/mingw/scripts/
+      local zeranoe_script_name=mingw-w64-build-r27 # https://files.1f0.de/mingw/scripts/
       local zeranoe_script_options="--default-configure --cpu-count=$gcc_cpu_count --pthreads-w32-ver=2-9-1 --disable-shared --clean-build --verbose"
       echo "Building win32 cross compiler."
       download_gcc_build_script $zeranoe_script_name
