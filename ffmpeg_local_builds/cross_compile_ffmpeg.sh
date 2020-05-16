@@ -912,45 +912,45 @@ build_libaom() {
 } # cmake >= 3.5
 
 build_ffmpeg() {
-  do_git_checkout https://github.com/FFmpeg/FFmpeg.git FFmpeg_git $ffmpeg_git_checkout_version
+  do_git_checkout https://github.com/FFmpeg/FFmpeg.git "" "" 1128aa875367f66ac11adc30364d5652919a2591
   cd FFmpeg_git
-    apply_patch file://$patch_dir/ffmpeg-wincrypt_restore-winxp-compatibility.patch -p1 # WinXP doesn't have 'bcrypt'. See https://github.com/FFmpeg/FFmpeg/commit/aedbf1640ced8fc09dc980ead2a387a59d8f7f68.
-    apply_patch file://$patch_dir/ffmpeg-libfdk-aac_load-shared-library-dynamically.patch -p1 # See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0001-dynamic-loading-of-shared-fdk-aac-library.patch.
-    apply_patch file://$patch_dir/ffmpeg-frei0r_load-shared-libraries-dynamically.patch -p1 # See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0002-avfilters-better-behavior-of-frei0r-on-win32.patch.
-    if [[ ! -f configure.bak ]]; then
-      sed -i.bak "/enabled libfdk_aac/s/&.*/\&\& require_headers fdk-aac\/aacenc_lib.h/;/require libfdk_aac/,/without pkg-config/d;/    libfdk_aac/d;/    libflite/i\    libfdk_aac" configure # Load 'libfdk-aac-1.dll' dynamically.
+    apply_patch file://$patch_dir/ffmpeg_make-bcrypt-optional.patch -p1 # WinXP doesn't have 'bcrypt'. See https://github.com/FFmpeg/FFmpeg/commit/aedbf1640ced8fc09dc980ead2a387a59d8f7f68 and https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0001-make-bcrypt-optional-on-win32.patch.
+    apply_patch file://$patch_dir/ffmpeg_load-shared-libfdk-aac-library-dynamically.patch -p1 # See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0003-dynamic-loading-of-shared-fdk-aac-library.patch.
+    apply_patch file://$patch_dir/ffmpeg_load-shared-frei0r-libraries-dynamically.patch -p1 # See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0004-avfilters-better-behavior-of-frei0r-on-win32.patch.
+    if [[ ! -f libavformat/udp.c.bak ]]; then
+      sed -i.bak "s/#ifdef _WIN32/#ifndef _WIN32_WINNT_WINXP/" libavformat/udp.c
+      # Otherwise you'd get "The procedure entry point CancelIoEx could not be located in the dynamic link library KERNEL32.dll" while running ffmpeg, ffplay, or ffprobe, because CancelIoEx() is only available on Windows Vista and later.
+      # See https://github.com/FFmpeg/FFmpeg/commit/53aa76686e7ff4f1f6625502503d7923cec8c10e#diff-612cd5096dca6b6969e9743c462bfad0 and https://trac.ffmpeg.org/ticket/5717. This obviously doesn't fix the ticket, but simply reverts the change.
     fi
-    init_options=(--arch=x86 --target-os=mingw32 --cross-prefix=$cross_prefix --extra-cflags="$CFLAGS" --pkg-config=pkg-config --pkg-config-flags=--static --extra-version=Reino --enable-gray --enable-version3 --disable-debug --disable-doc --disable-htmlpages --disable-manpages --disable-podpages --disable-txtpages --disable-w32threads)
-    config_options=("${init_options[@]}" --enable-avisynth --enable-frei0r --enable-filter=frei0r --enable-gmp --enable-gpl --enable-libaom --enable-libass --enable-libfdk-aac --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libgme --enable-libmp3lame --enable-libopenmpt --enable-libopus --enable-libsoxr --enable-libtwolame --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxml2 --enable-libxvid --enable-libzimg --enable-mbedtls)
+    init_options=(--arch=x86 --target-os=mingw32 --prefix=$mingw_w64_x86_64_prefix --cross-prefix=$cross_prefix --extra-cflags="$CFLAGS")
     if [[ $1 == "shared" ]]; then
-      config_options+=(--enable-shared --disable-static --prefix=$PWD)
-    else
-      config_options+=(--enable-static --disable-shared --prefix=$mingw_w64_x86_64_prefix)
+      init_options+=(--enable-shared --disable-static) # Building a static FFmpeg is the default, so no need to specify '--enable-static --disable-shared'.
     fi
-    do_configure "${config_options[@]}"
-    do_make # 'ffmpeg.exe', 'ffplay.exe' and 'ffprobe.exe' only. No install.
+    init_options+=(--pkg-config=pkg-config --pkg-config-flags=--static --extra-version=Reino --enable-gpl --enable-gray --enable-version3 --disable-bcrypt --disable-debug --disable-doc --disable-htmlpages --disable-manpages --disable-podpages --disable-txtpages --disable-w32threads)
+    do_configure "${init_options[@]}" --enable-avisynth --enable-frei0r --enable-filter=frei0r --enable-gmp --enable-libaom --enable-libass --enable-libfdk-aac --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libgme --enable-libmp3lame --enable-libopenmpt --enable-libopus --enable-libsoxr --enable-libtwolame --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxml2 --enable-libxvid --enable-libzimg --enable-mbedtls
+    do_make # Build 'ffmpeg.exe', 'ffplay.exe' and 'ffprobe.exe' (+ '*.dll' for shared build). No install.
 
     mkdir -p $redist_dir
-    archive="$redist_dir/ffmpeg-$(git describe --tags | tail -c +2)-win32-$1-xpmod-sse"
+    archive="$redist_dir/ffmpeg-$(git describe --tags | tail -c +2 | sed "s/dev-//")-win32-$1-xpmod-sse"
     if [[ $1 == "shared" ]]; then
-      do_make_install # Because of '--prefix=$PWD' the dlls are stripped and installed to 'ffmpeg_git_shared/bin'.
-      echo -e "\e[1;33mDone! You will find 32-bit $1 binaries in $PWD and libraries in $PWD/bin.\e[0m"
+      do_make_install
       if [[ ! -f $archive.7z ]]; then # Pack shared build.
         sed "s/$/\r/" COPYING.GPLv3 > COPYING.GPLv3.txt
-        7z a -mx=9 -bb3 $archive.7z ffmpeg.exe ffplay.exe ffprobe.exe $PWD/bin/*.dll COPYING.GPLv3.txt
+        7z a -mx=9 -bb3 $archive.7z $mingw_w64_x86_64_prefix/bin/{ff*.exe,{av,sw,postproc}*.dll} COPYING.GPLv3.txt
         rm -v COPYING.GPLv3.txt
       else
         echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
       fi
-      if [[ ! -f ${archive/shared/dev}.7z ]]; then # Pack dev build.
-        mv -v bin/*.lib lib
-        rm -r lib/pkgconfig
-        7z a -mx=9 -bb3 ${archive/shared/dev}.7z include lib share
+      if [[ ! -f ${archive/shared/dev}.7z ]]; then # Pack shared dev build.
+        cd $mingw_w64_x86_64_prefix
+          cp -v bin/*.lib lib
+          7z a -mx=9 -bb3 ${archive/shared/dev}.7z include/lib{av,sw,postproc}* lib/{*.lib,*.def,lib{av,sw,postproc}*.dll.a} share/ffmpeg
+          rm -v lib/*.lib
+        cd $OLDPWD
       else
         echo -e "\e[1;33mAlready made '$(basename ${archive/shared/dev}.7z)'.\e[0m"
       fi
     else
-      echo -e "\e[1;33mDone! You will find 32-bit $1 binaries in $PWD.\e[0m"
       if [[ ! -f $archive.7z ]]; then # Pack static build.
         sed "s/$/\r/" COPYING.GPLv3 > COPYING.GPLv3.txt
         7z a -mx=9 -bb3 $archive.7z ffmpeg.exe ffplay.exe ffprobe.exe COPYING.GPLv3.txt
@@ -959,8 +959,6 @@ build_ffmpeg() {
         echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
       fi
     fi
-    echo -e "\e[1;33mYou will find redistributable archives in $redist_dir.\e[0m"
-    echo `date`
   cd ..
 } # SDL2 (only for FFplay)
 
@@ -1069,7 +1067,6 @@ fi
 # variables with their defaults
 build_ffmpeg_static=y
 original_cflags='-march=pentium3 -mtune=athlon-xp -O2 -mfpmath=sse -msse' # See https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html, https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html and https://stackoverflow.com/questions/19689014/gcc-difference-between-o3-and-os.
-ffmpeg_git_checkout_version=
 export ac_cv_func__mktemp_s=no   # _mktemp_s is not available on WinXP.
 export ac_cv_func_vsnprintf_s=no # Mark vsnprintf_s as unavailable, as windows xp mscrt doesn't have it.
 
@@ -1086,7 +1083,6 @@ while true; do
       --debug Make this script  print out each line as it executes
        "; exit 0 ;;
     --sandbox-ok=* ) sandbox_ok="${1#*=}"; shift ;;
-    --ffmpeg-git-checkout-version=* ) ffmpeg_git_checkout_version="${1#*=}"; shift ;;
     --cflags=* )
        original_cflags="${1#*=}"; echo "setting cflags as $original_cflags"; shift ;;
     -d         ) gcc_cpu_count=$cpu_count; sandbox_ok="y"; shift ;;

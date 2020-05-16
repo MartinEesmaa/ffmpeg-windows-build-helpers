@@ -1,5 +1,36 @@
+diff --git a/configure b/configure
+index 080d93a..45e7c12 100755
+--- a/configure
++++ b/configure
+@@ -1730,7 +1732,6 @@ EXTERNAL_LIBRARY_GPL_LIST="
+ 
+ EXTERNAL_LIBRARY_NONFREE_LIST="
+     decklink
+-    libfdk_aac
+     openssl
+     libtls
+ "
+@@ -1771,6 +1772,7 @@ EXTERNAL_LIBRARY_LIST="
+     libdav1d
+     libdc1394
+     libdrm
++    libfdk_aac
+     libflite
+     libfontconfig
+     libfreetype
+@@ -6285,9 +6287,7 @@ enabled libdav1d          && require_pkg_config libdav1d "dav1d >= 0.4.0" "dav1d
+ enabled libdavs2          && require_pkg_config libdavs2 "davs2 >= 1.6.0" davs2.h davs2_decoder_open
+ enabled libdc1394         && require_pkg_config libdc1394 libdc1394-2 dc1394/dc1394.h dc1394_new
+ enabled libdrm            && require_pkg_config libdrm libdrm xf86drm.h drmGetVersion
+-enabled libfdk_aac        && { check_pkg_config libfdk_aac fdk-aac "fdk-aac/aacenc_lib.h" aacEncOpen ||
+-                               { require libfdk_aac fdk-aac/aacenc_lib.h aacEncOpen -lfdk-aac &&
+-                                 warn "using libfdk without pkg-config"; } }
++enabled libfdk_aac        && require_headers fdk-aac/aacenc_lib.h
+ flite_extralibs="-lflite_cmu_time_awb -lflite_cmu_us_awb -lflite_cmu_us_kal -lflite_cmu_us_kal16 -lflite_cmu_us_rms -lflite_cmu_us_slt -lflite_usenglish -lflite_cmulex -lflite"
+ enabled libflite          && require libflite "flite/flite.h" flite_init $flite_extralibs
+ enabled fontconfig        && enable libfontconfig
 diff --git a/libavcodec/libfdk-aac_internal.h b/libavcodec/libfdk-aac_internal.h
-new file mode 100755
+new file mode 100644
 index 0000000..cd1e6e3
 --- /dev/null
 +++ b/libavcodec/libfdk-aac_internal.h
@@ -89,7 +120,7 @@ index 0000000..cd1e6e3
 +
 +#endif /* AVCODEC_LIBFDK_AAC_INTERNAL_H */
 diff --git a/libavcodec/libfdk-aacdec.c b/libavcodec/libfdk-aacdec.c
-index 1abe1d8..ef7728c 100644
+index 1a86dff..18fed4e 100644
 --- a/libavcodec/libfdk-aacdec.c
 +++ b/libavcodec/libfdk-aacdec.c
 @@ -24,6 +24,7 @@
@@ -109,7 +140,7 @@ index 1abe1d8..ef7728c 100644
      uint8_t *decoder_buffer;
      int decoder_buffer_size;
      uint8_t *anc_buffer;
-@@ -99,7 +102,7 @@ static const AVClass fdk_aac_dec_class = {
+@@ -101,7 +104,7 @@ static const AVClass fdk_aac_dec_class = {
  static int get_stream_info(AVCodecContext *avctx)
  {
      FDKAACDecContext *s   = avctx->priv_data;
@@ -118,7 +149,7 @@ index 1abe1d8..ef7728c 100644
      int channel_counts[0x24] = { 0 };
      int i, ch_error       = 0;
      uint64_t ch_layout    = 0;
-@@ -211,8 +214,10 @@ static av_cold int fdk_aac_decode_close(AVCodecContext *avctx)
+@@ -216,8 +219,10 @@ static av_cold int fdk_aac_decode_close(AVCodecContext *avctx)
  {
      FDKAACDecContext *s = avctx->priv_data;
  
@@ -131,7 +162,7 @@ index 1abe1d8..ef7728c 100644
      av_freep(&s->decoder_buffer);
      av_freep(&s->anc_buffer);
  
-@@ -224,6 +229,27 @@ static av_cold int fdk_aac_decode_init(AVCodecContext *avctx)
+@@ -229,6 +234,27 @@ static av_cold int fdk_aac_decode_init(AVCodecContext *avctx)
      FDKAACDecContext *s = avctx->priv_data;
      AAC_DECODER_ERROR err;
  
