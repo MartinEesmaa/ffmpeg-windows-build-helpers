@@ -144,7 +144,7 @@ install_cross_compiler() {
 do_svn_checkout() {
   local dir="$2"
   if [ ! -d $dir ]; then
-    echo -e "\e[1;33mDownloading (via svn checkout) $dir from ${1##*/}.\e[0m"
+    echo -e "\e[1;33mDownloading (svn checkout) ${1##*/} to $dir.\e[0m"
     if [[ $3 ]]; then
       svn checkout -r $3 $1 $dir.tmp || exit 1
     else
@@ -154,13 +154,13 @@ do_svn_checkout() {
   else
     cd $dir
       if [[ $(svn info --show-item revision) != $(svn info --show-item revision $1) ]]; then
-        echo -e "\e[1;33mGot upstream changes. Updating $dir to latest svn revision.\e[0m"
+        echo -e "\e[1;33mUpdating $dir to latest svn revision.\e[0m"
         svn revert . -R # Return files to their original state.
         svn cleanup --remove-ignored # Clean the working tree; build- ...
         svn cleanup --remove-unversioned # ...as well as untracked files.
         svn update || exit 1
       else
-        echo -e "\e[1;33mGot no code changes. Local $dir repo is up-to-date.\e[0m"
+        echo -e "\e[1;33mLocal $dir is up-to-date.\e[0m"
       fi
     cd ..
   fi
