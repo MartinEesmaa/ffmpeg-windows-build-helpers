@@ -144,7 +144,7 @@ install_cross_compiler() {
 do_svn_checkout() {
   local dir="$2"
   if [ ! -d $dir ]; then
-    echo "Downloading (via svn checkout) $dir from $1."
+    echo -e "\e[1;33mDownloading (via svn checkout) $dir from $1.\e[0m"
     if [[ $3 ]]; then
       svn checkout -r $3 $1 $dir.tmp || exit 1
     else
@@ -154,13 +154,13 @@ do_svn_checkout() {
   else
     cd $dir
       if [[ $(svn info --show-item revision) != $(svn info --show-item revision $1) ]]; then
-        echo "Got upstream changes. Updating $dir to latest svn revision."
+        echo -e "\e[1;33mGot upstream changes. Updating $dir to latest svn revision.\e[0m"
         svn revert . -R # Return files to their original state.
         svn cleanup --remove-ignored # Clean the working tree; build- ...
         svn cleanup --remove-unversioned # ...as well as untracked files.
         svn update || exit 1
       else
-        echo "Got no code changes. Local $dir repo is up-to-date."
+        echo -e "\e[1;33mGot no code changes. Local $dir repo is up-to-date.\e[0m"
       fi
     cd ..
   fi
@@ -173,12 +173,12 @@ do_git_checkout() {
     local dir=$(basename $1 | sed s/\.git/_git/) # http://y/abc.git -> abc_git
   fi
   if [ ! -d $dir ]; then
-    echo "Downloading (via git clone) $dir from $1."
+    echo -e "\e[1;33mDownloading (via git clone) $dir from $1.\e[0m"
     rm -fr $dir.tmp # just in case it was interrupted previously...
     git clone $1 $dir.tmp || exit 1
     # prevent partial checkouts by renaming it only after success
     mv $dir.tmp $dir
-    echo "Done git cloning to $dir."
+    echo -e "\e[1;33mDone git cloning to $dir.\e[0m"
     cd $dir
   else
     cd $dir
@@ -186,20 +186,20 @@ do_git_checkout() {
   fi
 
   if [[ $3 ]]; then
-    echo "Doing git checkout $3."
+    echo -e "\e[1;33mDoing git checkout $3.\e[0m"
     git reset --hard
     git clean -fdx
     git checkout "$3" || exit 1
     git merge "$3" || exit 1 # get incoming changes to a branch
   else
     if [[ $(git rev-parse HEAD) != $(git ls-remote -h $1 master | sed "s/\s.*//") ]]; then
-      echo "Got upstream changes. Updating $dir to latest git version 'origin/master'."
+      echo -e "\e[1;33mGot upstream changes. Updating $dir to latest git version 'origin/master'.\e[0m"
       git reset --hard # Return files to their original state.
       git clean -fdx # Clean the working tree; build- as well as untracked files.
       git checkout master || exit 1
       git merge origin/master || exit 1
     else
-      echo "Got no code changes. Local $dir repo is up-to-date."
+      echo -e "\e[1;33mGot no code changes. Local $dir repo is up-to-date.\e[0m"
     fi
   fi
   cd ..
@@ -212,12 +212,12 @@ do_hg_checkout() {
     local dir=$(basename $1)_hg # http://y/abc -> abc_hg
   fi
   if [ ! -d $dir ]; then
-    echo "Downloading (via hg clone) $dir from $1."
+    echo -e "\e[1;33mDownloading (via hg clone) $dir from $1.\e[0m"
     rm -fr $dir.tmp # just in case it was interrupted previously...
     hg clone $1 $dir.tmp || exit 1
     # prevent partial checkouts by renaming it only after success
     mv $dir.tmp $dir
-    echo "Done hg cloning to $dir."
+    echo -e "\e[1;33mDone hg cloning to $dir.\e[0m"
     cd $dir
   else
     cd $dir
@@ -225,20 +225,20 @@ do_hg_checkout() {
   fi
 
   if [[ $3 ]]; then
-    echo "Doing hg update $3."
+    echo -e "\e[1;33mDoing hg update $3.\e[0m"
     hg revert -a --no-backup
     hg purge
     hg update "$3" || exit 1
     #hg merge "$3" || exit 1 # get incoming changes to a branch
   else
     if [[ $(hg id -i) != $(hg id -r default $1) ]]; then # 'hg id http://hg.videolan.org/x265' defaults to the "stable" branch!
-      echo "Got upstream changes. Updating $dir to latest hg version."
+      echo -e "\e[1;33mGot upstream changes. Updating $dir to latest hg version.\e[0m"
       hg revert -a --no-backup # Return files to their original state.
       hg purge # Clean the working tree; build- as well as untracked files.
       hg pull -u || exit 1
       hg update || exit 1
     else
-      echo "Got no code changes. Local $dir repo is up-to-date."
+      echo -e "\e[1;33mGot no code changes. Local $dir repo is up-to-date.\e[0m"
     fi
   fi
   cd ..
@@ -274,13 +274,13 @@ do_configure() {
     if [ ! -f $configure_name ]; then
       autoreconf -fiv
     fi
-    echo "Configuring $(basename $(pwd)) as $configure_name $1."
+    echo -e "\e[1;33mConfiguring $(basename $(pwd)) as $configure_name $1.\e[0m"
     "$configure_name" $1 || exit 1
     touch -- "$name"
-    echo "Doing preventative make clean."
+    echo -e "\e[1;33mDoing preventative make clean.\e[0m"
     make clean -j $cpu_count # sometimes useful when files change, etc.
   #else
-  #  echo "Already configured $(basename $(pwd))."
+  #  echo -e "\e[1;33mAlready configured $(basename $(pwd)).\e[0m"
   fi
 }
 
@@ -289,7 +289,7 @@ do_make() {
   local name=$(get_small_touchfile_name already_ran_make "$extra_make_options" )
   if [ ! -f $name ]; then
     echo
-    echo "Compiling $(basename $(pwd)) as make $extra_make_options."
+    echo -e "\e[1;33mCompiling $(basename $(pwd)) as make $extra_make_options.\e[0m"
     echo
     if [ ! -f configure ]; then
       make clean -j $cpu_count # just in case helpful if old junk left around and this is a 're make' and wasn't cleaned at reconfigure time
@@ -297,7 +297,7 @@ do_make() {
     make $extra_make_options || exit 1
     touch $name || exit 1 # only touch if the build was OK
   else
-    echo "Already made $(basename $(pwd))."
+    echo -e "\e[1;33mAlready made $(basename $(pwd)).\e[0m"
   fi
 }
 
@@ -309,7 +309,7 @@ do_make_install() {
   fi
   local name=$(get_small_touchfile_name already_ran_make_install "$make_install_options")
   if [ ! -f $name ]; then
-    echo "Installing $(basename $(pwd)) as make $make_install_options."
+    echo -e "\e[1;33mInstalling $(basename $(pwd)) as make $make_install_options.\e[0m"
     make $make_install_options || exit 1
     touch $name || exit 1
   fi
@@ -328,7 +328,7 @@ do_cmake() {
   fi
   local name=$(get_small_touchfile_name already_ran_cmake "$1")
   if [ ! -f $name ]; then
-    echo "Compiling $(basename $dir) as cmake –G\"Unix Makefiles\" $dir -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_FIND_ROOT_PATH=$mingw_w64_x86_64_prefix -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY -DCMAKE_RANLIB=${cross_prefix}ranlib.exe -DCMAKE_C_COMPILER=${cross_prefix}gcc.exe -DCMAKE_CXX_COMPILER=${cross_prefix}g++.exe -DCMAKE_RC_COMPILER=${cross_prefix}windres.exe -DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix $1."
+    echo -e "\e[1;33mCompiling $(basename $dir) as cmake –G\"Unix Makefiles\" $dir -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_FIND_ROOT_PATH=$mingw_w64_x86_64_prefix -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY -DCMAKE_RANLIB=${cross_prefix}ranlib.exe -DCMAKE_C_COMPILER=${cross_prefix}gcc.exe -DCMAKE_CXX_COMPILER=${cross_prefix}g++.exe -DCMAKE_RC_COMPILER=${cross_prefix}windres.exe -DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix $1.\e[0m"
     cmake –G\"Unix Makefiles\" $dir -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_FIND_ROOT_PATH=$mingw_w64_x86_64_prefix -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY -DCMAKE_RANLIB=${cross_prefix}ranlib.exe -DCMAKE_C_COMPILER=${cross_prefix}gcc.exe -DCMAKE_CXX_COMPILER=${cross_prefix}g++.exe -DCMAKE_RC_COMPILER=${cross_prefix}windres.exe -DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix $1 || exit 1
     touch $name || exit 1
   fi
@@ -351,12 +351,12 @@ apply_patch() {
       rm $name || exit 1 # remove old version in case it has been since updated on the server...
     fi
     curl -4 --retry 5 $1 -O --fail || exit 1
-    echo "Applying patch '$name'."
+    echo -e "\e[1;33mApplying patch '$name'.\e[0m"
     patch $type < "$name" || exit 1
     touch $name.done || exit 1
     rm -f already_ran* # if it's a new patch, reset everything too, in case it's really really really new
   else
-    echo "Patch '$name' already applied."
+    echo -e "\e[1;33mPatch '$name' already applied.\e[0m"
   fi
 }
 
@@ -368,7 +368,7 @@ download_and_unpack_file() {
     local dir=$(echo $name | sed s/\.tar\.*//) # remove .tar.xx
   fi
   if [ ! -f "$dir/unpacked.successfully" ]; then
-    echo "Downloading $1."
+    echo -e "\e[1;33mDownloading $1.\e[0m"
     if [[ -f $name ]]; then
       rm $name || exit 1
     fi
@@ -418,21 +418,21 @@ do_strip() {
   local name=$(get_small_touchfile_name already_ran_strip "$2 $1")
   if [ ! -f $name ]; then
     if [ -f "$1" ]; then
-      echo "Stripping $(basename $1) as ${host_target}-strip $2 $1"
+      echo -e "\e[1;33mStripping $(basename $1) as ${host_target}-strip $2 $1.\e[0m"
       ${cross_prefix}strip $2 $1 || exit 1
     else
       for file in $1/*.{dll,exe}; do
         [ -f "$file" ] || continue
-        echo "Stripping $(basename $file) as ${host_target}-strip $2 $file"
+        echo -e "\e[1;33mStripping $(basename $file) as ${host_target}-strip $2 $file.\e[0m"
         ${cross_prefix}strip $2 $file || exit 1
       done
     fi
     touch $name || exit 1
   else
     if [ -f "$1" ]; then
-      echo "Already stripped $(basename $1)."
+      echo -e "\e[1;33mAlready stripped $(basename $1).\e[0m"
     else
-      echo "Already stripped $(basename $(pwd))."
+      echo -e "\e[1;33mAlready stripped $(basename $(pwd)).\e[0m"
     fi
   fi
 } # do_strip file/dir [strip-parameters]
@@ -442,11 +442,11 @@ gen_ld_script() {
   lib_s="${1:3:-2}_s"
   if [ ! -f "$mingw_w64_x86_64_prefix/lib/lib$lib_s.a" ] || [ "$1" -nt "$mingw_w64_x86_64_prefix/lib/lib$lib_s.a" ]; then
     rm -f $mingw_w64_x86_64_prefix/lib/lib$lib_s.a
-    echo "Generating linker script for $1, adding $2".
+    echo -e "\e[1;33mGenerating linker script for $1, adding $2.\e[0m"
     mv -f $lib $mingw_w64_x86_64_prefix/lib/lib$lib_s.a
     echo "GROUP ( -l$lib_s $2 )" > $lib
   else
-    echo "Already generated linker script for $1."
+    echo -e "\e[1;33mAlready generated linker script for $1.\e[0m"
   fi
 } # gen_ld_script libxxx.a -lxxx
 
@@ -458,7 +458,7 @@ build_mingw_std_threads() {
         rm -f $mingw_w64_x86_64_prefix/include/$file
         cp -v $file $mingw_w64_x86_64_prefix/include
       else
-        echo "$file is up-to-date."
+        echo -e "\e[1;33m$file is up-to-date.\e[0m"
       fi
     done
   cd ..
@@ -509,7 +509,7 @@ build_bzip2() {
       install -m644 libbz2.a $mingw_w64_x86_64_prefix/lib/libbz2.a
       install -m644 bzlib.h $mingw_w64_x86_64_prefix/include/bzlib.h
     else
-      echo "Already made bzip2-1.0.8."
+      echo -e "\e[1;33mAlready made bzip2-1.0.8.\e[0m"
     fi
   cd ..
 }
@@ -647,7 +647,7 @@ build_openssl-1.0.2() {
         sed "s/$/\r/" LICENSE > LICENSE.txt
         7z a -mx=9 $archive.7z *.dll LICENSE.txt && rm -f LICENSE.txt
       else
-        echo "Already made '$(basename $archive.7z)'."
+        echo -e "\e[1;33mAlready made '$(basename $archive.7z)'.\e[0m"
       fi
     else
       do_make_and_make_install
@@ -682,7 +682,7 @@ build_openssl-1.1.1() {
         sed "s/$/\r/" LICENSE > LICENSE.txt
         7z a -mx=9 $archive.7z *.dll LICENSE.txt && rm -f LICENSE.txt
       else
-        echo "Already made '$(basename $archive.7z)'."
+        echo -e "\e[1;33mAlready made '$(basename $archive.7z)'.\e[0m"
       fi
     else
       do_make_install "" "install_dev"
@@ -752,7 +752,7 @@ build_fdk-aac() {
       sed "s/$/\r/" NOTICE > NOTICE.txt
       7z a -mx=9 $archive.7z $(pwd)/.libs/libfdk-aac-2.dll NOTICE.txt && rm -f NOTICE.txt
     else
-      echo "Already made '$(basename $archive.7z)'."
+      echo -e "\e[1;33mAlready made '$(basename $archive.7z)'.\e[0m"
     fi
   cd ..
 } # [dlfcn]
@@ -847,7 +847,7 @@ build_frei0r() {
       done
       7z a -mx=9 $archive.7z $mingw_w64_x86_64_prefix/lib/frei0r-1 && rm -f $mingw_w64_x86_64_prefix/lib/frei0r-1/*.txt
     else
-      echo "Already made '$(basename $archive.7z)'."
+      echo -e "\e[1;33mAlready made '$(basename $archive.7z)'.\e[0m"
     fi
   cd ..
 } # dlfcn
@@ -935,30 +935,30 @@ build_ffmpeg() {
     archive="$redist_dir/ffmpeg-$(git describe --tags | tail -c +2)-win32-$1-xpmod-sse"
     if [[ $1 == "shared" ]]; then
       do_make_install # Because of '--prefix=$(pwd)' the dlls are stripped and installed to 'ffmpeg_git_shared/bin'.
-      echo "Done! You will find 32-bit $1 binaries in $(pwd) and libraries in $(pwd)/bin."
+      echo -e "\e[1;33mDone! You will find 32-bit $1 binaries in $(pwd) and libraries in $(pwd)/bin.\e[0m"
       if [[ ! -f $archive.7z ]]; then # Pack shared build.
         sed "s/$/\r/" COPYING.GPLv3 > COPYING.GPLv3.txt
         7z a -mx=9 $archive.7z ffmpeg.exe ffplay.exe ffprobe.exe $(pwd)/bin/*.dll COPYING.GPLv3.txt && rm -f COPYING.GPLv3.txt
       else
-        echo "Already made '$(basename $archive.7z)'."
+        echo -e "\e[1;33mAlready made '$(basename $archive.7z)'.\e[0m"
       fi
       if [[ ! -f ${archive/shared/dev}.7z ]]; then # Pack dev build.
         mv bin/*.lib lib
         rm -r lib/pkgconfig
         7z a -mx=9 ${archive/shared/dev}.7z include lib share
       else
-        echo "Already made '$(basename ${archive/shared/dev}.7z)'."
+        echo -e "\e[1;33mAlready made '$(basename ${archive/shared/dev}.7z)'.\e[0m"
       fi
     else
-      echo "Done! You will find 32-bit $1 binaries in $(pwd)."
+      echo -e "\e[1;33mDone! You will find 32-bit $1 binaries in $(pwd).\e[0m"
       if [[ ! -f $archive.7z ]]; then # Pack static build.
         sed "s/$/\r/" COPYING.GPLv3 > COPYING.GPLv3.txt
         7z a -mx=9 $archive.7z ffmpeg.exe ffplay.exe ffprobe.exe COPYING.GPLv3.txt && rm -f COPYING.GPLv3.txt
       else
-        echo "Already made '$(basename $archive.7z)'."
+        echo -e "\e[1;33mAlready made '$(basename $archive.7z)'.\e[0m"
       fi
     fi
-    echo "You will find redistributable archives in $redist_dir."
+    echo -e "\e[1;33mYou will find redistributable archives in $redist_dir.\e[0m"
     echo `date`
   cd ..
 } # SDL2 (only for FFplay)
@@ -1023,7 +1023,7 @@ build_curl() {
     do_make # 'curl.exe' only. No install.
     do_strip src/curl.exe
     if [[ ! -f src/ca-bundle.crt ]]; then # For 'ca-bundle.crt' see https://superuser.com/a/442797.
-      echo "Downloading 'https://curl.haxx.se/ca/cacert.pem' and renaming to 'ca-bundle.crt'"
+      echo -e "\e[1;33mDownloading 'https://curl.haxx.se/ca/cacert.pem' and renaming to 'ca-bundle.crt'.\e[0m"
       curl -o src/ca-bundle.crt https://curl.haxx.se/ca/cacert.pem
     fi
 
