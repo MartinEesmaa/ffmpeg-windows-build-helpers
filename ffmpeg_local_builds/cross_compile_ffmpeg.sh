@@ -393,7 +393,7 @@ build_mingw_std_threads() {
   cd mingw-std-threads_git
     for file in *.h; do
       if [ ! -f "$mingw_w64_x86_64_prefix/include/$file" ] || [ "$file" -nt "$mingw_w64_x86_64_prefix/include/$file" ]; then
-        rm -f $mingw_w64_x86_64_prefix/include/$file
+        rm -v $mingw_w64_x86_64_prefix/include/$file
         cp -v $file $mingw_w64_x86_64_prefix/include
       else
         echo -e "\e[1;33m$file is up-to-date.\e[0m"
@@ -489,7 +489,7 @@ build_sdl2() {
     generic_configure --bindir=$mingw_bin_path
     do_make install
     if [[ ! -f $mingw_bin_path/${host_target}-sdl2-config ]]; then
-      mv "$mingw_bin_path/sdl2-config" "$mingw_bin_path/${host_target}-sdl2-config" # At the moment FFmpeg's 'configure' doesn't use 'sdl2-config', because it gives priority to 'sdl2.pc', but when it does, it expects 'i686-w64-mingw32-sdl2-config' in 'cross_compilers/mingw-w64-i686/bin'.
+      mv -v "$mingw_bin_path/sdl2-config" "$mingw_bin_path/${host_target}-sdl2-config" # At the moment FFmpeg's 'configure' doesn't use 'sdl2-config', because it gives priority to 'sdl2.pc', but when it does, it expects 'i686-w64-mingw32-sdl2-config' in 'cross_compilers/mingw-w64-i686/bin'.
     fi
   cd ..
 } # [iconv, dlfcn]
@@ -582,7 +582,8 @@ build_openssl-1.0.2() {
       if [[ ! -f $archive.7z ]]; then
         sed "s/$/\r/" LICENSE > LICENSE.txt
         ${cross_prefix}strip -ps libeay32.dll ssleay32.dll
-        7z a -mx=9 $archive.7z *.dll LICENSE.txt && rm -f LICENSE.txt
+        7z a -mx=9 -bb3 $archive.7z *.dll LICENSE.txt
+        rm -v LICENSE.txt
       else
         echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
       fi
@@ -618,7 +619,8 @@ build_openssl-1.1.1() {
       if [[ ! -f $archive.7z ]]; then
         sed "s/$/\r/" LICENSE > LICENSE.txt
         ${cross_prefix}strip -ps libcrypto-1_1.dll libssl-1_1.dll
-        7z a -mx=9 $archive.7z *.dll LICENSE.txt && rm -f LICENSE.txt
+        7z a -mx=9 -bb3 $archive.7z *.dll LICENSE.txt
+        rm -v LICENSE.txt
       else
         echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
       fi
@@ -687,7 +689,8 @@ build_fdk-aac() {
     archive="$redist_dir/libfdk-aac-$(git describe | tail -c +2)-win32-xpmod-sse"
     if [[ ! -f $archive.7z ]]; then # Pack shared library.
       sed "s/$/\r/" NOTICE > NOTICE.txt
-      7z a -mx=9 $archive.7z $PWD/.libs/libfdk-aac-2.dll NOTICE.txt && rm -f NOTICE.txt
+      7z a -mx=9 -bb3 $archive.7z $PWD/.libs/libfdk-aac-2.dll NOTICE.txt
+      rm -v NOTICE.txt
     else
       echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
     fi
@@ -786,7 +789,8 @@ build_frei0r() {
       for doc in AUTHORS ChangeLog COPYING README.md; do
         sed "s/$/\r/" $doc > $mingw_w64_x86_64_prefix/lib/frei0r-1/$doc.txt
       done
-      7z a -mx=9 $archive.7z $mingw_w64_x86_64_prefix/lib/frei0r-1 && rm -f $mingw_w64_x86_64_prefix/lib/frei0r-1/*.txt
+      7z a -mx=9 -bb3 $archive.7z $mingw_w64_x86_64_prefix/lib/frei0r-1
+      rm -v $mingw_w64_x86_64_prefix/lib/frei0r-1/*.txt
     else
       echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
     fi
@@ -882,14 +886,15 @@ build_ffmpeg() {
       echo -e "\e[1;33mDone! You will find 32-bit $1 binaries in $PWD and libraries in $PWD/bin.\e[0m"
       if [[ ! -f $archive.7z ]]; then # Pack shared build.
         sed "s/$/\r/" COPYING.GPLv3 > COPYING.GPLv3.txt
-        7z a -mx=9 $archive.7z ffmpeg.exe ffplay.exe ffprobe.exe $PWD/bin/*.dll COPYING.GPLv3.txt && rm -f COPYING.GPLv3.txt
+        7z a -mx=9 -bb3 $archive.7z ffmpeg.exe ffplay.exe ffprobe.exe $PWD/bin/*.dll COPYING.GPLv3.txt
+        rm -v COPYING.GPLv3.txt
       else
         echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
       fi
       if [[ ! -f ${archive/shared/dev}.7z ]]; then # Pack dev build.
-        mv bin/*.lib lib
+        mv -v bin/*.lib lib
         rm -r lib/pkgconfig
-        7z a -mx=9 ${archive/shared/dev}.7z include lib share
+        7z a -mx=9 -bb3 ${archive/shared/dev}.7z include lib share
       else
         echo -e "\e[1;33mAlready made '$(basename ${archive/shared/dev}.7z)'.\e[0m"
       fi
@@ -897,7 +902,8 @@ build_ffmpeg() {
       echo -e "\e[1;33mDone! You will find 32-bit $1 binaries in $PWD.\e[0m"
       if [[ ! -f $archive.7z ]]; then # Pack static build.
         sed "s/$/\r/" COPYING.GPLv3 > COPYING.GPLv3.txt
-        7z a -mx=9 $archive.7z ffmpeg.exe ffplay.exe ffprobe.exe COPYING.GPLv3.txt && rm -f COPYING.GPLv3.txt
+        7z a -mx=9 -bb3 $archive.7z ffmpeg.exe ffplay.exe ffprobe.exe COPYING.GPLv3.txt
+        rm -v COPYING.GPLv3.txt
       else
         echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
       fi
@@ -975,7 +981,8 @@ build_curl() {
     if [[ ! -f $archive.7z ]]; then
       sed "s/$/\r/" COPYING > src/COPYING.txt
       cd src
-        7z a -mx=9 $archive.7z curl.exe ca-bundle.crt COPYING.txt && rm -f COPYING.txt
+        7z a -mx=9 -bb3 $archive.7z curl.exe ca-bundle.crt COPYING.txt
+        rm -v COPYING.txt
       cd ..
     fi
   cd ..
