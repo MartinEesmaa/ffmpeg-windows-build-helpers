@@ -127,7 +127,7 @@ install_cross_compiler() {
       if [[ `uname` =~ "5.1" ]]; then # Avoid using secure API functions for compatibility with msvcrt.dll on Windows XP.
         sed -i "s/ --enable-secure-api//" $zeranoe_script_name
       fi
-      nice ./$zeranoe_script_name $zeranoe_script_options --build-type=win32 || exit 1
+      ./$zeranoe_script_name $zeranoe_script_options --build-type=win32 || exit 1
       if [[ ! -f ../$win32_gcc ]]; then
         echo "Failure building 32 bit gcc? Recommend nuke sandbox (rm -fr sandbox) and start over."
         exit 1
@@ -275,10 +275,10 @@ do_configure() {
       autoreconf -fiv
     fi
     echo "Configuring $(basename $(pwd)) as $configure_name $1."
-    "$configure_name" $1 || exit 1 # not nice on purpose, so that if some other script is running as nice, this one will get priority :)
+    "$configure_name" $1 || exit 1
     touch -- "$name"
     echo "Doing preventative make clean."
-    nice make clean -j $cpu_count # sometimes useful when files change, etc.
+    make clean -j $cpu_count # sometimes useful when files change, etc.
   #else
   #  echo "Already configured $(basename $(pwd))."
   fi
@@ -292,9 +292,9 @@ do_make() {
     echo "Compiling $(basename $(pwd)) as make $extra_make_options."
     echo
     if [ ! -f configure ]; then
-      nice make clean -j $cpu_count # just in case helpful if old junk left around and this is a 're make' and wasn't cleaned at reconfigure time
+      make clean -j $cpu_count # just in case helpful if old junk left around and this is a 're make' and wasn't cleaned at reconfigure time
     fi
-    nice make $extra_make_options || exit 1
+    make $extra_make_options || exit 1
     touch $name || exit 1 # only touch if the build was OK
   else
     echo "Already made $(basename $(pwd))."
@@ -310,7 +310,7 @@ do_make_install() {
   local name=$(get_small_touchfile_name already_ran_make_install "$make_install_options")
   if [ ! -f $name ]; then
     echo "Installing $(basename $(pwd)) as make $make_install_options."
-    nice make $make_install_options || exit 1
+    make $make_install_options || exit 1
     touch $name || exit 1
   fi
 }
