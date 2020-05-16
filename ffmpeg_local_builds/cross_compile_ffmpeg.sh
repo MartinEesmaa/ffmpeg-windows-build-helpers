@@ -304,12 +304,15 @@ do_make() {
 }
 
 do_make_install() {
+  local dir="${PWD/$cur_dir\/win32\/}"
   local make_install_options=(install "$@")
   local name=$(get_small_touchfile_name already_ran_make_install "${make_install_options[@]}")
   if [ ! -f $name ]; then
-    echo -e "\e[1;33mInstalling ${PWD##*/} as \"make ${make_install_options[@]}\".\e[0m"
+    echo -e "\e[1;33mInstalling ${dir%%/*} as \"make ${make_install_options[@]}\".\e[0m"
     make "${make_install_options[@]}" || exit 1
     touch $name || exit 1
+  else
+    echo -e "\e[1;33mAlready installed ${dir%%/*}.\e[0m"
   fi
 }
 
