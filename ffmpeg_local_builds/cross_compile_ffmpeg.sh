@@ -280,19 +280,26 @@ do_configure() {
 }
 
 do_make() {
-  local extra_make_options=(-j $cpu_count "$@")
-  local name=$(get_small_touchfile_name already_ran_make "${extra_make_options[@]}")
+  local dir="${PWD/$cur_dir\/win32\/}"
+  local make_options=(-j $cpu_count "$@")
+  local name=$(get_small_touchfile_name already_ran_make "${make_options[@]}")
   if [ ! -f $name ]; then
-    echo
-    echo -e "\e[1;33mCompiling ${PWD##*/} as \"make ${extra_make_options[@]}\".\e[0m"
-    echo
-    if [ ! -f configure ]; then
-      make clean -j $cpu_count # just in case helpful if old junk left around and this is a 're make' and wasn't cleaned at reconfigure time
+    if [[ $1 == install* ]]; then
+      echo -e "\e[1;33mCompiling and installing ${dir%%/*} as \"make ${make_options[@]}\".\e[0m"
+    else
+      echo -e "\e[1;33mCompiling ${dir%%/*} as \"make ${make_options[@]}\".\e[0m"
     fi
-    make "${extra_make_options[@]}" || exit 1
+  #  if [ ! -f configure ]; then
+  #    make -j $cpu_count clean # just in case helpful if old junk left around and this is a 're make' and wasn't cleaned at reconfigure time
+  #  fi
+    make "${make_options[@]}" || exit 1
     touch $name || exit 1 # only touch if the build was OK
   else
-    echo -e "\e[1;33mAlready made ${PWD##*/}.\e[0m"
+    if [[ $1 == install* ]]; then
+      echo -e "\e[1;33mAlready made and installed ${dir%%/*}.\e[0m"
+    else
+      echo -e "\e[1;33mAlready made ${dir%%/*}.\e[0m"
+    fi
   fi
 }
 
