@@ -1147,13 +1147,14 @@ done
 
 reset_cflags # also overrides any "native" CFLAGS, which we may need if there are some 'linux only' settings in there
 check_missing_packages # do this first since it's annoying to go through prompts then be rejected
-intro # remember to always run the intro, since it adjust pwd
-install_cross_compiler
+#intro # remember to always run the intro, since it adjust pwd
+cd "$cur_dir"
+#install_cross_compiler
 
 export PKG_CONFIG_LIBDIR= # disable pkg-config from finding [and using] normal linux system installed libs [yikes]
 
 original_path="$PATH"
-echo
+#echo
 echo "Starting 32-bit builds."
 host_target='i686-w64-mingw32'
 mingw_w64_x86_64_prefix="$cur_dir/cross_compilers/mingw-w64-i686/$host_target"
