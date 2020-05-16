@@ -253,29 +253,27 @@ do_configure() {
   fi
   local name=$(get_small_touchfile_name already_configured "${configure_options[@]}")
   if [ ! -f "$name" ]; then # This is to generate 'configure', 'Makefile.in' and some other files.
-    if [ ! -f $configure_name ] && [ -f autogen.sh ]; then
-      ./autogen.sh
-    fi
-    if [ ! -f $configure_name ] && [ -f autobuild ]; then
-      ./autobuild
-    fi
-    if [ ! -f $configure_name ] && [ -f buildconf ]; then
-      ./buildconf
-    fi
-    if [ ! -f $configure_name ] && [ -f bootstrap ]; then
-      ./bootstrap
-    fi
-    if [ ! -f $configure_name ] && [ -f bootstrap.sh ]; then
-      ./bootstrap.sh
-    fi
     if [ ! -f $configure_name ]; then
-      autoreconf -fiv
+      echo -e "\e[1;33mGenerating 'configure' script.\e[0m"
+      if [ -f autogen.sh ]; then
+        NOCONFIGURE=1 ./autogen.sh # Without NOCONFIGURE=1 TwoLame's 'autogen.sh' will run 'configure' with no arguments.
+      elif [ -f autobuild ]; then
+        ./autobuild
+      elif [ -f buildconf ]; then
+        ./buildconf
+      elif [ -f bootstrap ]; then
+        ./bootstrap
+      elif [ -f bootstrap.sh ]; then
+        ./bootstrap.sh
+      else
+        autoreconf -fiv
+      fi
     fi
     echo -e "\e[1;33mConfiguring ${PWD##*/} as \"${configure_options[@]}\".\e[0m"
     $configure_name "${configure_options[@]}" || exit 1
-    touch -- "$name"
-    echo -e "\e[1;33mDoing preventative make clean.\e[0m"
-    make clean -j $cpu_count # sometimes useful when files change, etc.
+    touch $name || exit 1
+  #  echo -e "\e[1;33mDoing preventative make clean.\e[0m"
+  #  make -j $cpu_count clean # sometimes useful when files change, etc.
   #else
   #  echo -e "\e[1;33mAlready configured ${PWD##*/}.\e[0m"
   fi
