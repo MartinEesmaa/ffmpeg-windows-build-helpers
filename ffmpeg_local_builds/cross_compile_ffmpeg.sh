@@ -501,9 +501,9 @@ build_libwebp() {
   do_git_checkout https://chromium.googlesource.com/webm/libwebp.git
   cd libwebp_git
     if [[ ! -f Makefile.am.bak ]]; then # Library only.
-      sed -i.bak "/^SUBDIRS/s/=.*/= src/" Makefile.am
+      sed -i.bak "s/src.*/src/;4,\$d" Makefile.am
     fi
-    generic_configure --disable-png --disable-jpeg --disable-tiff --disable-gif --disable-wic # These are only necessary for building the bundled tools/binaries.
+    generic_configure --disable-gl --disable-sdl --disable-png --disable-jpeg --disable-tiff --disable-gif --disable-wic # These are only necessary for building the bundled tools/binaries.
     do_make install
   cd ..
 } # [dlfcn]
