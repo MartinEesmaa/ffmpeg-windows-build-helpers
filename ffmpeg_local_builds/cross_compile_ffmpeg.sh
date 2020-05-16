@@ -1059,6 +1059,39 @@ build_hlsdl() {
   cd ..
 } # curl(openssl)
 
+build_ffms2_cplugin() {
+  do_git_checkout https://github.com/FFmpeg/FFmpeg.git FFmpeg-ffms2_git "" 1128aa875367f66ac11adc30364d5652919a2591
+  cd FFmpeg-ffms2_git
+    apply_patch file://$patch_dir/ffmpeg_make-bcrypt-optional.patch -p1
+    do_configure --arch=x86 --target-os=mingw32 --prefix=$mingw_w64_x86_64_prefix --cross-prefix=$cross_prefix --extra-cflags="$CFLAGS" --pkg-config=pkg-config --pkg-config-flags=--static --enable-gpl --enable-version3 --disable-bcrypt --disable-debug --disable-doc --disable-htmlpages --disable-manpages --disable-podpages --disable-schannel --disable-txtpages --disable-w32threads --disable-avdevice --disable-avfilter --disable-devices --disable-encoders --disable-filters --disable-hwaccels --disable-muxers --disable-network --disable-programs --disable-sdl2 --enable-libaom
+    do_make
+    do_make_install
+  cd ..
+
+  do_git_checkout https://github.com/qyot27/ffms2_cplugin.git "" c_plugin
+  cd ffms2_cplugin_git
+    if [[ ! -f configure.bak ]]; then
+      sed -i.bak 's/\[\[.*\]\]/[ "${1##*-}" = "mingw32" ]/;s/cross_prefix%%-/host##*-/;s/${cross_prefix}pkg-config/pkg-config/' configure # Correctly detect MingW32 and use Cygwin's pkg-config.
+      sed -i.bak 's/<mutex>/"mingw.mutex.h"/' src/core/ffms.cpp # Use "mingw-std-threads" implementation of standard C++11 threading classes, which are currently still missing on MinGW GCC.
+      sed -i.bak 's/<thread>/"mingw.thread.h"/' src/core/videosource.cpp # Otherwise you'd get errors like "'mutex' in namespace 'std' does not name a type".
+    fi
+    export CFLAGS="${original_cflags/O2/O0}" # See https://forum.doom9.org/showthread.php?p=1910199#post1910199.
+    do_configure --host=$host_target --prefix=$mingw_w64_x86_64_prefix --cross-prefix=$cross_prefix --enable-debug --extra-ldflags=-s --enable-shared --enable-avisynth --enable-vapoursynth
+    do_make
+    reset_cflags
+
+    mkdir -p $redist_dir
+    archive="$redist_dir/ffm2-$(git describe --tags)_avs+vsp+ffmpeg-$(cd ../FFmpeg-ffms2_git/ && git describe --tags | tail -c +2 | sed 's/dev-//' && cd $OLDPWD)-win32-xpmod-sse"
+    if [[ ! -f $archive.7z ]]; then
+      sed "s/$/\r/" etc/COPYING.GPLv3 > COPYING.GPLv3.txt
+      7z a -mx=9 -bb3 $archive.7z ffms2.dll ffmsindex.exe ./etc/FFMS2-cplugin.avsi doc COPYING.GPLv3.txt
+      rm -v COPYING.GPLv3.txt
+    else
+      echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
+    fi
+  cd ..
+} # ffmpeg, mingw-std-threads
+
 reset_cflags() {
   export CFLAGS=$original_cflags
 }
