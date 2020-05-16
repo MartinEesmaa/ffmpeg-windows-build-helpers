@@ -852,6 +852,21 @@ build_avisynth() {
   cd ..
 }
 
+build_libxvid() {
+  download_and_unpack_file https://downloads.xvid.com/downloads/xvidcore-1.3.7.tar.gz xvidcore
+  cd xvidcore/build/generic
+    if [[ ! -f Makefile.bak ]]; then
+      sed -i.bak "/dll/i\disabled:" Makefile # Static library.
+      sed -i.bak "s/\"xvidcore/\"libxvidcore/" configure # Compile 'libxvidcore.a'.
+    fi
+    export ac_yasm=no # Force the use of NASM.
+    do_configure --host=$host_target --prefix=$mingw_w64_x86_64_prefix
+    do_make
+    do_make_install
+    unset ac_yasm
+  cd ../../..
+}
+
 build_libx264() {
   do_git_checkout http://git.videolan.org/git/x264.git
   cd x264_git
@@ -906,7 +921,7 @@ build_ffmpeg() {
       sed -i.bak "/enabled libfdk_aac/s/&.*/\&\& require_headers fdk-aac\/aacenc_lib.h/;/require libfdk_aac/,/without pkg-config/d;/    libfdk_aac/d;/    libflite/i\    libfdk_aac" configure # Load 'libfdk-aac-1.dll' dynamically.
     fi
     init_options=(--arch=x86 --target-os=mingw32 --cross-prefix=$cross_prefix --extra-cflags="$CFLAGS" --pkg-config=pkg-config --pkg-config-flags=--static --extra-version=Reino --enable-gray --enable-version3 --disable-debug --disable-doc --disable-htmlpages --disable-manpages --disable-podpages --disable-txtpages --disable-w32threads)
-    config_options=("${init_options[@]}" --enable-avisynth --enable-frei0r --enable-filter=frei0r --enable-gmp --enable-gpl --enable-libaom --enable-libass --enable-libfdk-aac --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libgme --enable-libmp3lame --enable-libopenmpt --enable-libopus --enable-libsoxr --enable-libtwolame --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxml2 --enable-libzimg --enable-mbedtls)
+    config_options=("${init_options[@]}" --enable-avisynth --enable-frei0r --enable-filter=frei0r --enable-gmp --enable-gpl --enable-libaom --enable-libass --enable-libfdk-aac --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libgme --enable-libmp3lame --enable-libopenmpt --enable-libopus --enable-libsoxr --enable-libtwolame --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxml2 --enable-libxvid --enable-libzimg --enable-mbedtls)
     if [[ $1 == "shared" ]]; then
       config_options+=(--enable-shared --disable-static --prefix=$PWD)
     else
@@ -982,6 +997,7 @@ build_dependencies() {
   build_fribidi
   build_libass
   build_avisynth
+  build_libxvid
   build_libx264
   build_libx265
   build_libvpx
