@@ -378,13 +378,16 @@ generic_configure() {
 gen_ld_script() {
   lib=$mingw_w64_x86_64_prefix/lib/$1
   lib_s="${1:3:-2}_s"
-  if [ ! -f "$mingw_w64_x86_64_prefix/lib/lib$lib_s.a" ] || [ "$1" -nt "$mingw_w64_x86_64_prefix/lib/lib$lib_s.a" ]; then
-    rm -f $mingw_w64_x86_64_prefix/lib/lib$lib_s.a
+  if [ "$1" -nt "$mingw_w64_x86_64_prefix/lib/lib$lib_s.a" ]; then
+    rm $mingw_w64_x86_64_prefix/lib/lib$lib_s.a
+  fi
+  if [ ! -f "$mingw_w64_x86_64_prefix/lib/lib$lib_s.a" ]; then
     echo -e "\e[1;33mGenerating linker script for $1, adding $2.\e[0m"
-    mv -f $lib $mingw_w64_x86_64_prefix/lib/lib$lib_s.a
+    mv $lib $mingw_w64_x86_64_prefix/lib/lib$lib_s.a
+    echo "echo \"GROUP ( -l$lib_s $2 )\" > $lib"
     echo "GROUP ( -l$lib_s $2 )" > $lib
   else
-    echo -e "\e[1;33mAlready generated linker script for $1.\e[0m"
+    echo -e "\e[1;33mAlready generated linker script for '$1'.\e[0m"
   fi
 } # gen_ld_script libxxx.a -lxxx
 
