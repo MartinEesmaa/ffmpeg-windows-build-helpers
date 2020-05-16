@@ -685,6 +685,18 @@ build_lame() {
   cd ..
 } # [dlfcn]
 
+build_twolame() {
+  do_git_checkout https://github.com/njh/twolame.git
+  cd twolame_git
+    if [[ ! -f Makefile.am.bak ]]; then # Library only.
+      sed -i.bak "/^SUBDIRS/s/ frontend.*//;/pkgdocdir/,+6d;/pkgdoc_DATA/d" Makefile.am
+      sed -i.bak "/#ifdef TL_API/i\#ifndef LIBTWOLAME_STATIC\\n#define LIBTWOLAME_STATIC\\n#endif\\n" libtwolame/twolame.h # Static library.
+    fi
+    generic_configure
+    do_make install
+  cd ..
+} # [dlfcn]
+
 build_fdk-aac() {
   do_git_checkout https://github.com/mstorsjo/fdk-aac.git
   cd fdk-aac_git
@@ -876,7 +888,7 @@ build_ffmpeg() {
       sed -i.bak "/enabled libfdk_aac/s/&.*/\&\& require_headers fdk-aac\/aacenc_lib.h/;/require libfdk_aac/,/without pkg-config/d;/    libfdk_aac/d;/    libflite/i\    libfdk_aac" configure # Load 'libfdk-aac-1.dll' dynamically.
     fi
     init_options=(--arch=x86 --target-os=mingw32 --cross-prefix=$cross_prefix --extra-cflags="$CFLAGS" --pkg-config=pkg-config --pkg-config-flags=--static --extra-version=Reino --enable-gray --enable-version3 --disable-debug --disable-doc --disable-htmlpages --disable-manpages --disable-podpages --disable-txtpages --disable-w32threads)
-    config_options=("${init_options[@]}" --enable-avisynth --enable-frei0r --enable-filter=frei0r --enable-gmp --enable-gpl --enable-libaom --enable-libass --enable-libfdk-aac --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libgme --enable-libmp3lame --enable-libopenmpt --enable-libopus --enable-libsoxr --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxml2 --enable-mbedtls)
+    config_options=("${init_options[@]}" --enable-avisynth --enable-frei0r --enable-filter=frei0r --enable-gmp --enable-gpl --enable-libaom --enable-libass --enable-libfdk-aac --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libgme --enable-libmp3lame --enable-libopenmpt --enable-libopus --enable-libsoxr --enable-libtwolame --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxml2 --enable-mbedtls)
     if [[ $1 == "shared" ]]; then
       config_options+=(--enable-shared --disable-static --prefix=$PWD)
     else
@@ -939,6 +951,7 @@ build_dependencies() {
   build_libvorbis
   build_libopus
   build_lame
+  build_twolame
   build_fdk-aac
   build_libmpg123
   build_libopenmpt
