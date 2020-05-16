@@ -796,9 +796,9 @@ build_libzimg() {
 } # [dlfcn]
 
 build_vidstab() {
-  do_git_checkout https://github.com/georgmartius/vid.stab.git vid.stab_git
+  do_git_checkout https://github.com/georgmartius/vid.stab.git
   cd vid.stab_git
-    if [[ ! -f CMakeLists.txt.bak ]]; then # Change CFLAGS.
+    if [[ ! -f CMakeLists.txt.bak ]]; then # Change GCC optimization level.
       sed -i.bak "s/O3/O2/;s/ -fPIC//" CMakeLists.txt
     fi
     do_cmake $PWD -DBUILD_SHARED_LIBS=0 -DUSE_OMP=0 # '-DUSE_OMP' is on by default, but somehow libgomp ('cygwin_local_install/lib/gcc/i686-pc-cygwin/5.4.0/include/omp.h') can't be found, so '-DUSE_OMP=0' to prevent a compilation error.
