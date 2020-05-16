@@ -482,11 +482,11 @@ build_iconv() {
 } # [dlfcn]
 
 build_sdl2() {
-  download_and_unpack_file https://libsdl.org/release/SDL2-2.0.10.tar.gz
-  cd SDL2-2.0.10
-    apply_patch file://$patch_dir/SDL2-2.0.10_lib-only.diff
-    if [[ ! -f configure.bak ]]; then
-      sed -i.bak "s/ -mwindows//" configure # Allow ffmpeg to output anything to console.
+  download_and_unpack_file https://libsdl.org/release/SDL2-2.0.12.tar.gz
+  cd SDL2-2.0.12
+    if [[ ! -f Makefile.in.bak ]]; then
+      sed -i.bak "/aclocal/d" Makefile.in # Library only.
+      sed -i.bak "s/ -mwindows//;s/iconv_open ()/libiconv_open ()/;s/\"iconv\"/\"libiconv\"/" configure # Allow ffmpeg to output anything to console and use libiconv instead of iconv.
       sed -i.bak "/#ifndef DECLSPEC/i\#define DECLSPEC" include/begin_code.h # Needed for building shared FFmpeg libraries.
     fi
     generic_configure --bindir=$mingw_bin_path
