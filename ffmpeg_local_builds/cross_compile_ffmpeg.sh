@@ -566,42 +566,6 @@ build_mbedtls() {
   cd ..
 }
 
-build_openssl-1.1.1() {
-  download_and_unpack_file https://www.openssl.org/source/openssl-1.1.1d.tar.gz
-  cd openssl-1.1.1d
-    export CC="${cross_prefix}gcc"
-    export AR="${cross_prefix}ar"
-    export RANLIB="${cross_prefix}ranlib"
-    local config_options=(./Configure --prefix=$mingw_w64_x86_64_prefix mingw zlib no-async)
-    # "Note: on older OSes, like CentOS 5, BSD 5, and Windows XP or Vista, you will need to configure with no-async when building OpenSSL 1.1.0 and above. The configuration system does not detect lack of the Posix feature on the platforms." (https://wiki.openssl.org/index.php/Compilation_and_Installation)
-    if [ "$1" = "dllonly" ]; then
-      config_options+=(shared)
-    else
-      config_options+=(no-shared no-dso) # No 'no-engine' because Curl needs it when built with Libssh2.
-    fi
-    do_configure "${config_options[@]}"
-    sed -i "s/-O3/-O2/" Makefile # Change CFLAGS.
-    do_make build_libs
-    if [ "$1" = "dllonly" ]; then # Strip and pack shared libraries.
-      mkdir -p $redist_dir
-      archive="$redist_dir/openssl-1.1.1d-win32-xpmod-sse"
-      if [[ ! -f $archive.7z ]]; then
-        sed "s/$/\r/" LICENSE > LICENSE.txt
-        ${cross_prefix}strip -ps libcrypto-1_1.dll libssl-1_1.dll
-        7z a -mx=9 -bb3 $archive.7z *.dll LICENSE.txt
-        rm -v LICENSE.txt
-      else
-        echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
-      fi
-    else
-      do_make install_dev
-    fi
-    unset CC
-    unset AR
-    unset RANLIB
-  cd ..
-}
-
 build_libogg() {
   do_git_checkout https://github.com/xiph/ogg.git
   cd ogg_git
@@ -1002,9 +966,45 @@ build_openssl-1.0.2() {
   cd ..
 }
 
+build_openssl-1.1.1() {
+  download_and_unpack_file https://www.openssl.org/source/openssl-1.1.1g.tar.gz
+  cd openssl-1.1.1g
+    if [[ ! -f Configurations/10-main.conf.bak ]]; then # Change GCC optimization level.
+      sed -i.bak "s/-O3/-O2/" Configurations/10-main.conf
+    fi
+    export CC="${cross_prefix}gcc"
+    export AR="${cross_prefix}ar"
+    export RANLIB="${cross_prefix}ranlib"
+    local config_options=(./Configure --prefix=$mingw_w64_x86_64_prefix mingw zlib no-async)
+    # "Note: on older OSes, like CentOS 5, BSD 5, and Windows XP or Vista, you will need to configure with no-async when building OpenSSL 1.1.0 and above. The configuration system does not detect lack of the Posix feature on the platforms." (https://wiki.openssl.org/index.php/Compilation_and_Installation)
+    if [ "$1" = "static" ]; then
+      make distclean || exit 1
+      do_configure "${config_options[@]}" no-shared no-dso # No 'no-engine' because Curl needs it when built with Libssh2.
+      do_make install_dev
+    else
+      do_configure "${config_options[@]}" shared
+      do_make build_libs
+
+      mkdir -p $redist_dir
+      archive="$redist_dir/openssl-1.1.1g-win32-xpmod-sse"
+      if [[ ! -f $archive.7z ]]; then # Pack shared libraries.
+        sed "s/$/\r/" LICENSE > LICENSE.txt
+        ${cross_prefix}strip -ps libcrypto-1_1.dll libssl-1_1.dll
+        7z a -mx=9 -bb3 $archive.7z libcrypto-1_1.dll libssl-1_1.dll LICENSE.txt
+        rm -v LICENSE.txt
+      else
+        echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
+      fi
+    fi
+    unset CC
+    unset AR
+    unset RANLIB
+  cd ..
+}
+
 build_openssl-dlls() {
   build_openssl-1.0.2 # Only for building 'libeay32.dll' and 'ssleay32.dll' (for Xidel).
-  build_openssl-1.1.1 dllonly # Only for building 'libcrypto-1_1.dll' and 'libssl-1_1.dll'.
+  build_openssl-1.1.1 # Only for building 'libcrypto-1_1.dll' and 'libssl-1_1.dll'.
 }
 
 build_curl() {
