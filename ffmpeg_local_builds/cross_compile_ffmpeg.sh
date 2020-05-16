@@ -731,8 +731,8 @@ build_libmpg123() {
 } # [dlfcn]
 
 build_libopenmpt() {
-  download_and_unpack_file https://lib.openmpt.org/files/libopenmpt/src/libopenmpt-0.4.11+release.autotools.tar.gz
-  cd libopenmpt-0.4.11+release.autotools
+  download_and_unpack_file https://lib.openmpt.org/files/libopenmpt/src/libopenmpt-0.4.12+release.autotools.tar.gz
+  cd libopenmpt-0.4.12+release.autotools
     if [[ ! -f Makefile.in.bak ]]; then # Library only
       sed -i.bak "/^all-am/s/DATA/pkgconfig_DATA/;/^install-data-am/s/:.*/: \\\/;s/\tinstall-nobase_dist_docDATA /\t/" Makefile.in
     fi
@@ -740,7 +740,7 @@ build_libopenmpt() {
     do_make install
   cd ..
 } # zlib, libmpg123, libogg, libvorbis, [dlfcn, mingw-std-threads]
-# Without mingw-std-threads you'll get "libopenmpt/libopenmpt_impl.cpp:85:2: warning: #warning "Warning: Building libopenmpt with MinGW-w64 without std::thread support is not recommended and is deprecated. Please use MinGW-w64 with posix threading model (as opposed to win32 threading model), or build with mingw-std-threads." [-Wcpp]".
+# Without mingw-std-threads you'd get "libopenmpt/libopenmpt_impl.cpp:85:2: warning: #warning "Warning: Building libopenmpt with MinGW-w64 without std::thread support is not recommended and is deprecated. Please use MinGW-w64 with posix threading model (as opposed to win32 threading model), or build with mingw-std-threads." [-Wcpp]".
 
 build_libgme() {
   do_git_checkout https://bitbucket.org/mpyne/game-music-emu.git
