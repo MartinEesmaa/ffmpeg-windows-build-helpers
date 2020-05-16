@@ -239,6 +239,30 @@ do_hg_checkout() {
   fi
 }
 
+download_and_unpack_file() {
+  local name="${1##*/}"
+  if [[ $2 ]]; then
+    local dir="$2"
+  else
+    local dir="${name/.tar*/}" # remove .tar.xx
+  fi
+  if [ ! -f "$dir/unpacked.successfully" ]; then
+    echo -e "\e[1;33mDownloading (curl) $1.\e[0m"
+    if [[ -f $name ]]; then
+      rm $name || exit 1
+    fi
+    #  From man curl
+    #  -4, --ipv4
+    #  If curl is capable of resolving an address to multiple IP versions (which it is if it is  IPv6-capable),
+    #  this option tells curl to resolve names to IPv4 addresses only.
+    #  avoid a "network unreachable" error in certain [broken Ubuntu] configurations a user ran into once
+    curl -4 "$1" --retry 50 -O -L --fail || exit 1 # -L means "allow redirection" or some odd :|
+    tar -xf "$name" || unzip "$name" || exit 1
+    touch "$dir/unpacked.successfully" || exit 1
+    rm "$name" || exit 1
+  fi
+}
+
 get_small_touchfile_name() { # have to call with assignment like a=$(get_small...)
   echo "$1_$(echo -- "$@" $CFLAGS $LDFLAGS | /usr/bin/env md5sum | sed "s/ //g")" # md5sum to make it smaller, cflags to force rebuild if changes and sed to remove spaces that md5sum introduced.
 }
@@ -279,6 +303,22 @@ do_configure() {
   fi
 }
 
+generic_configure() {
+  do_configure --host=$host_target --prefix=$mingw_w64_x86_64_prefix --disable-shared --enable-static "$@"
+}
+
+do_cmake() {
+  local cmake_options=($1 -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_FIND_ROOT_PATH=$mingw_w64_x86_64_prefix -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY -DCMAKE_RANLIB=${cross_prefix}ranlib.exe -DCMAKE_C_COMPILER=${cross_prefix}gcc.exe -DCMAKE_CXX_COMPILER=${cross_prefix}g++.exe -DCMAKE_RC_COMPILER=${cross_prefix}windres.exe -DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix "${@:2}")
+  local name=$(get_small_touchfile_name already_ran_cmake "${cmake_options[@]}")
+  if [ ! -f $name ]; then
+    echo -e "\e[1;33mConfiguring ${1##*/} as \"cmake –G\"Unix Makefiles\" ${cmake_options[@]}\".\e[0m"
+    cmake –G"Unix Makefiles" "${cmake_options[@]}" || exit 1
+    touch $name || exit 1
+  #else
+  #  echo -e "\e[1;33mAlready configured ${1##*/}.\e[0m"
+  fi
+}
+
 do_make() {
   local dir="${PWD/$cur_dir\/win32\/}"
   local make_options=(-j $cpu_count "$@")
@@ -316,16 +356,6 @@ do_make_install() {
   fi
 }
 
-do_cmake() {
-  local cmake_options=($1 -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_FIND_ROOT_PATH=$mingw_w64_x86_64_prefix -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY -DCMAKE_RANLIB=${cross_prefix}ranlib.exe -DCMAKE_C_COMPILER=${cross_prefix}gcc.exe -DCMAKE_CXX_COMPILER=${cross_prefix}g++.exe -DCMAKE_RC_COMPILER=${cross_prefix}windres.exe -DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix "${@:2}")
-  local name=$(get_small_touchfile_name already_ran_cmake "${cmake_options[@]}")
-  if [ ! -f $name ]; then
-    echo -e "\e[1;33mConfiguring ${1##*/} as \"cmake –G\"Unix Makefiles\" ${cmake_options[@]}\".\e[0m"
-    cmake –G"Unix Makefiles" "${cmake_options[@]}" || exit 1
-    touch $name || exit 1
-  fi
-}
-
 apply_patch() {
   if [[ $2 ]]; then
     local type=$2 # Git patches need '-p1' (also see https://unix.stackexchange.com/a/26502).
@@ -345,34 +375,6 @@ apply_patch() {
   else
     echo -e "\e[1;33mPatch '$name' already applied.\e[0m"
   fi
-}
-
-download_and_unpack_file() {
-  local name="${1##*/}"
-  if [[ $2 ]]; then
-    local dir="$2"
-  else
-    local dir="${name/.tar*/}" # remove .tar.xx
-  fi
-  if [ ! -f "$dir/unpacked.successfully" ]; then
-    echo -e "\e[1;33mDownloading $1.\e[0m"
-    if [[ -f $name ]]; then
-      rm $name || exit 1
-    fi
-    #  From man curl
-    #  -4, --ipv4
-    #  If curl is capable of resolving an address to multiple IP versions (which it is if it is  IPv6-capable),
-    #  this option tells curl to resolve names to IPv4 addresses only.
-    #  avoid a "network unreachable" error in certain [broken Ubuntu] configurations a user ran into once
-    curl -4 "$1" --retry 50 -O -L --fail || exit 1 # -L means "allow redirection" or some odd :|
-    tar -xf "$name" || unzip "$name" || exit 1
-    touch "$dir/unpacked.successfully" || exit 1
-    rm "$name" || exit 1
-  fi
-}
-
-generic_configure() {
-  do_configure --host=$host_target --prefix=$mingw_w64_x86_64_prefix --disable-shared --enable-static "$@"
 }
 
 gen_ld_script() {
@@ -448,7 +450,7 @@ build_bzip2() {
       install -m644 libbz2.a $mingw_w64_x86_64_prefix/lib/libbz2.a
       install -m644 bzlib.h $mingw_w64_x86_64_prefix/include/bzlib.h
     else
-      echo -e "\e[1;33mAlready made bzip2-1.0.8.\e[0m"
+      echo -e "\e[1;33mAlready made and installed bzip2-1.0.8.\e[0m"
     fi
   cd ..
 }
@@ -648,7 +650,7 @@ build_libmpg123() {
     if [[ ! -f libmpg123.pc.in.bak ]]; then
       sed -i.bak "/Libs/a\Libs.private: @LIBS@" libmpg123.pc.in
     fi
-    # FFmpeg's 'configure' needs '-lshlwapi' for LibOpenMPT. Otherwise you'll get "undefined reference to `_imp__PathIs[...]'" and "ERROR: libopenmpt not found using pkg-config" (https://sourceforge.net/p/mpg123/mailman/message/35653684/). Configuring FFmpeg with '--extra-libs=-lshlwapi' is another option.
+    # FFmpeg's 'configure' needs '-lshlwapi' for LibOpenMPT. Otherwise you'd get "undefined reference to `_imp__PathIs[...]'" and "ERROR: libopenmpt not found using pkg-config" (https://sourceforge.net/p/mpg123/mailman/message/35653684/). Configuring FFmpeg with '--extra-libs=-lshlwapi' is another option.
     if [[ ! -f Makefile.in.bak ]]; then # Library only
       sed -i.bak "/^all-am/s/\$(PROG.*/\\\/;/^install-data-am/s/ install-man//;/^install-exec-am/s/ install-binPROGRAMS//" Makefile.in
     fi
@@ -797,7 +799,7 @@ build_libxvid() {
 build_libx264() {
   do_git_checkout http://git.videolan.org/git/x264.git
   cd x264_git
-    if [[ ! -f configure.bak ]]; then # Change CFLAGS.
+    if [[ ! -f configure.bak ]]; then # Change GCC optimization level.
       sed -i.bak "s/O3 -/O2 -/" configure
     fi
     do_configure --host=$host_target --cross-prefix=$cross_prefix --prefix=$mingw_w64_x86_64_prefix --enable-static --disable-cli --disable-win32thread # Use pthreads instead of win32threads.
