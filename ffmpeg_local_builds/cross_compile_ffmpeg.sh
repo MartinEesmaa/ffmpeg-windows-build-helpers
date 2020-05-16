@@ -566,43 +566,6 @@ build_mbedtls() {
   cd ..
 }
 
-build_openssl-1.0.2() {
-  download_and_unpack_file https://www.openssl.org/source/openssl-1.0.2u.tar.gz
-  cd openssl-1.0.2u
-    apply_patch file://$patch_dir/openssl-1.0.2u_lib-only.diff
-    export CC="${cross_prefix}gcc"
-    export AR="${cross_prefix}ar"
-    export RANLIB="${cross_prefix}ranlib"
-    local config_options=(--prefix=$mingw_w64_x86_64_prefix mingw zlib)
-    if [ "$1" = "dllonly" ]; then
-      config_options+=(shared)
-    else
-      config_options+=(no-shared no-dso)
-    fi
-    do_configure ./Configure "${config_options[@]}"
-    sed -i "s/-O3/-O2/" Makefile # Change CFLAGS.
-    if [ "$1" = "dllonly" ]; then # Make, strip and pack shared libraries.
-      do_make build_libs
-      mkdir -p $redist_dir
-      archive="$redist_dir/openssl-1.0.2u-win32-xpmod-sse"
-      if [[ ! -f $archive.7z ]]; then
-        sed "s/$/\r/" LICENSE > LICENSE.txt
-        ${cross_prefix}strip -ps libeay32.dll ssleay32.dll
-        7z a -mx=9 -bb3 $archive.7z *.dll LICENSE.txt
-        rm -v LICENSE.txt
-      else
-        echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
-      fi
-    else
-      do_make
-      do_make_install
-    fi
-    unset CC
-    unset AR
-    unset RANLIB
-  cd ..
-}
-
 build_openssl-1.1.1() {
   download_and_unpack_file https://www.openssl.org/source/openssl-1.1.1d.tar.gz
   cd openssl-1.1.1d
@@ -1010,8 +973,37 @@ build_apps() {
   fi
 }
 
+build_openssl-1.0.2() {
+  download_and_unpack_file https://www.openssl.org/source/openssl-1.0.2u.tar.gz
+  cd openssl-1.0.2u
+    if [[ ! -f Makefile.org.bak ]]; then
+      sed -i.bak "/^DIRS/s/ apps.*//;/^build_all/s/ build_apps.*//;/install:/s/ install_docs//;550s/openssl.*/openssl/;551,553d" Makefile.org # Library only.
+    fi
+    export CC="${cross_prefix}gcc"
+    export AR="${cross_prefix}ar"
+    export RANLIB="${cross_prefix}ranlib"
+    do_configure ./Configure --prefix=$mingw_w64_x86_64_prefix mingw zlib shared
+    sed -i "s/-O3/-O2/" Makefile # Change GCC optimization level.
+    do_make build_libs
+    unset CC
+    unset AR
+    unset RANLIB
+
+    mkdir -p $redist_dir
+    archive="$redist_dir/openssl-1.0.2u-win32-xpmod-sse"
+    if [[ ! -f $archive.7z ]]; then # Pack shared libraries.
+      sed "s/$/\r/" LICENSE > LICENSE.txt
+      ${cross_prefix}strip -ps libeay32.dll ssleay32.dll
+      7z a -mx=9 -bb3 $archive.7z libeay32.dll ssleay32.dll LICENSE.txt
+      rm -v LICENSE.txt
+    else
+      echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
+    fi
+  cd ..
+}
+
 build_openssl-dlls() {
-  build_openssl-1.0.2 dllonly # Only for building 'libeay32.dll' and 'ssleay32.dll' (for Xidel).
+  build_openssl-1.0.2 # Only for building 'libeay32.dll' and 'ssleay32.dll' (for Xidel).
   build_openssl-1.1.1 dllonly # Only for building 'libcrypto-1_1.dll' and 'libssl-1_1.dll'.
 }
 
