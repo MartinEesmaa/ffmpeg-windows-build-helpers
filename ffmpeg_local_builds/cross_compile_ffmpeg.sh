@@ -181,7 +181,6 @@ do_git_checkout() {
     rm -fr $dir.tmp # just in case it was interrupted previously...
     echo -e "\e[1;33mDownloading (git clone) $1 to $dir.\e[0m"
     git clone --branch $branch --single-branch $1 $dir.tmp || exit 1
-    #git clone --depth 1 $1 $dir.tmp || exit 1
     # prevent partial checkouts by renaming it only after success
     mv $dir.tmp $dir
     if [[ $4 ]]; then
@@ -220,36 +219,24 @@ do_hg_checkout() {
     local dir="${1##*/}_hg" # http://y/abc -> abc_hg
   fi
   if [ ! -d $dir ]; then
-    echo -e "\e[1;33mDownloading (via hg clone) $dir from $1.\e[0m"
     rm -fr $dir.tmp # just in case it was interrupted previously...
+    echo -e "\e[1;33mDownloading (hg clone) $1 to $dir.\e[0m"
     hg clone $1 $dir.tmp || exit 1
     # prevent partial checkouts by renaming it only after success
     mv $dir.tmp $dir
-    echo -e "\e[1;33mDone hg cloning to $dir.\e[0m"
-    cd $dir
   else
     cd $dir
-    hg pull # need this no matter what
+      if [[ $(hg id -i) != $(hg id -r default $1) ]]; then # 'hg id http://hg.videolan.org/x265' defaults to the "stable" branch!
+        echo -e "\e[1;33mUpdating $dir to latest hg head.\e[0m"
+        hg revert -a --no-backup # Return files to their original state.
+        hg purge # Clean the working tree; build- as well as untracked files.
+        hg pull -u || exit 1
+        hg update || exit 1
+      else
+        echo -e "\e[1;33mLocal $dir repo is up-to-date.\e[0m"
+      fi
+    cd ..
   fi
-
-  if [[ $3 ]]; then
-    echo -e "\e[1;33mDoing hg update $3.\e[0m"
-    hg revert -a --no-backup
-    hg purge
-    hg update "$3" || exit 1
-    #hg merge "$3" || exit 1 # get incoming changes to a branch
-  else
-    if [[ $(hg id -i) != $(hg id -r default $1) ]]; then # 'hg id http://hg.videolan.org/x265' defaults to the "stable" branch!
-      echo -e "\e[1;33mGot upstream changes. Updating $dir to latest hg version.\e[0m"
-      hg revert -a --no-backup # Return files to their original state.
-      hg purge # Clean the working tree; build- as well as untracked files.
-      hg pull -u || exit 1
-      hg update || exit 1
-    else
-      echo -e "\e[1;33mGot no code changes. Local $dir repo is up-to-date.\e[0m"
-    fi
-  fi
-  cd ..
 }
 
 get_small_touchfile_name() { # have to call with assignment like a=$(get_small...)
