@@ -92,9 +92,7 @@ intro() {
   You can, of course, rebuild ffmpeg from within it, etc.
 EOL
   if [[ $sandbox_ok != 'y' && ! -d sandbox ]]; then
-    echo
-    echo "Building in $PWD/sandbox, will use ~ 4GB space!"
-    echo
+    echo -e "\nBuilding in $PWD/sandbox, will use ~ 4GB space!\n"
   fi
   mkdir -p "$cur_dir"
   cd "$cur_dir"
@@ -110,14 +108,13 @@ download_gcc_build_script() {
 install_cross_compiler() {
   local win32_gcc="cross_compilers/mingw-w64-i686/bin/i686-w64-mingw32-gcc"
   if [[ -f $win32_gcc ]]; then
-    echo "MinGW-w64 compilers for Win32 already installed, not re-installing."
+    echo -e "MinGW-w64 compilers for Win32 already installed, not re-installing.\n"
   else
     mkdir -p cross_compilers
     cd cross_compilers
       unset CFLAGS # don't want these "windows target" settings used the compiler itself since it creates executables to run on the local box (we have a parameter allowing them to set them for the script "all builds" basically)
       # pthreads version to avoid having to use cvs for it
-      echo "Starting to download and build cross compile version of gcc [requires working internet access] with thread count $gcc_cpu_count."
-      echo
+      echo -e "Starting to download and build cross compile version of gcc [requires working internet access] with thread count $gcc_cpu_count.\n"
 
       # --disable-shared allows c++ to be distributed at all...which seemed necessary for some random dependency which happens to use/require c++...
       local zeranoe_script_name=mingw-w64-build-r27 # https://files.1f0.de/mingw/scripts/
@@ -137,7 +134,7 @@ install_cross_compiler() {
       reset_cflags
     cd ..
     echo "Done building (or already built) MinGW-w64 cross-compiler(s) successfully."
-    echo `date` # so they can see how long it took :)
+    echo -e "$(date)\n" # so they can see how long it took :)
   fi
 }
 
@@ -1156,7 +1153,7 @@ export PKG_CONFIG_LIBDIR= # disable pkg-config from finding [and using] normal l
 
 original_path="$PATH"
 echo
-echo "Starting 32-bit builds."
+echo -e "Starting 32-bit builds.\n"
 host_target='i686-w64-mingw32'
 mingw_w64_x86_64_prefix="$cur_dir/cross_compilers/mingw-w64-i686/$host_target"
 mingw_bin_path="$cur_dir/cross_compilers/mingw-w64-i686/bin"
