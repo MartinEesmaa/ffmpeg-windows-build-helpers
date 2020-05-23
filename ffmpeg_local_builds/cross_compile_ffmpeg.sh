@@ -768,7 +768,7 @@ build_libass() {
   cd libass_git
     generic_configure
     do_make install
-  cd
+  cd ..
 } # freetype >= 9.10.3 (see https://bugs.launchpad.net/ubuntu/+source/freetype1/+bug/78573 o_O), fribidi >= 0.19.0, [fontconfig >= 2.10.92, iconv, dlfcn]
 
 build_avisynth() {
