@@ -508,8 +508,8 @@ build_libwebp() {
 } # [dlfcn]
 
 build_freetype() {
-  download_and_unpack_file https://download.savannah.gnu.org/releases/freetype/freetype-2.10.1.tar.xz
-  cd freetype-2.10.1
+  download_and_unpack_file https://download.savannah.gnu.org/releases/freetype/freetype-2.10.2.tar.xz
+  cd freetype-2.10.2
     if [[ ! -f builds/unix/install.mk.bak ]]; then
       sed -i.bak "/config \\\/s/\s*\\\//;/bindir) /s/\s*\\\//;/aclocal/d;/man1/d;/BUILD_DIR/d;/docs/d" builds/unix/install.mk # Library only.
       sed -i.bak "490s/if/if 0 \/\//" builds/unix/ftconfig.in # Static library.
