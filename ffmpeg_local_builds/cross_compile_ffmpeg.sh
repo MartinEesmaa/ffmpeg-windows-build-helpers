@@ -642,12 +642,8 @@ build_fdk-aac() {
 } # [dlfcn]
 
 build_libmpg123() {
-  download_and_unpack_file https://sourceforge.net/projects/mpg123/files/mpg123/1.25.13/mpg123-1.25.13.tar.bz2
-  cd mpg123-1.25.13
-    if [[ ! -f libmpg123.pc.in.bak ]]; then
-      sed -i.bak "/Libs/a\Libs.private: @LIBS@" libmpg123.pc.in
-    fi
-    # FFmpeg's 'configure' needs '-lshlwapi' for LibOpenMPT. Otherwise you'd get "undefined reference to `_imp__PathIs[...]'" and "ERROR: libopenmpt not found using pkg-config" (https://sourceforge.net/p/mpg123/mailman/message/35653684/). Configuring FFmpeg with '--extra-libs=-lshlwapi' is another option.
+  download_and_unpack_file https://sourceforge.net/projects/mpg123/files/mpg123/1.26.3/mpg123-1.26.3.tar.bz2
+  cd mpg123-1.26.3
     if [[ ! -f Makefile.in.bak ]]; then # Library only
       sed -i.bak "/^all-am/s/\$(PROG.*/\\\/;/^install-data-am/s/ install-man//;/^install-exec-am/s/ install-binPROGRAMS//" Makefile.in
     fi
