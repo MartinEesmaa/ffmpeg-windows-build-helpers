@@ -414,8 +414,8 @@ build_cmake() {
 }
 
 build_nasm() {
-  download_and_unpack_file https://www.nasm.us/pub/nasm/releasebuilds/2.14.02/nasm-2.14.02.tar.xz
-  cd nasm-2.14.02
+  download_and_unpack_file https://www.nasm.us/pub/nasm/releasebuilds/2.15.05/nasm-2.15.05.tar.xz
+  cd nasm-2.15.05
     if [[ ! -f Makefile.in.bak ]]; then # Library only and install nasm stripped.
       sed -i.bak '/man1/d;/install:/a\\t$(STRIP) --strip-unneeded nasm$(X) ndisasm$(X)' Makefile.in
     fi
