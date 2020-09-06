@@ -1,6 +1,8 @@
 # ffmpeg-windows-build-helpers
 
-I forked this script from [Roger Pack's ffmpeg-windows-build-helpers](https://github.com/rdp/ffmpeg-windows-build-helpers) in order to compile a Windows XP compatible static and shared FFmpeg build that runs on my old pc with non-SSE2 cpu.  
-FFmpeg has officially dropped support for Windows XP, but I'll try to update the script nonetheless and release some fresh builds so every now and then.  
-See [Windows XP compatible non-SSE2 FFmpeg builds](https://ffmpeg.zeranoe.com/forum/viewtopic.php?f=3&t=6930) on Zeranoe's forum.  
-You can download my builds from [my website](http://rwijnsma.home.xs4all.nl/files/ffmpeg).
+This script is a fork of [Roger Pack's ffmpeg-windows-build-helpers](https://github.com/rdp/ffmpeg-windows-build-helpers). It helps me to compile (FFmpeg) binaries that are Windows XP compatible _and_ will work on old CPUs without SSE2 instruction sets (like my own AMD Athlon XP 3200+).  
+FFmpeg has officially dropped support for Windows XP, but I'll try to create fresh binaries and update the script nonetheless.
+
+**Binaries:** https://rwijnsma.home.xs4all.nl/files/ffmpeg/?C=M;O=D  
+**Other stuff:** https://rwijnsma.home.xs4all.nl/files  
+**Discussion and more info:** https://forum.doom9.org/showthread.php?t=181802
