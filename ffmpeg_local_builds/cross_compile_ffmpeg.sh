@@ -744,6 +744,7 @@ build_fribidi() {
   cd fribidi_git
     if [[ ! -f Makefile.am.bak ]]; then # Library only.
       sed -i.bak "s/ bin.*//" Makefile.am
+      sed -i.bak "s/ __declspec.*//" lib/fribidi-common.h # Otherwise you'd get "undefined reference to `_imp__fribidi_version_info'" while configuring FFmpeg.
     fi
     generic_configure --disable-deprecated
     do_make install
