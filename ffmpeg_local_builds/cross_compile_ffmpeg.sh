@@ -630,7 +630,7 @@ build_fdk-aac() {
     do_make install-strip
 
     mkdir -p $redist_dir
-    archive="$redist_dir/libfdk-aac-$(git describe | tail -c +2)-win32-xpmod-sse"
+    archive="$redist_dir/libfdk-aac-$(git describe | tail -c +2 | sed 's/g//')-win32-xpmod-sse"
     if [[ ! -f $archive.7z ]]; then # Pack shared library.
       sed "s/$/\r/" NOTICE > NOTICE.txt
       7z a -mx=9 -bb3 $archive.7z $mingw_w64_x86_64_prefix/bin/libfdk-aac-2.dll NOTICE.txt
@@ -739,7 +739,7 @@ build_frei0r() {
     do_make install/strip
 
     mkdir -p $redist_dir
-    archive="$redist_dir/frei0r-plugins-$(git describe --tags | tail -c +2)-win32-xpmod-sse"
+    archive="$redist_dir/frei0r-plugins-$(git describe --tags | tail -c +2 | sed 's/g//')-win32-xpmod-sse"
     if [[ ! -f $archive.7z ]]; then # Pack shared libraries.
       for doc in AUTHORS ChangeLog COPYING README.md; do
         sed "s/$/\r/" $doc > $mingw_w64_x86_64_prefix/lib/frei0r-1/$doc.txt
@@ -857,7 +857,7 @@ build_ffmpeg() {
     do_make # Build 'ffmpeg.exe', 'ffplay.exe' and 'ffprobe.exe' (+ '*.dll' for shared build). No install.
 
     mkdir -p $redist_dir
-    archive="$redist_dir/ffmpeg-$(git describe --tags | tail -c +2 | sed "s/dev-//")-win32-$1-xpmod-sse"
+    archive="$redist_dir/ffmpeg-$(git describe --tags | tail -c +2 | sed 's/dev-//;s/g//')-win32-$1-xpmod-sse"
     if [[ $1 == "shared" ]]; then
       do_make_install
       if [[ ! -f $archive.7z ]]; then # Pack shared build.
@@ -1061,6 +1061,7 @@ build_hlsdl() {
 build_ffms2_cplugin() {
   do_git_checkout https://github.com/FFmpeg/FFmpeg.git FFmpeg-ffms2_git "" 1128aa875367f66ac11adc30364d5652919a2591
   cd FFmpeg-ffms2_git
+    ff_rev=$(git describe --tags | tail -c +2 | sed 's/dev-//;s/g//')
     apply_patch file://$patch_dir/ffmpeg_make-bcrypt-optional.patch -p1
     do_configure --arch=x86 --target-os=mingw32 --prefix=$mingw_w64_x86_64_prefix --cross-prefix=$cross_prefix --extra-cflags="$CFLAGS" --pkg-config=pkg-config --pkg-config-flags=--static --enable-gpl --enable-version3 --disable-bcrypt --disable-debug --disable-doc --disable-htmlpages --disable-manpages --disable-podpages --disable-schannel --disable-txtpages --disable-w32threads --disable-avdevice --disable-avfilter --disable-devices --disable-encoders --disable-filters --disable-hwaccels --disable-muxers --disable-network --disable-programs --disable-sdl2 --enable-libaom
     do_make
@@ -1080,7 +1081,7 @@ build_ffms2_cplugin() {
     reset_cflags
 
     mkdir -p $redist_dir
-    archive="$redist_dir/ffm2-$(git describe --tags)_avs+vsp+ffmpeg-$(cd ../FFmpeg-ffms2_git/ && git describe --tags | tail -c +2 | sed 's/dev-//' && cd $OLDPWD)-win32-xpmod-sse"
+    archive="$redist_dir/ffms2-$(git describe --tags | sed 's/g//')-avs-vsp_ffmpeg-$ff_rev-win32-xpmod-sse"
     if [[ ! -f $archive.7z ]]; then
       sed "s/$/\r/" etc/COPYING.GPLv3 > COPYING.GPLv3.txt
       7z a -mx=9 -bb3 $archive.7z ffms2.dll ffmsindex.exe ./etc/FFMS2-cplugin.avsi doc COPYING.GPLv3.txt
