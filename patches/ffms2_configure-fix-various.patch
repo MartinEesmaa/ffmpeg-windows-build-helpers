@@ -1,0 +1,67 @@
+diff --git a/configure b/configure
+index fc8f000..b004a71 100755
+--- a/configure
++++ b/configure
+@@ -33,7 +33,7 @@ fi
+ 
+ # [cc/cxx]_check will fail on non-windows because of wmain/municode
+ # unless we check for mingw first
+-if [[ "$1" =~ "--cross-prefix=*-w64-mingw32-" ]]; then
++if [ "${1##*-}" = "mingw32" ]; then
+     mingw_build="yes"
+ else
+     mingw_build="no"
+@@ -288,7 +288,7 @@ RC=""
+ if [ -z "$host" -a -z "$cross_prefix" ]; then    
+     host=`./config.guess`
+ else
+-    host="${cross_prefix%%-}"
++    host="${host##*-}"
+ fi
+ # normalize a triplet into a quadruplet
+ host=`./config.sub $host`
+@@ -384,19 +384,19 @@ else
+ fi
+ 
+ #find ffmpeg
+-if ${cross_prefix}pkg-config --exists libavformat libavcodec libswscale libavutil 2>$DEVNULL; then
+-    FFMPEG_LIBS="$FFMPEG_LIBS $(${cross_prefix}pkg-config --libs libavformat libavcodec libswscale libavutil)"
+-    FFMPEG_CFLAGS="$FFMPEG_CFLAGS $(${cross_prefix}pkg-config --cflags libavformat libavcodec libswscale libavutil)"
++if pkg-config --exists libavformat libavcodec libswscale libavutil 2>$DEVNULL; then
++    FFMPEG_LIBS="$FFMPEG_LIBS $(pkg-config --libs libavformat libavcodec libswscale libavutil)"
++    FFMPEG_CFLAGS="$FFMPEG_CFLAGS $(pkg-config --cflags libavformat libavcodec libswscale libavutil)"
+ fi
+ 
+ #check for the presence of swresample and avresample, prefer swresample if present
+-if ${cross_prefix}pkg-config --exists libswresample 2>$DEVNULL; then
+-    FFMPEG_LIBS="$FFMPEG_LIBS $(${cross_prefix}pkg-config --libs libswresample)"
+-    FFMPEG_CFLAGS="$FFMPEG_CFLAGS $(${cross_prefix}pkg-config --cflags libswresample) -DWITH_SWRESAMPLE"
++if pkg-config --exists libswresample 2>$DEVNULL; then
++    FFMPEG_LIBS="$FFMPEG_LIBS $(pkg-config --libs libswresample)"
++    FFMPEG_CFLAGS="$FFMPEG_CFLAGS $(pkg-config --cflags libswresample) -DWITH_SWRESAMPLE"
+     RESAMPLE_LIB="swresample"
+-elif ${cross_prefix}pkg-config --exists libavresample 2>$DEVNULL; then
+-    FFMPEG_LIBS="$FFMPEG_LIBS $(${cross_prefix}pkg-config --libs libavresample)"
+-    FFMPEG_CFLAGS="$FFMPEG_CFLAGS $(${cross_prefix}pkg-config --cflags libavresample)"
++elif pkg-config --exists libavresample 2>$DEVNULL; then
++    FFMPEG_LIBS="$FFMPEG_LIBS $(pkg-config --libs libavresample)"
++    FFMPEG_CFLAGS="$FFMPEG_CFLAGS $(pkg-config --cflags libavresample)"
+     RESAMPLE_LIB="avresample"
+ fi
+ 
+@@ -489,12 +489,11 @@ if [ "$debug" = "yes" ]; then
+ 		      test "x$?" != "x0" && pkg_failed=yes
+ fi
+ 
+-if [ "$optlevel" != "no" -a "$olev" = "0" ] ; then
+-    CFLAGS="$CFLAGS"
+-    CXXFLAGS="$CXXFLAGS"
+-else
++if [[ $CFLAGS != *-O* && $olev != 0 ]] ; then
+     CFLAGS="-O$olev $CFLAGS"
+     CXXFLAGS="-O$olev $CXXFLAGS"
++else
++    olev=$(head -c1 <<< ${CFLAGS/*-O})
+ fi
+ 
+ 

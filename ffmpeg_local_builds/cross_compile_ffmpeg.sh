@@ -1054,15 +1054,14 @@ build_ffms2_cplugin() {
 
   do_git_checkout https://github.com/qyot27/ffms2_cplugin.git "" c_plugin
   cd ffms2_cplugin_git
-    if [[ ! -f configure.bak ]]; then
-      sed -i.bak 's/\[\[.*\]\]/[ "${1##*-}" = "mingw32" ]/;s/cross_prefix%%-/host##*-/;s/${cross_prefix}pkg-config/pkg-config/' configure # Correctly detect MingW32 and use Cygwin's pkg-config.
+    apply_patch file://$patch_dir/ffms2_configure-fix-various.patch -p1 # Correctly detect MingW32, use Cygwin's pkg-config and don't set GCC optimization level twice if $CFLAGS already contains one.
+    if [[ ! -f src/core/ffms.cpp.bak ]]; then
       sed -i.bak 's/<mutex>/"mingw.mutex.h"/' src/core/ffms.cpp # Use "mingw-std-threads" implementation of standard C++11 threading classes, which are currently still missing on MinGW GCC.
       sed -i.bak 's/<thread>/"mingw.thread.h"/' src/core/videosource.cpp # Otherwise you'd get errors like "'mutex' in namespace 'std' does not name a type".
     fi
-    export CFLAGS="${original_cflags/O2/O0}" # See https://forum.doom9.org/showthread.php?p=1910199#post1910199.
-    do_configure --host=$host_target --prefix=$mingw_w64_x86_64_prefix --cross-prefix=$cross_prefix --enable-debug --extra-ldflags=-s --enable-shared --enable-avisynth --enable-vapoursynth
+    do_configure --host=$host_target --prefix=$mingw_w64_x86_64_prefix --cross-prefix=$cross_prefix --enable-shared --enable-avisynth --enable-vapoursynth
     do_make
-    reset_cflags
+    rm -f NUL # Somehow this "file" is created and Windows Explorer can't delete it.
 
     mkdir -p $redist_dir
     archive="$redist_dir/ffms2-$(git describe --tags | sed 's/g//')-avs-vsp_ffmpeg-$ff_rev-win32-xpmod-sse"
