@@ -1,5 +1,16 @@
+From d1f351c977f44661547eec456a1b0b2c0350c5c3 Mon Sep 17 00:00:00 2001
+From: Reino17 <rwijnsma@xs4all.nl>
+Date: Sun, 30 Aug 2020 19:12:55 +0200
+Subject: [PATCH 4/4] libavfilter/vf_frei0r.c: load shared frei0r libraries
+ dynamically
+
+See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0004-avfilters-better-behavior-of-frei0r-on-win32.patch.
+---
+ libavfilter/vf_frei0r.c | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
 diff --git a/libavfilter/vf_frei0r.c b/libavfilter/vf_frei0r.c
-index c775ed1..9148f8d 100644
+index 5d38405..cbf74a5 100644
 --- a/libavfilter/vf_frei0r.c
 +++ b/libavfilter/vf_frei0r.c
 @@ -42,6 +42,10 @@
@@ -13,24 +24,20 @@ index c775ed1..9148f8d 100644
  typedef f0r_instance_t (*f0r_construct_f)(unsigned int width, unsigned int height);
  typedef void (*f0r_destruct_f)(f0r_instance_t instance);
  typedef void (*f0r_deinit_f)(void);
-@@ -240,11 +244,31 @@ static av_cold int frei0r_init(AVFilterContext *ctx,
+@@ -240,11 +244,27 @@ static av_cold int frei0r_init(AVFilterContext *ctx,
          if (ret < 0)
              return ret;
      }
 +#ifdef _WIN32
 +    if (!s->dl_handle) {
 +        char *ls, prefix[MAX_PATH + 1];
-+
 +        if (!GetModuleFileNameA(NULL, prefix, MAX_PATH))
 +            return AVERROR(EINVAL);
 +        prefix[MAX_PATH] = 0;
-+
 +        if (!(ls = strrchr(prefix, '\\')))
 +            return AVERROR(EINVAL);
-+
 +        *ls = 0;
 +        strncat(prefix, "\\frei0r-1\\", sizeof(prefix) - 1 - strlen(prefix));
-+
 +        ret = load_path(ctx, &s->dl_handle, prefix, dl_name);
 +        if (ret < 0)
 +            return ret;
@@ -45,3 +52,6 @@ index c775ed1..9148f8d 100644
      if (!s->dl_handle) {
          av_log(ctx, AV_LOG_ERROR, "Could not find module '%s'.\n", dl_name);
          return AVERROR(EINVAL);
+-- 
+2.8.3
+

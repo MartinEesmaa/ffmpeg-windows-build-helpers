@@ -826,21 +826,17 @@ build_libaom() {
 } # cmake >= 3.5
 
 build_ffmpeg() {
-  do_git_checkout https://github.com/FFmpeg/FFmpeg.git "" "" 1128aa875367f66ac11adc30364d5652919a2591
+  do_git_checkout https://github.com/FFmpeg/FFmpeg.git "" "" 276d86a8b80378ac08f51dbd2698c4d234f0e5d6
   cd FFmpeg_git
-    apply_patch file://$patch_dir/ffmpeg_make-bcrypt-optional.patch -p1 # WinXP doesn't have 'bcrypt'. See https://github.com/FFmpeg/FFmpeg/commit/aedbf1640ced8fc09dc980ead2a387a59d8f7f68 and https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0001-make-bcrypt-optional-on-win32.patch.
-    apply_patch file://$patch_dir/ffmpeg_load-shared-libfdk-aac-library-dynamically.patch -p1 # See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0003-dynamic-loading-of-shared-fdk-aac-library.patch.
-    apply_patch file://$patch_dir/ffmpeg_load-shared-frei0r-libraries-dynamically.patch -p1 # See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0004-avfilters-better-behavior-of-frei0r-on-win32.patch.
-    if [[ ! -f libavformat/udp.c.bak ]]; then
-      sed -i.bak "s/#ifdef _WIN32/#ifndef _WIN32_WINNT_WINXP/" libavformat/udp.c
-      # Otherwise you'd get "The procedure entry point CancelIoEx could not be located in the dynamic link library KERNEL32.dll" while running ffmpeg, ffplay, or ffprobe, because CancelIoEx() is only available on Windows Vista and later.
-      # See https://github.com/FFmpeg/FFmpeg/commit/53aa76686e7ff4f1f6625502503d7923cec8c10e#diff-612cd5096dca6b6969e9743c462bfad0 and https://trac.ffmpeg.org/ticket/5717. This obviously doesn't fix the ticket, but simply reverts the change.
-    fi
+    apply_patch file://$patch_dir/0001-use-WinXP-s-wincrypt-API-again.patch -p1 # WinXP doesn't have 'bcrypt'. See https://github.com/FFmpeg/FFmpeg/commit/aedbf1640ced8fc09dc980ead2a387a59d8f7f68.
+    apply_patch file://$patch_dir/0002-revert-53aa766-for-winxp-compatibility.patch -p1 # Otherwise you'd get "The procedure entry point CancelIoEx could not be located in the dynamic link library KERNEL32.dll" while running ffmpeg.exe, ffplay.exe, or ffprobe.exe, because 'CancelIoEx()' is only available on Windows Vista and later. See https://github.com/FFmpeg/FFmpeg/commit/53aa76686e7ff4f1f6625502503d7923cec8c10e and https://trac.ffmpeg.org/ticket/5717. This obviously doesn't fix the ticket, but simply reverts the commit.
+    apply_patch file://$patch_dir/0003-load-shared-libfdk-aac-library-dynamically.patch -p1 # See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0003-dynamic-loading-of-shared-fdk-aac-library.patch.
+    apply_patch file://$patch_dir/0004-load-shared-frei0r-libraries-dynamically.patch -p1 # See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0004-avfilters-better-behavior-of-frei0r-on-win32.patch.
     init_options=(--arch=x86 --target-os=mingw32 --prefix=$mingw_w64_x86_64_prefix --cross-prefix=$cross_prefix --extra-cflags="$CFLAGS")
     if [[ $1 == "shared" ]]; then
       init_options+=(--enable-shared --disable-static) # Building a static FFmpeg is the default, so no need to specify '--enable-static --disable-shared'.
     fi
-    init_options+=(--pkg-config=pkg-config --pkg-config-flags=--static --extra-version=Reino --enable-gpl --enable-gray --enable-version3 --disable-bcrypt --disable-debug --disable-doc --disable-htmlpages --disable-manpages --disable-podpages --disable-txtpages --disable-w32threads)
+    init_options+=(--pkg-config=pkg-config --pkg-config-flags=--static --extra-version=Reino --enable-gpl --enable-gray --enable-version3 --disable-debug --disable-doc --disable-htmlpages --disable-manpages --disable-mediafoundation --disable-podpages --disable-txtpages --disable-w32threads)
     do_configure "${init_options[@]}" --enable-avisynth --enable-frei0r --enable-filter=frei0r --enable-gmp --enable-libaom --enable-libass --enable-libfdk-aac --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libgme --enable-libmp3lame --enable-libopenmpt --enable-libopus --enable-libsoxr --enable-libtwolame --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxml2 --enable-libxvid --enable-libzimg --enable-mbedtls
     do_make # Build 'ffmpeg.exe', 'ffplay.exe' and 'ffprobe.exe' (+ '*.dll' for shared build). No install.
 
@@ -1047,11 +1043,11 @@ build_hlsdl() {
 } # curl(openssl)
 
 build_ffms2_cplugin() {
-  do_git_checkout https://github.com/FFmpeg/FFmpeg.git FFmpeg-ffms2_git "" 1128aa875367f66ac11adc30364d5652919a2591
+  do_git_checkout https://github.com/FFmpeg/FFmpeg.git FFmpeg-ffms2_git "" 276d86a8b80378ac08f51dbd2698c4d234f0e5d6
   cd FFmpeg-ffms2_git
     ff_rev=$(git describe --tags | tail -c +2 | sed 's/dev-//;s/g//')
-    apply_patch file://$patch_dir/ffmpeg_make-bcrypt-optional.patch -p1
-    do_configure --arch=x86 --target-os=mingw32 --prefix=$mingw_w64_x86_64_prefix --cross-prefix=$cross_prefix --extra-cflags="$CFLAGS" --pkg-config=pkg-config --pkg-config-flags=--static --enable-gpl --enable-version3 --disable-bcrypt --disable-debug --disable-doc --disable-htmlpages --disable-manpages --disable-podpages --disable-schannel --disable-txtpages --disable-w32threads --disable-avdevice --disable-avfilter --disable-devices --disable-encoders --disable-filters --disable-hwaccels --disable-muxers --disable-network --disable-programs --disable-sdl2 --enable-libaom
+    apply_patch file://$patch_dir/0001-use-WinXP-s-wincrypt-API-again.patch -p1
+    do_configure --arch=x86 --target-os=mingw32 --prefix=$mingw_w64_x86_64_prefix --cross-prefix=$cross_prefix --extra-cflags="$CFLAGS" --pkg-config=pkg-config --pkg-config-flags=--static --enable-gpl --enable-version3 --disable-debug --disable-doc --disable-htmlpages --disable-manpages --disable-podpages --disable-schannel --disable-txtpages --disable-w32threads --disable-avdevice --disable-avfilter --disable-devices --disable-encoders --disable-filters --disable-hwaccels --disable-mediafoundation --disable-muxers --disable-network --disable-programs --disable-sdl2 --enable-libaom
     do_make
     do_make_install
   cd ..
