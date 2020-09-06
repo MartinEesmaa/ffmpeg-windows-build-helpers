@@ -366,7 +366,7 @@ apply_patch() {
     fi
     curl -4 --retry 5 $1 -O --fail || exit 1
     echo -e "\e[1;33mApplying patch '$name'.\e[0m"
-    patch $type < "$name" || exit 1
+    patch $type -i "$name" || exit 1
     touch $name.done || exit 1
     rm -f already_ran* # if it's a new patch, reset everything too, in case it's really really really new
   else
