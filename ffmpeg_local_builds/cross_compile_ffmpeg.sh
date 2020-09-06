@@ -603,7 +603,6 @@ build_libopus() {
 build_lame() {
   do_svn_checkout https://svn.code.sf.net/p/lame/svn/trunk/lame lame_svn
   cd lame_svn
-    apply_patch file://$patch_dir/libmp3lame_fix-nasm-compilation.patch # Fix NASM compilation error by changing 'nasm.h' from UTF-8 BOM to UTF-8 and mute several warnings. See https://sourceforge.net/p/lame/patches/81/.
     if [[ ! -f Makefile.in.bak ]]; then # Library only.
       sed -i.bak "/^SUBDIRS/s/ frontend//;/^SUBDIRS/s/ doc//" Makefile.in
     fi
