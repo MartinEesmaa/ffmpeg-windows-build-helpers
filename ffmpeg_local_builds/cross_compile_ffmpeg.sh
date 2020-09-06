@@ -305,11 +305,11 @@ generic_configure() {
 }
 
 do_cmake() {
-  local cmake_options=($1 -DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_FIND_ROOT_PATH=$mingw_w64_x86_64_prefix -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY -DCMAKE_RANLIB=${cross_prefix}ranlib.exe -DCMAKE_C_COMPILER=${cross_prefix}gcc.exe -DCMAKE_CXX_COMPILER=${cross_prefix}g++.exe -DCMAKE_RC_COMPILER=${cross_prefix}windres.exe -DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix "${@:2}")
+  local cmake_options=(-DENABLE_STATIC_RUNTIME=1 -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_FIND_ROOT_PATH=$mingw_w64_x86_64_prefix -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY -DCMAKE_RANLIB=${cross_prefix}ranlib.exe -DCMAKE_C_COMPILER=${cross_prefix}gcc.exe -DCMAKE_CXX_COMPILER=${cross_prefix}g++.exe -DCMAKE_RC_COMPILER=${cross_prefix}windres.exe -DCMAKE_INSTALL_PREFIX=$mingw_w64_x86_64_prefix "${@:2}" $1)
   local name=$(get_small_touchfile_name already_ran_cmake "${cmake_options[@]}")
   if [ ! -f $name ]; then
-    echo -e "\e[1;33mConfiguring ${1##*/} as \"cmake –G\"Unix Makefiles\" ${cmake_options[@]}\".\e[0m"
-    cmake –G"Unix Makefiles" "${cmake_options[@]}" || exit 1
+    echo -e "\e[1;33mConfiguring ${1##*/} as \"cmake -G \"Unix Makefiles\" ${cmake_options[@]}\".\e[0m"
+    cmake -G "Unix Makefiles" "${cmake_options[@]}" || exit 1
     touch $name || exit 1
   #else
   #  echo -e "\e[1;33mAlready configured ${1##*/}.\e[0m"
