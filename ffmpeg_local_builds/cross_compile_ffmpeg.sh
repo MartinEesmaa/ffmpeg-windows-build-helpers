@@ -579,7 +579,7 @@ build_libvorbis() {
   do_git_checkout https://github.com/xiph/vorbis.git
   cd vorbis_git
     if [[ ! -f Makefile.am.bak ]]; then # Library only.
-      sed -i.bak "s/ test.*//;/m4data/,+2d" Makefile.am
+      sed -i.bak "s/ test doc//;/m4data/,+2d" Makefile.am
     fi
     generic_configure --disable-docs --disable-examples --disable-oggtest
     do_make install
