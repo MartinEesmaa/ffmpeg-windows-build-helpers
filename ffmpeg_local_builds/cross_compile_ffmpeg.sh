@@ -800,6 +800,7 @@ build_libx264() {
 build_libx265() {
   do_hg_checkout http://hg.videolan.org/x265
   cd x265_hg/source
+    apply_patch file://$patch_dir/x265_fix-nasm-warnings.patch -p1 # See https://github.com/sherpya/mplayer-be/blob/master/packages/x265/patches/01_sherpya_nasm-warnings.diff.
     do_cmake $PWD -DENABLE_SHARED=0 -DENABLE_CLI=0 -DWINXP_SUPPORT=1 # No '-DHIGH_BIT_DEPTH=1'. See 'x265_hg/source/CMakeLists.txt' why.
     do_make install
   cd ../..
