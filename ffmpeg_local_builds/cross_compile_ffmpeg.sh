@@ -1050,7 +1050,7 @@ build_hlsdl() {
 } # curl(openssl)
 
 build_ffms2_cplugin() {
-  do_git_checkout https://github.com/FFmpeg/FFmpeg.git FFmpeg-ffms2_git "" 276d86a8b80378ac08f51dbd2698c4d234f0e5d6
+  do_git_checkout https://github.com/FFmpeg/FFmpeg.git FFmpeg-ffms2_git "" 2c6f532e0a29527347418d2d8c4ccfe57a6ace0e
   cd FFmpeg-ffms2_git
     ff_rev=$(git describe --tags | tail -c +2 | sed 's/dev-//;s/g//')
     apply_patch file://$patch_dir/0001-use-WinXP-s-wincrypt-API-again.patch -p1
