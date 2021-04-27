@@ -832,7 +832,7 @@ build_libaom() {
 } # cmake >= 3.5
 
 build_ffmpeg() {
-  do_git_checkout https://github.com/FFmpeg/FFmpeg.git "" "" 276d86a8b80378ac08f51dbd2698c4d234f0e5d6
+  do_git_checkout https://github.com/FFmpeg/FFmpeg.git "" "" 2c6f532e0a29527347418d2d8c4ccfe57a6ace0e
   cd FFmpeg_git
     apply_patch file://$patch_dir/0001-use-WinXP-s-wincrypt-API-again.patch -p1 # WinXP doesn't have 'bcrypt'. See https://github.com/FFmpeg/FFmpeg/commit/aedbf1640ced8fc09dc980ead2a387a59d8f7f68.
     apply_patch file://$patch_dir/0002-revert-53aa766-for-winxp-compatibility.patch -p1 # Otherwise you'd get "The procedure entry point CancelIoEx could not be located in the dynamic link library KERNEL32.dll" while running ffmpeg.exe, ffplay.exe, or ffprobe.exe, because 'CancelIoEx()' is only available on Windows Vista and later. See https://github.com/FFmpeg/FFmpeg/commit/53aa76686e7ff4f1f6625502503d7923cec8c10e and https://trac.ffmpeg.org/ticket/5717. This obviously doesn't fix the ticket, but simply reverts the commit.
@@ -1143,7 +1143,6 @@ install_cross_compiler
 export PKG_CONFIG_LIBDIR= # disable pkg-config from finding [and using] normal linux system installed libs [yikes]
 
 original_path="$PATH"
-echo
 echo -e "Starting 32-bit builds.\n"
 host_target='i686-w64-mingw32'
 mingw_w64_x86_64_prefix="$cur_dir/cross_compilers/mingw-w64-i686/$host_target"

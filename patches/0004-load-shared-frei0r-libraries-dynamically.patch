@@ -1,8 +1,7 @@
-From d1f351c977f44661547eec456a1b0b2c0350c5c3 Mon Sep 17 00:00:00 2001
+From 4c71ed62a46cdbbc9f6292e3afc704476a229c6b Mon Sep 17 00:00:00 2001
 From: Reino17 <rwijnsma@xs4all.nl>
-Date: Sun, 30 Aug 2020 19:12:55 +0200
-Subject: [PATCH 4/4] libavfilter/vf_frei0r.c: load shared frei0r libraries
- dynamically
+Date: Sat, 2 Jan 2021 00:05:50 +0100
+Subject: [PATCH 4/4] libavfilter/vf_frei0r.c: load shared frei0r libraries dynamically
 
 See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0004-avfilters-better-behavior-of-frei0r-on-win32.patch.
 ---
@@ -10,7 +9,7 @@ See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0004-avfilters-
  1 file changed, 20 insertions(+)
 
 diff --git a/libavfilter/vf_frei0r.c b/libavfilter/vf_frei0r.c
-index 5d38405..cbf74a5 100644
+index c084d5b..5a9543c 100644
 --- a/libavfilter/vf_frei0r.c
 +++ b/libavfilter/vf_frei0r.c
 @@ -42,6 +42,10 @@

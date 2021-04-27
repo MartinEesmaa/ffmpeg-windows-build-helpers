@@ -1,8 +1,7 @@
-From 1fa422664d64ada7102abf9a65a05ccda98c8fc2 Mon Sep 17 00:00:00 2001
+From 5ceb28332170be195e283323b75339ec144a022b Mon Sep 17 00:00:00 2001
 From: Reino17 <rwijnsma@xs4all.nl>
-Date: Sun, 30 Aug 2020 19:06:49 +0200
-Subject: [PATCH 3/4] libavcodec/libfdk-aac*: load shared libfdk-aac library
- dynamically
+Date: Sat, 2 Jan 2021 00:02:50 +0100
+Subject: [PATCH 3/4] libavcodec/libfdk-aac*: load shared libfdk-aac library dynamically
 
 See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0003-dynamic-loading-of-shared-fdk-aac-library.patch.
 ---
@@ -11,10 +10,10 @@ See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0003-dynamic-lo
  libavcodec/libfdk-aacdec.c       | 32 +++++++++++++--
  libavcodec/libfdk-aacenc.c       | 24 +++++++++++-
  4 files changed, 137 insertions(+), 9 deletions(-)
- create mode 100755 libavcodec/libfdk-aac_internal.h
+ create mode 100644 libavcodec/libfdk-aac_internal.h
 
 diff --git a/configure b/configure
-index f9a836b..035a393 100755
+index b71fb81..85a4b57 100755
 --- a/configure
 +++ b/configure
 @@ -1733,7 +1733,6 @@ EXTERNAL_LIBRARY_GPL_LIST="
@@ -33,7 +32,7 @@ index f9a836b..035a393 100755
      libflite
      libfontconfig
      libfreetype
-@@ -6336,9 +6336,7 @@ enabled libdav1d          && require_pkg_config libdav1d "dav1d >= 0.5.0" "dav1d
+@@ -6348,9 +6348,7 @@ enabled libdav1d          && require_pkg_config libdav1d "dav1d >= 0.5.0" "dav1d
  enabled libdavs2          && require_pkg_config libdavs2 "davs2 >= 1.6.0" davs2.h davs2_decoder_open
  enabled libdc1394         && require_pkg_config libdc1394 libdc1394-2 dc1394/dc1394.h dc1394_new
  enabled libdrm            && require_pkg_config libdrm libdrm xf86drm.h drmGetVersion

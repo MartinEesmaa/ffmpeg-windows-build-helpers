@@ -1,6 +1,6 @@
-From 1c79399977a3c9ef6d936b0b38b492f505e384a1 Mon Sep 17 00:00:00 2001
+From 07781bb367e31bbee711ddaef7c3080162cf0437 Mon Sep 17 00:00:00 2001
 From: Reino17 <rwijnsma@xs4all.nl>
-Date: Sun, 30 Aug 2020 18:44:07 +0200
+Date: Fri, 1 Jan 2021 23:51:21 +0100
 Subject: [PATCH 1/4] libavutil/random_seed.c: use WinXP's wincrypt API again
 
 WinXP doesn't have 'bcrypt'. See https://github.com/FFmpeg/FFmpeg/commit/aedbf1640ced8fc09dc980ead2a387a59d8f7f68.
@@ -10,10 +10,10 @@ WinXP doesn't have 'bcrypt'. See https://github.com/FFmpeg/FFmpeg/commit/aedbf16
  2 files changed, 12 insertions(+), 14 deletions(-)
 
 diff --git a/configure b/configure
-index 5640720..f9a836b 100755
+index 9005057..b71fb81 100755
 --- a/configure
 +++ b/configure
-@@ -2254,10 +2254,10 @@ SYSTEM_FUNCS="
+@@ -2255,10 +2255,10 @@ SYSTEM_FUNCS="
  "
  
  SYSTEM_LIBRARIES="
@@ -25,7 +25,7 @@ index 5640720..f9a836b 100755
  "
  
  TOOLCHAIN_FEATURES="
-@@ -3691,7 +3691,7 @@ avformat_deps="avcodec avutil"
+@@ -3708,7 +3708,7 @@ avformat_deps="avcodec avutil"
  avformat_suggest="libm network zlib"
  avresample_deps="avutil"
  avresample_suggest="libm"
@@ -34,7 +34,7 @@ index 5640720..f9a836b 100755
  postproc_deps="avutil gpl"
  postproc_suggest="libm"
  swresample_deps="avutil"
-@@ -6170,10 +6170,9 @@ check_headers asm/types.h
+@@ -6181,10 +6181,9 @@ check_headers asm/types.h
  check_builtin stdatomic stdatomic.h "atomic_int foo, bar = ATOMIC_VAR_INIT(-1); atomic_store(&foo, 0); foo += bar"
  
  check_lib advapi32 "windows.h"            RegCloseKey          -ladvapi32
