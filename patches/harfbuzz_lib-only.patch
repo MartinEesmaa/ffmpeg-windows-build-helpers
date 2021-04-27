@@ -1,0 +1,165 @@
+diff --git a/src/Makefile.am b/src/Makefile.am
+index c341d40..e89130a 100644
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -10,7 +10,6 @@ DISTCLEANFILES =
+ MAINTAINERCLEANFILES =
+ DISTCHECK_CONFIGURE_FLAGS = --enable-introspection
+ TESTS =
+-check_PROGRAMS =
+ 
+ EXTRA_DIST += harfbuzz.cc
+ EXTRA_DIST += meson.build
+@@ -112,8 +111,6 @@ HBLIBS += $(HBNONPCLIBS)
+ if OS_WIN32
+ export_symbols = -export-symbols harfbuzz.def
+ harfbuzz_def_dependency = harfbuzz.def
+-export_symbols_subset = -export-symbols harfbuzz-subset.def
+-harfbuzz_subset_def_dependency = harfbuzz-subset.def
+ export_symbols_icu = -export-symbols harfbuzz-icu.def
+ harfbuzz_icu_def_dependency = harfbuzz-icu.def
+ export_symbols_gobject = -export-symbols harfbuzz-gobject.def
+@@ -149,17 +146,6 @@ cmakedir = $(libdir)/cmake/harfbuzz
+ cmake_DATA = harfbuzz-config.cmake
+ EXTRA_DIST += hb-version.h.in harfbuzz.pc.in harfbuzz-config.cmake.in
+ 
+-lib_LTLIBRARIES += libharfbuzz-subset.la
+-libharfbuzz_subset_la_LINK = $(chosen_linker) $(libharfbuzz_subset_la_LDFLAGS)
+-libharfbuzz_subset_la_SOURCES = $(HB_SUBSET_sources)
+-libharfbuzz_subset_la_CPPFLAGS = $(HBCFLAGS) $(CODE_COVERAGE_CFLAGS)
+-libharfbuzz_subset_la_LDFLAGS = $(base_link_flags) $(export_symbols_subset) $(CODE_COVERAGE_LDFLAGS)
+-libharfbuzz_subset_la_LIBADD = libharfbuzz.la
+-EXTRA_libharfbuzz_subset_la_DEPENDENCIES = $(harfbuzz_subset_def_dependency)
+-pkginclude_HEADERS += $(HB_SUBSET_headers)
+-pkgconfig_DATA += harfbuzz-subset.pc
+-EXTRA_DIST += harfbuzz-subset.pc.in
+-
+ if HAVE_ICU
+ if HAVE_ICU_BUILTIN
+ HBCFLAGS += $(ICU_CFLAGS)
+@@ -229,7 +215,7 @@ EXTRA_DIST += \
+ CLEANFILES += $(pkgconfig_DATA)
+ 
+ 
+-DEF_FILES = harfbuzz.def harfbuzz-subset.def harfbuzz-icu.def harfbuzz-deprecated-symbols.txt
++DEF_FILES = harfbuzz.def harfbuzz-icu.def harfbuzz-deprecated-symbols.txt
+ if HAVE_GOBJECT
+ DEF_FILES += harfbuzz-gobject.def
+ endif
+@@ -237,8 +223,6 @@ check: $(DEF_FILES) # For check-symbols.sh
+ CLEANFILES += $(DEF_FILES)
+ harfbuzz.def: $(HBHEADERS) $(HBNODISTHEADERS)
+ 	$(AM_V_GEN) $(srcdir)/gen-def.py "$@" $^
+-harfbuzz-subset.def: $(HB_SUBSET_headers)
+-	$(AM_V_GEN) $(srcdir)/gen-def.py "$@" $^
+ harfbuzz-icu.def: $(HB_ICU_headers)
+ 	$(AM_V_GEN) $(srcdir)/gen-def.py "$@" $^
+ harfbuzz-gobject.def: $(HB_GOBJECT_headers)
+@@ -297,107 +281,6 @@ harfbuzz.cc: Makefile.sources
+ 	|| ($(RM) $(srcdir)/harfbuzz.cc; false)
+ BUILT_SOURCES += harfbuzz.cc
+ 
+-noinst_PROGRAMS = \
+-	main \
+-	test \
+-	test-buffer-serialize \
+-	test-ot-meta \
+-	test-ot-name \
+-	test-ot-glyphname \
+-	test-gpos-size-params \
+-	test-gsub-would-substitute \
+-	$(NULL)
+-bin_PROGRAMS =
+-
+-main_SOURCES = main.cc
+-main_CPPFLAGS = $(HBCFLAGS)
+-main_LDADD = libharfbuzz.la $(HBLIBS)
+-
+-test_SOURCES = test.cc
+-test_CPPFLAGS = $(HBCFLAGS) $(FREETYPE_CFLAGS)
+-test_LDADD = libharfbuzz.la $(HBLIBS) $(FREETYPE_LIBS)
+-
+-test_buffer_serialize_SOURCES = test-buffer-serialize.cc
+-test_buffer_serialize_CPPFLAGS = $(HBCFLAGS)
+-test_buffer_serialize_LDADD = libharfbuzz.la $(HBLIBS)
+-
+-test_ot_meta_SOURCES = test-ot-meta.cc
+-test_ot_meta_CPPFLAGS = $(HBCFLAGS)
+-test_ot_meta_LDADD = libharfbuzz.la $(HBLIBS)
+-
+-test_ot_name_SOURCES = test-ot-name.cc
+-test_ot_name_CPPFLAGS = $(HBCFLAGS)
+-test_ot_name_LDADD = libharfbuzz.la $(HBLIBS)
+-
+-test_ot_glyphname_SOURCES = test-ot-glyphname.cc
+-test_ot_glyphname_CPPFLAGS = $(HBCFLAGS)
+-test_ot_glyphname_LDADD = libharfbuzz.la $(HBLIBS)
+-
+-test_gpos_size_params_SOURCES = test-gpos-size-params.cc
+-test_gpos_size_params_CPPFLAGS = $(HBCFLAGS)
+-test_gpos_size_params_LDADD = libharfbuzz.la $(HBLIBS)
+-
+-test_gsub_would_substitute_SOURCES = test-gsub-would-substitute.cc
+-test_gsub_would_substitute_CPPFLAGS = $(HBCFLAGS) $(FREETYPE_CFLAGS)
+-test_gsub_would_substitute_LDADD = libharfbuzz.la $(HBLIBS) $(FREETYPE_LIBS)
+-
+-check_PROGRAMS += \
+-	dump-indic-data \
+-	dump-khmer-data \
+-	dump-myanmar-data \
+-	dump-use-data \
+-	$(NULL)
+-dump_indic_data_SOURCES = dump-indic-data.cc hb-ot-shape-complex-indic-table.cc
+-dump_indic_data_CPPFLAGS = $(HBCFLAGS)
+-dump_indic_data_LDADD = libharfbuzz.la $(HBLIBS)
+-dump_khmer_data_SOURCES = dump-khmer-data.cc hb-ot-shape-complex-indic-table.cc
+-dump_khmer_data_CPPFLAGS = $(HBCFLAGS)
+-dump_khmer_data_LDADD = libharfbuzz.la $(HBLIBS)
+-dump_myanmar_data_SOURCES = dump-myanmar-data.cc hb-ot-shape-complex-indic-table.cc
+-dump_myanmar_data_CPPFLAGS = $(HBCFLAGS)
+-dump_myanmar_data_LDADD = libharfbuzz.la $(HBLIBS)
+-dump_use_data_SOURCES = dump-use-data.cc hb-ot-shape-complex-use-table.cc
+-dump_use_data_CPPFLAGS = $(HBCFLAGS)
+-dump_use_data_LDADD = libharfbuzz.la $(HBLIBS)
+-
+-COMPILED_TESTS = test-algs test-array test-iter test-meta test-number test-ot-tag test-unicode-ranges test-bimap
+-COMPILED_TESTS_CPPFLAGS = $(HBCFLAGS) -DMAIN -UNDEBUG
+-COMPILED_TESTS_LDADD = libharfbuzz.la $(HBLIBS)
+-check_PROGRAMS += $(COMPILED_TESTS)
+-TESTS += $(COMPILED_TESTS)
+-
+-test_algs_SOURCES = test-algs.cc hb-static.cc
+-test_algs_CPPFLAGS = $(COMPILED_TESTS_CPPFLAGS)
+-test_algs_LDADD = $(COMPILED_TESTS_LDADD)
+-
+-test_array_SOURCES = test-array.cc
+-test_array_CPPFLAGS = $(HBCFLAGS)
+-test_array_LDADD = libharfbuzz.la $(HBLIBS)
+-
+-test_iter_SOURCES = test-iter.cc hb-static.cc
+-test_iter_CPPFLAGS = $(COMPILED_TESTS_CPPFLAGS)
+-test_iter_LDADD = $(COMPILED_TESTS_LDADD)
+-
+-test_meta_SOURCES = test-meta.cc hb-static.cc
+-test_meta_CPPFLAGS = $(COMPILED_TESTS_CPPFLAGS)
+-test_meta_LDADD = $(COMPILED_TESTS_LDADD)
+-
+-test_number_SOURCES = test-number.cc hb-number.cc
+-test_number_CPPFLAGS = $(COMPILED_TESTS_CPPFLAGS)
+-test_number_LDADD = $(COMPILED_TESTS_LDADD)
+-
+-test_ot_tag_SOURCES = hb-ot-tag.cc
+-test_ot_tag_CPPFLAGS = $(COMPILED_TESTS_CPPFLAGS)
+-test_ot_tag_LDADD = $(COMPILED_TESTS_LDADD)
+-
+-test_unicode_ranges_SOURCES = test-unicode-ranges.cc
+-test_unicode_ranges_CPPFLAGS = $(COMPILED_TESTS_CPPFLAGS)
+-test_unicode_ranges_LDADD = $(COMPILED_TESTS_LDADD)
+-
+-test_bimap_SOURCES = test-bimap.cc hb-static.cc
+-test_bimap_CPPFLAGS = $(COMPILED_TESTS_CPPFLAGS)
+-test_bimap_LDADD = $(COMPILED_TESTS_LDADD)
+-
+ dist_check_SCRIPTS = \
+ 	check-c-linkage-decls.py \
+ 	check-externs.py \

@@ -747,13 +747,22 @@ build_fribidi() {
   cd ..
 } # [dlfcn]
 
+build_harfbuzz() {
+  do_git_checkout https://github.com/harfbuzz/harfbuzz.git
+  cd harfbuzz_git
+    apply_patch file://$patch_dir/harfbuzz_lib-only.patch -p1 # 'libharfbuzz.la' library only.
+    generic_configure
+    do_make install
+  cd ..
+}
+
 build_libass() {
   do_git_checkout https://github.com/libass/libass.git
   cd libass_git
     generic_configure
     do_make install
   cd ..
-} # freetype >= 9.10.3 (see https://bugs.launchpad.net/ubuntu/+source/freetype1/+bug/78573 o_O), fribidi >= 0.19.0, [fontconfig >= 2.10.92, iconv, dlfcn]
+} # freetype >= 9.10.3 (see https://bugs.launchpad.net/ubuntu/+source/freetype1/+bug/78573 o_O), fribidi >= 0.19.0, harfbuzz >= 1.2.3, [fontconfig >= 2.10.92, iconv, dlfcn]
 
 build_avisynth() {
   do_git_checkout https://github.com/AviSynth/AviSynthPlus.git
@@ -899,6 +908,7 @@ build_dependencies() {
   build_vidstab
   build_frei0r
   build_fribidi
+  build_harfbuzz
   build_libass
   build_avisynth
   build_libxvid
