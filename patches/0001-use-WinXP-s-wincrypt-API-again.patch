@@ -1,6 +1,6 @@
-From 07781bb367e31bbee711ddaef7c3080162cf0437 Mon Sep 17 00:00:00 2001
+From 6f6c5c5331e452224a71c40306767aa0d7d2bbad Mon Sep 17 00:00:00 2001
 From: Reino17 <rwijnsma@xs4all.nl>
-Date: Fri, 1 Jan 2021 23:51:21 +0100
+Date: Fri, 30 Apr 2021 13:28:12 +0200
 Subject: [PATCH 1/4] libavutil/random_seed.c: use WinXP's wincrypt API again
 
 WinXP doesn't have 'bcrypt'. See https://github.com/FFmpeg/FFmpeg/commit/aedbf1640ced8fc09dc980ead2a387a59d8f7f68.
@@ -10,10 +10,10 @@ WinXP doesn't have 'bcrypt'. See https://github.com/FFmpeg/FFmpeg/commit/aedbf16
  2 files changed, 12 insertions(+), 14 deletions(-)
 
 diff --git a/configure b/configure
-index 9005057..b71fb81 100755
+index 6580859..3c9fb68 100755
 --- a/configure
 +++ b/configure
-@@ -2255,10 +2255,10 @@ SYSTEM_FUNCS="
+@@ -2285,10 +2285,10 @@ SYSTEM_FUNCS="
  "
  
  SYSTEM_LIBRARIES="
@@ -25,16 +25,16 @@ index 9005057..b71fb81 100755
  "
  
  TOOLCHAIN_FEATURES="
-@@ -3708,7 +3708,7 @@ avformat_deps="avcodec avutil"
+@@ -3739,7 +3739,7 @@ avfilter_deps="avutil"
+ avfilter_suggest="libm"
+ avformat_deps="avcodec avutil"
  avformat_suggest="libm network zlib"
- avresample_deps="avutil"
- avresample_suggest="libm"
 -avutil_suggest="clock_gettime ffnvcodec libm libdrm libmfx opencl user32 vaapi vulkan videotoolbox corefoundation corevideo coremedia bcrypt"
 +avutil_suggest="clock_gettime ffnvcodec libm libdrm libmfx opencl user32 vaapi vulkan videotoolbox corefoundation corevideo coremedia wincrypt"
  postproc_deps="avutil gpl"
  postproc_suggest="libm"
  swresample_deps="avutil"
-@@ -6181,10 +6181,9 @@ check_headers asm/types.h
+@@ -6212,10 +6212,9 @@ check_headers asm/types.h
  check_builtin stdatomic stdatomic.h "atomic_int foo, bar = ATOMIC_VAR_INIT(-1); atomic_store(&foo, 0); foo += bar"
  
  check_lib advapi32 "windows.h"            RegCloseKey          -ladvapi32
@@ -47,7 +47,7 @@ index 9005057..b71fb81 100755
  
  check_lib android android/native_window.h ANativeWindow_acquire -landroid
 diff --git a/libavutil/random_seed.c b/libavutil/random_seed.c
-index 70dc509..881c23c 100644
+index 70dc509..9c9fe2f 100644
 --- a/libavutil/random_seed.c
 +++ b/libavutil/random_seed.c
 @@ -26,9 +26,9 @@

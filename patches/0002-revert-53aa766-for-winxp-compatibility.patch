@@ -1,6 +1,6 @@
-From e62197ead11f30ea1e567c96d07c94c870a5c7f7 Mon Sep 17 00:00:00 2001
+From 1ea763afad41679f17af3d04302d982359091a54 Mon Sep 17 00:00:00 2001
 From: Reino17 <rwijnsma@xs4all.nl>
-Date: Fri, 1 Jan 2021 23:55:09 +0100
+Date: Fri, 30 Apr 2021 13:32:10 +0200
 Subject: [PATCH 2/4] avformat/udp: revert 53aa766 for winxp compatibility
 
 Otherwise you'd get "The procedure entry point CancelIoEx could not be located in the dynamic link library KERNEL32.dll" while running ffmpeg.exe, ffplay.exe, or ffprobe.exe, because 'CancelIoEx()' is only available on Windows Vista and later. See https://github.com/FFmpeg/FFmpeg/commit/53aa76686e7ff4f1f6625502503d7923cec8c10e and https://trac.ffmpeg.org/ticket/5717. This obviously doesn't fix the ticket, but simply reverts the commit.
@@ -9,10 +9,10 @@ Otherwise you'd get "The procedure entry point CancelIoEx could not be located i
  1 file changed, 1 insertion(+), 10 deletions(-)
 
 diff --git a/libavformat/udp.c b/libavformat/udp.c
-index 13c346a..26c6099 100644
+index 9b9d3de..57af26e 100644
 --- a/libavformat/udp.c
 +++ b/libavformat/udp.c
-@@ -1070,17 +1070,8 @@ static int udp_close(URLContext *h)
+@@ -1088,17 +1088,8 @@ static int udp_close(URLContext *h)
      if (s->thread_started) {
          int ret;
          // Cancel only read, as write has been signaled as success to the user
