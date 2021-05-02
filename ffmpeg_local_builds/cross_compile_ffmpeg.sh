@@ -640,8 +640,8 @@ build_fdk-aac() {
 } # [dlfcn]
 
 build_libmpg123() {
-  download_and_unpack_file https://sourceforge.net/projects/mpg123/files/mpg123/1.26.4/mpg123-1.26.4.tar.bz2
-  cd mpg123-1.26.4
+  download_and_unpack_file https://sourceforge.net/projects/mpg123/files/mpg123/1.26.5/mpg123-1.26.5.tar.bz2
+  cd mpg123-1.26.5
     if [[ ! -f Makefile.in.bak ]]; then # Library only
       sed -i.bak "/^all-am/s/\$(PROG.*/\\\/;/^install-data-am/s/ install-man//;/^install-exec-am/s/ install-binPROGRAMS//" Makefile.in
     fi
