@@ -534,7 +534,7 @@ build_fontconfig() {
   download_and_unpack_file https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.13.93.tar.xz
   cd fontconfig-2.13.93
     if [[ ! -f Makefile.in.bak ]]; then
-      sed -i.bak "/^SUBDIRS/s/fc.*/src/;456,457d;/^install-data-am/s/:.*/: install-pkgconfigDATA/;/\tinstall-xmlDATA$/d" Makefile.in # Library only.
+      sed -i.bak "/^SUBDIRS/s/fc.*/src/;466,467d;/^install-data-am/s/:.*/: install-pkgconfigDATA/;/\tinstall-xmlDATA$/d" Makefile.in # Library only.
     fi
     generic_configure --enable-libxml2 --disable-docs # Use Libxml2 instead of Expat.
     do_make install
