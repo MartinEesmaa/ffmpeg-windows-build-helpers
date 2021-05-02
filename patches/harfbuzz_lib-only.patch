@@ -1,5 +1,5 @@
 diff --git a/src/Makefile.am b/src/Makefile.am
-index c341d40..e89130a 100644
+index 7a0ca29..724983c 100644
 --- a/src/Makefile.am
 +++ b/src/Makefile.am
 @@ -10,7 +10,6 @@ DISTCLEANFILES =
@@ -46,16 +46,16 @@ index c341d40..e89130a 100644
  if HAVE_GOBJECT
  DEF_FILES += harfbuzz-gobject.def
  endif
-@@ -237,8 +223,6 @@ check: $(DEF_FILES) # For check-symbols.sh
- CLEANFILES += $(DEF_FILES)
- harfbuzz.def: $(HBHEADERS) $(HBNODISTHEADERS)
+@@ -238,8 +224,6 @@ CLEANFILES += $(DEF_FILES)
+ harfbuzz.def: $(top_builddir)/config.status
+ harfbuzz.def: $(HBHEADERS)
  	$(AM_V_GEN) $(srcdir)/gen-def.py "$@" $^
 -harfbuzz-subset.def: $(HB_SUBSET_headers)
 -	$(AM_V_GEN) $(srcdir)/gen-def.py "$@" $^
  harfbuzz-icu.def: $(HB_ICU_headers)
  	$(AM_V_GEN) $(srcdir)/gen-def.py "$@" $^
  harfbuzz-gobject.def: $(HB_GOBJECT_headers)
-@@ -297,107 +281,6 @@ harfbuzz.cc: Makefile.sources
+@@ -298,96 +282,10 @@ harfbuzz.cc: Makefile.sources
  	|| ($(RM) $(srcdir)/harfbuzz.cc; false)
  BUILT_SOURCES += harfbuzz.cc
  
@@ -71,10 +71,10 @@ index c341d40..e89130a 100644
 -	$(NULL)
 -bin_PROGRAMS =
 -
--main_SOURCES = main.cc
--main_CPPFLAGS = $(HBCFLAGS)
--main_LDADD = libharfbuzz.la $(HBLIBS)
--
+ main_SOURCES = main.cc
+ main_CPPFLAGS = $(HBCFLAGS)
+ main_LDADD = libharfbuzz.la $(HBLIBS)
+ 
 -test_SOURCES = test.cc
 -test_CPPFLAGS = $(HBCFLAGS) $(FREETYPE_CFLAGS)
 -test_LDADD = libharfbuzz.la $(HBLIBS) $(FREETYPE_LIBS)
@@ -103,26 +103,7 @@ index c341d40..e89130a 100644
 -test_gsub_would_substitute_CPPFLAGS = $(HBCFLAGS) $(FREETYPE_CFLAGS)
 -test_gsub_would_substitute_LDADD = libharfbuzz.la $(HBLIBS) $(FREETYPE_LIBS)
 -
--check_PROGRAMS += \
--	dump-indic-data \
--	dump-khmer-data \
--	dump-myanmar-data \
--	dump-use-data \
--	$(NULL)
--dump_indic_data_SOURCES = dump-indic-data.cc hb-ot-shape-complex-indic-table.cc
--dump_indic_data_CPPFLAGS = $(HBCFLAGS)
--dump_indic_data_LDADD = libharfbuzz.la $(HBLIBS)
--dump_khmer_data_SOURCES = dump-khmer-data.cc hb-ot-shape-complex-indic-table.cc
--dump_khmer_data_CPPFLAGS = $(HBCFLAGS)
--dump_khmer_data_LDADD = libharfbuzz.la $(HBLIBS)
--dump_myanmar_data_SOURCES = dump-myanmar-data.cc hb-ot-shape-complex-indic-table.cc
--dump_myanmar_data_CPPFLAGS = $(HBCFLAGS)
--dump_myanmar_data_LDADD = libharfbuzz.la $(HBLIBS)
--dump_use_data_SOURCES = dump-use-data.cc hb-ot-shape-complex-use-table.cc
--dump_use_data_CPPFLAGS = $(HBCFLAGS)
--dump_use_data_LDADD = libharfbuzz.la $(HBLIBS)
--
--COMPILED_TESTS = test-algs test-array test-iter test-meta test-number test-ot-tag test-unicode-ranges test-bimap
+-COMPILED_TESTS = test-algs test-array test-iter test-meta test-number test-ot-tag test-priority-queue test-unicode-ranges test-bimap test-repacker
 -COMPILED_TESTS_CPPFLAGS = $(HBCFLAGS) -DMAIN -UNDEBUG
 -COMPILED_TESTS_LDADD = libharfbuzz.la $(HBLIBS)
 -check_PROGRAMS += $(COMPILED_TESTS)
@@ -135,6 +116,14 @@ index c341d40..e89130a 100644
 -test_array_SOURCES = test-array.cc
 -test_array_CPPFLAGS = $(HBCFLAGS)
 -test_array_LDADD = libharfbuzz.la $(HBLIBS)
+-
+-test_priority_queue_SOURCES = test-priority-queue.cc hb-static.cc
+-test_priority_queue_CPPFLAGS = $(HBCFLAGS)
+-test_priority_queue_LDADD = libharfbuzz.la $(HBLIBS)
+-
+-test_repacker_SOURCES = test-repacker.cc hb-static.cc
+-test_repacker_CPPFLAGS = $(HBCFLAGS)
+-test_repacker_LDADD = libharfbuzz.la libharfbuzz-subset.la $(HBLIBS)
 -
 -test_iter_SOURCES = test-iter.cc hb-static.cc
 -test_iter_CPPFLAGS = $(COMPILED_TESTS_CPPFLAGS)
