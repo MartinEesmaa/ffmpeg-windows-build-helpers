@@ -799,11 +799,34 @@ build_libx264() {
 
 build_libx265() {
   do_hg_checkout http://hg.videolan.org/x265
-  cd x265_hg/source
+  cd x265_hg
     apply_patch file://$patch_dir/x265_fix-nasm-warnings.patch -p1 # See https://github.com/sherpya/mplayer-be/blob/master/packages/x265/patches/01_sherpya_nasm-warnings.diff.
-    do_cmake $PWD -DENABLE_SHARED=0 -DENABLE_CLI=0 -DWINXP_SUPPORT=1 # No '-DHIGH_BIT_DEPTH=1'. See 'x265_hg/source/CMakeLists.txt' why.
-    do_make install
-  cd ../..
+    apply_patch file://$patch_dir/x265_static-multilib-api.patch -p1
+    mkdir -p 8bit 10bit 12bit
+    cd 12bit
+      do_cmake ${PWD%/*}/source -DENABLE_SHARED=0 -DENABLE_CLI=0 -DHIGH_BIT_DEPTH=1 -DMAIN12=1 -DEXPORT_C_API=0 -DENABLE_ASSEMBLY=0
+      do_make
+    cd ../10bit
+      do_cmake ${PWD%/*}/source -DENABLE_SHARED=0 -DENABLE_CLI=0 -DHIGH_BIT_DEPTH=1 -DEXPORT_C_API=0 -DENABLE_ASSEMBLY=0
+      do_make
+    cd ../8bit
+      ln -sf ../10bit/libx265.a libx265_main10.a
+      ln -sf ../12bit/libx265.a libx265_main12.a
+      do_cmake ${PWD%/*}/source -DENABLE_SHARED=0 -DENABLE_CLI=0 -DWINXP_SUPPORT=1 -DEXTRA_LIB="libx265_main10.a;libx265_main12.a" -DEXTRA_LINK_FLAGS=-L. -DLINKED_10BIT=ON -DLINKED_12BIT=ON
+      do_make
+      # rename the 8bit library, then combine all three into libx265.a
+      mv libx265.a libx265_main.a
+      ar -M <<EOF
+CREATE libx265.a
+ADDLIB libx265_main.a
+ADDLIB libx265_main10.a
+ADDLIB libx265_main12.a
+SAVE
+END
+EOF
+      do_make install
+    cd ..
+  cd ..
 } # nasm >= 2.13 (unless '-DENABLE_ASSEMBLY=0' is specified)
 
 build_libvpx() {

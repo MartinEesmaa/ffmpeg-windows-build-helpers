@@ -1,6 +1,6 @@
-diff -r 65b6d13ab22a common/x86/const-a.asm
---- a/common/x86/const-a.asm	Wed Oct 28 01:00:40 2020 +0530
-+++ b/common/x86/const-a.asm	Sat Dec 05 20:42:45 2020 +0100
+diff -r 27eee651e1fd source/common/x86/const-a.asm
+--- a/source/common/x86/const-a.asm	Thu Mar 18 09:41:49 2021 +0530
++++ b/source/common/x86/const-a.asm	Fri Apr 30 10:33:22 2021 +0200
 @@ -100,7 +100,7 @@
  const pw_2000,              times 16 dw 0x2000
  const pw_8000,              times  8 dw 0x8000
@@ -10,9 +10,9 @@ diff -r 65b6d13ab22a common/x86/const-a.asm
                              times  4 dw 0
  const pw_pixel_max,         times 16 dw ((1 << BIT_DEPTH)-1)
  
-diff -r 65b6d13ab22a common/x86/x86inc.asm
---- a/common/x86/x86inc.asm	Wed Oct 28 01:00:40 2020 +0530
-+++ b/common/x86/x86inc.asm	Sat Dec 05 20:42:45 2020 +0100
+diff -r 27eee651e1fd source/common/x86/x86inc.asm
+--- a/source/common/x86/x86inc.asm	Thu Mar 18 09:41:49 2021 +0530
++++ b/source/common/x86/x86inc.asm	Fri Apr 30 10:33:22 2021 +0200
 @@ -334,7 +334,7 @@
  %define vzeroupper_required (mmsize > 16 && (ARCH_X86_64 == 0 || xmm_regs_used > 16 || notcpuflag(avx512)))
  %define high_mm_regs (16*cpuflag(avx512))

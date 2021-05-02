@@ -1,0 +1,35 @@
+diff -r 27eee651e1fd source/encoder/api.cpp
+--- a/source/encoder/api.cpp	Thu Mar 18 09:41:49 2021 +0530
++++ b/source/encoder/api.cpp	Fri Apr 30 10:25:48 2021 +0200
+@@ -1106,6 +1106,7 @@
+ static int g_recursion /* = 0 */;
+ const x265_api* x265_api_get(int bitDepth)
+ {
++#if ENABLE_SHARED
+     if (bitDepth && bitDepth != X265_DEPTH)
+     {
+ #if LINKED_8BIT
+@@ -1177,6 +1178,7 @@
+ 
+         return api;
+     }
++#endif
+ 
+     return &libapi;
+ }
+@@ -1192,6 +1194,7 @@
+ 
+     if (err) *err = X265_API_QUERY_ERR_NONE;
+ 
++#if ENABLE_SHARED
+     if (bitDepth && bitDepth != X265_DEPTH)
+     {
+ #if LINKED_8BIT
+@@ -1274,6 +1277,7 @@
+         if (err) *err = api ? X265_API_QUERY_ERR_NONE : e;
+         return api;
+     }
++#endif
+ 
+     return &libapi;
+ }
