@@ -75,14 +75,14 @@ gcc='gcc'
 gcc_host=''
 
 ## Versions
-mingw_w64_release_ver='8.0.0'
-gcc_release_ver='10.3.0'
+mingw_w64_release_ver='8.0.2'
+gcc_release_ver='11.2.0'
 gcc_old_release_ver='4.9.3'
 mpfr_release_ver='4.1.0'
 mpc_release_ver='1.2.1'
-binutils_release_ver='2.35.2'
+binutils_release_ver='2.37'
 gmp_release_ver='6.2.1'
-isl_release_ver='0.23'
+isl_release_ver='0.24'
 pthreads_w32_release_ver='2-9-1'
 
 ## Locations
@@ -315,9 +315,13 @@ if [[ "$enabled_langs" != *,* ]]; then
   enabled_langs="${enabled_langs%,}"
 fi
 
+if [[ "$thread_lib" = 'winpthreads' ]]; then
+  enable_threads="--enable-threads=posix"
+fi
+
 case "$gcc_ver" in
   $gcc_old_release_ver ) CC=$gcc "../source/gcc-$gcc_ver/configure" --build="$system_type" --target="$mingw_w64_target" "${static_build[@]}" "${disable_nls[@]}" --disable-multilib --prefix="$mingw_w64_prefix" --with-sysroot="$mingw_w64_prefix" --with-mpc="$mpc_prefix" --with-mpfr="$mpfr_prefix" --with-gmp="$gmp_prefix" --with-host-libstdcxx="-lstdc++" --with-cloog="$cloog_prefix" --with-isl="$isl_prefix" --enable-languages="$enabled_langs" --enable-fully-dynamic-string --enable-lto  > >(build_log) 2>&1 ;;
-  $gcc_release_ver ) CC=$gcc "../source/gcc-$gcc_ver/configure" --build="$system_type" --target="$mingw_w64_target" $gcc_host "${static_build[@]}" "${disable_nls[@]}" --disable-multilib --prefix="$mingw_w64_prefix" --with-sysroot="$mingw_w64_prefix" --with-mpc="$mpc_prefix" --with-mpfr="$mpfr_prefix" --with-gmp="$gmp_prefix" --with-isl="$isl_prefix" --enable-languages="$enabled_langs" --enable-fully-dynamic-string --enable-lto  > >(build_log) 2>&1 || print_error ;;
+  $gcc_release_ver ) CC=$gcc "../source/gcc-$gcc_ver/configure" --build="$system_type" --target="$mingw_w64_target" $gcc_host "${static_build[@]}" "${disable_nls[@]}" --disable-multilib --prefix="$mingw_w64_prefix" --with-sysroot="$mingw_w64_prefix" --with-mpc="$mpc_prefix" --with-mpfr="$mpfr_prefix" --with-gmp="$gmp_prefix" --with-isl="$isl_prefix" --enable-languages="$enabled_langs" --enable-fully-dynamic-string --enable-lto $enable_threads  > >(build_log) 2>&1 || print_error ;;
 esac
 }
 
@@ -748,6 +752,10 @@ build_progress 'mingw-w64 crt' 'Installing'
 make install > >(build_log) 2>&1 || print_error
 build_progress 'done'
 
+if [[ "$thread_lib" = 'winpthreads' ]]; then
+  build_thread_lib "$mingw_w64_target" "$mingw_w64_prefix" || print_error
+fi
+
 # Build GCC
 cd "$pkgs_dir/gcc/build" || print_error
 build_progress 'gcc target-libgcc' 'Building'
@@ -766,7 +774,7 @@ build_progress 'gcc' 'Installing'
 make install-strip > >(build_log) 2>&1 || print_error
 build_progress 'done'
 
-if [[ "$thread_lib" != 'disable' ]]; then
+if [[ "$thread_lib" != 'winpthreads' && "$thread_lib" != 'disable' ]]; then
   build_thread_lib "$mingw_w64_target" "$mingw_w64_prefix" || print_error
 fi
 
