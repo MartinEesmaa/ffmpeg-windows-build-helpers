@@ -996,17 +996,17 @@ build_openssl() {
 } # This is to compile 'libcrypto-1_1.dll' and 'libssl-1_1.dll' for Xidel, or a static library for hlsdl.
 
 build_curl() {
-  download_and_unpack_file https://curl.se/download/curl-7.76.1.tar.xz
+  download_and_unpack_file https://curl.se/download/curl-7.78.0.tar.xz
   if [ "$1" = "openssl" ]; then # Compile Curl with OpenSSL for hlsdl.
     build_openssl static
-    cd curl-7.76.1
+    cd curl-7.78.0
     export PKG_CONFIG="pkg-config --static" # Automatically detect all of OpenSSL its dependencies.
     generic_configure --without-ca-bundle --with-ca-fallback
     unset PKG_CONFIG
     do_make install-strip
   else # Compile Curl with MbedTLS and create archive.
     build_mbedtls
-    cd curl-7.76.1
+    cd curl-7.78.0
     generic_configure --without-ssl --with-mbedtls --with-ca-bundle=cacert.pem LDFLAGS=-s # --with-ca-fallback only works with OpenSSL or GnuTLS.
     do_make # 'curl.exe' only. No install.
     if [[ ! -f cacert.pem ]]; then # See https://curl.se/docs/sslcerts.html and https://superuser.com/a/442797 for more on the CA cert file.
@@ -1015,7 +1015,7 @@ build_curl() {
     fi
 
     mkdir -p $redist_dir
-    archive="$redist_dir/curl-7.76.1-mbedtls-zlib-win32-static-xpmod-sse"
+    archive="$redist_dir/curl-7.78.0-mbedtls-zlib-win32-static-xpmod-sse"
     if [[ ! -f $archive.7z ]]; then # Pack static 'curl.exe'.
       sed "s/$/\r/" COPYING > COPYING.txt
       7z a -mx=9 -bb3 $archive.7z ./src/curl.exe cacert.pem COPYING.txt
