@@ -552,9 +552,9 @@ build_gmp() {
 } # [dlfcn]
 
 build_mbedtls() {
-  download_and_unpack_file https://github.com/ARMmbed/mbedtls/archive/refs/tags/v2.16.10.tar.gz mbedtls-2.16.10
+  download_and_unpack_file https://github.com/ARMmbed/mbedtls/archive/refs/tags/v2.16.11.tar.gz mbedtls-2.16.11
   # mbedtls-2.23.0 causes "The procedure entry point _vsnprintf_s could not be located in the dynamic link library msvcrt.dll" upon running ffmpeg.exe, ffplay.exe, or ffprobe.exe, because '_vsnprintf_s()' is only available on Windows Vista and later. See 'programs/psa/psa_constant_names.c'.
-  cd mbedtls-2.16.10
+  cd mbedtls-2.16.11
     mkdir -p build_dir
     cd build_dir # Out-of-source build.
       do_cmake ${PWD%/*} -DENABLE_PROGRAMS=0 -DENABLE_TESTING=0 -DENABLE_ZLIB_SUPPORT=1
