@@ -530,8 +530,8 @@ build_libxml2() {
 } # [zlib, liblzma, iconv, dlfcn]
 
 build_fontconfig() {
-  download_and_unpack_file https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.13.93.tar.xz
-  cd fontconfig-2.13.93
+  download_and_unpack_file https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.13.94.tar.xz
+  cd fontconfig-2.13.94
     if [[ ! -f Makefile.in.bak ]]; then
       sed -i.bak "/^SUBDIRS/s/fc.*/src/;466,467d;/^install-data-am/s/:.*/: install-pkgconfigDATA/;/\tinstall-xmlDATA$/d" Makefile.in # Library only.
     fi
