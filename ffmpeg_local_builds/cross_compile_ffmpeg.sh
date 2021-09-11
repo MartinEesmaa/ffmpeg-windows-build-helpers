@@ -480,8 +480,8 @@ build_iconv() {
 } # [dlfcn]
 
 build_sdl2() {
-  download_and_unpack_file https://libsdl.org/release/SDL2-2.0.14.tar.gz
-  cd SDL2-2.0.14
+  download_and_unpack_file https://libsdl.org/release/SDL2-2.0.16.tar.gz
+  cd SDL2-2.0.16
     if [[ ! -f Makefile.in.bak ]]; then
       sed -i.bak "/aclocal/d" Makefile.in # Library only.
       sed -i.bak "s/ -mwindows//;s/iconv_open ()/libiconv_open ()/;s/\"iconv\"/\"libiconv\"/" configure # Allow ffmpeg to output anything to console and use libiconv instead of iconv.
