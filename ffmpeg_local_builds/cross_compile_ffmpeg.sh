@@ -763,7 +763,12 @@ build_harfbuzz() {
 build_libass() {
   do_git_checkout https://github.com/libass/libass.git
   cd libass_git
-    generic_configure
+    generic_configure --disable-directwrite
+    # See https://github.com/libass/libass/blob/master/Changelog, libass (0.13.0): "The DirectWrite backend only works on Windows Vista and later. On XP, fontconfig is still needed.".
+    # Without '--disable-directwrite' you'd get:
+    # LD      ffmpeg_g.exe
+    # [...]/libass.a(ass_directwrite.o):ass_directwrit:(.text+0x776): undefined reference to `_imp__GetTextFaceW@12'
+    # [...]/libass.a(ass_directwrite.o):ass_directwrit:(.text+0xef0): undefined reference to `_imp__EnumFontFamiliesW@16'
     do_make install
   cd ..
 } # freetype >= 9.10.3 (see https://bugs.launchpad.net/ubuntu/+source/freetype1/+bug/78573 o_O), fribidi >= 0.19.0, harfbuzz >= 1.2.3, [fontconfig >= 2.10.92, iconv, dlfcn]
