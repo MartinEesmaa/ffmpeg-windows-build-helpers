@@ -864,7 +864,7 @@ build_libaom() {
 } # cmake >= 3.5
 
 build_ffmpeg() {
-  do_git_checkout https://github.com/FFmpeg/FFmpeg.git "" "" 5541cffa17a8c45004e5ceeda52d4d6b2acee037
+  do_git_checkout https://github.com/FFmpeg/FFmpeg.git "" "" 966fc3c070c1e5143537007fb26340c179cc02c5
   cd FFmpeg_git
     apply_patch file://$patch_dir/0001-use-WinXP-s-wincrypt-API-again.patch -p1 # WinXP doesn't have 'bcrypt'. See https://github.com/FFmpeg/FFmpeg/commit/aedbf1640ced8fc09dc980ead2a387a59d8f7f68.
     apply_patch file://$patch_dir/0002-revert-53aa766-for-winxp-compatibility.patch -p1 # Otherwise you'd get "The procedure entry point CancelIoEx could not be located in the dynamic link library KERNEL32.dll" while running ffmpeg.exe, ffplay.exe, or ffprobe.exe, because 'CancelIoEx()' is only available on Windows Vista and later. See https://github.com/FFmpeg/FFmpeg/commit/53aa76686e7ff4f1f6625502503d7923cec8c10e and https://trac.ffmpeg.org/ticket/5717. This obviously doesn't fix the ticket, but simply reverts the commit.
