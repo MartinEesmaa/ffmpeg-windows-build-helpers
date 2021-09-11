@@ -748,11 +748,15 @@ build_fribidi() {
 } # [dlfcn]
 
 build_harfbuzz() {
-  do_git_checkout https://github.com/harfbuzz/harfbuzz.git
+  do_git_checkout https://github.com/harfbuzz/harfbuzz.git harfbuzz_git main
   cd harfbuzz_git
-    apply_patch file://$patch_dir/harfbuzz_lib-only.patch -p1 # 'libharfbuzz.la' library only.
-    generic_configure
-    do_make install
+    apply_patch file://$patch_dir/harfbuzz_cmake-pkgconfig.patch -p1 # Let cmake create a pkgconfig file. See https://github.com/sherpya/mplayer-be/blob/master/packages/harfbuzz/patches/00_sherpya_cmake-pkgconfig.diff and https://github.com/sherpya/mplayer-be/blob/master/packages/harfbuzz/install/harfbuzz.pc.cmakein.
+    sed -i.bak "s|setlocale|//setlocale|" util/options.hh # See https://github.com/sherpya/mplayer-be/blob/master/packages/harfbuzz/patches/01_sherpya_no-setlocale.diff.
+    mkdir -p build_dir
+    cd build_dir # Out-of-source build.
+      do_cmake ${PWD%/*} -DBUILD_SHARED_LIBS=0 -DHB_HAVE_FREETYPE=1
+      do_make install
+    cd ..
   cd ..
 }
 
