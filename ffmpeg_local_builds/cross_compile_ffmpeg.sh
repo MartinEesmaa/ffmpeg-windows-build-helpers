@@ -959,9 +959,9 @@ build_apps() {
   fi
 }
 
-build_openssl-1.1.1() {
-  download_and_unpack_file https://www.openssl.org/source/openssl-1.1.1k.tar.gz
-  cd openssl-1.1.1k
+build_openssl() {
+  download_and_unpack_file https://www.openssl.org/source/openssl-1.1.1l.tar.gz
+  cd openssl-1.1.1l
     if [[ ! -f Configurations/10-main.conf.bak ]]; then # Change GCC optimization level.
       sed -i.bak "s/-O3/-O2/" Configurations/10-main.conf
     fi
@@ -979,7 +979,7 @@ build_openssl-1.1.1() {
       do_make build_libs
 
       mkdir -p $redist_dir
-      archive="$redist_dir/openssl-1.1.1k-win32-xpmod-sse"
+      archive="$redist_dir/openssl-1.1.1l-win32-xpmod-sse"
       if [[ ! -f $archive.7z ]]; then # Pack shared libraries.
         sed "s/$/\r/" LICENSE > LICENSE.txt
         ${cross_prefix}strip -ps libcrypto-1_1.dll libssl-1_1.dll
@@ -998,7 +998,7 @@ build_openssl-1.1.1() {
 build_curl() {
   download_and_unpack_file https://curl.se/download/curl-7.76.1.tar.xz
   if [ "$1" = "openssl" ]; then # Compile Curl with OpenSSL for hlsdl.
-    build_openssl-1.1.1 static
+    build_openssl static
     cd curl-7.76.1
     export PKG_CONFIG="pkg-config --static" # Automatically detect all of OpenSSL its dependencies.
     generic_configure --without-ca-bundle --with-ca-fallback
