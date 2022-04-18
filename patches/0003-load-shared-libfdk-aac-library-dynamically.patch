@@ -1,30 +1,30 @@
-From 18e615dad6e70518587d1bd1ceeab5fcd7d2ef9a Mon Sep 17 00:00:00 2001
+From 8fcaa09a445b5892d0c5fbc4ab94bf3a3de7caae Mon Sep 17 00:00:00 2001
 From: Reino17 <rwijnsma@xs4all.nl>
-Date: Sat, 4 Sep 2021 22:18:12 +0200
+Date: Sat, 1 Jan 2022 14:45:15 +0100
 Subject: [PATCH 3/4] libavcodec/libfdk-aac*: load shared libfdk-aac library dynamically
 
-See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0003-dynamic-loading-of-shared-fdk-aac-library.patch.
+See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0004-dynamic-loading-of-shared-fdk-aac-library.patch.
 ---
  configure                        |  6 +--
  libavcodec/libfdk-aac_internal.h | 84 ++++++++++++++++++++++++++++++++++++++++
  libavcodec/libfdk-aacdec.c       | 32 +++++++++++++--
- libavcodec/libfdk-aacenc.c       | 24 +++++++++++-
- 4 files changed, 137 insertions(+), 9 deletions(-)
+ libavcodec/libfdk-aacenc.c       | 25 +++++++++++-
+ 4 files changed, 138 insertions(+), 9 deletions(-)
  create mode 100644 libavcodec/libfdk-aac_internal.h
 
 diff --git a/configure b/configure
-index 98e6547..1b1e0d6 100755
+index cb136d9..6809e86 100755
 --- a/configure
 +++ b/configure
-@@ -1764,7 +1764,6 @@ EXTERNAL_LIBRARY_GPL_LIST="
+@@ -1785,7 +1785,6 @@ EXTERNAL_LIBRARY_GPL_LIST="
  
  EXTERNAL_LIBRARY_NONFREE_LIST="
      decklink
 -    libfdk_aac
-     openssl
      libtls
  "
-@@ -1804,6 +1803,7 @@ EXTERNAL_LIBRARY_LIST="
+ 
+@@ -1824,6 +1823,7 @@ EXTERNAL_LIBRARY_LIST="
      libdav1d
      libdc1394
      libdrm
@@ -32,7 +32,7 @@ index 98e6547..1b1e0d6 100755
      libflite
      libfontconfig
      libfreetype
-@@ -6407,9 +6407,7 @@ enabled libdav1d          && require_pkg_config libdav1d "dav1d >= 0.5.0" "dav1d
+@@ -6521,9 +6521,7 @@ enabled libdav1d          && require_pkg_config libdav1d "dav1d >= 0.5.0" "dav1d
  enabled libdavs2          && require_pkg_config libdavs2 "davs2 >= 1.6.0" davs2.h davs2_decoder_open
  enabled libdc1394         && require_pkg_config libdc1394 libdc1394-2 dc1394/dc1394.h dc1394_new
  enabled libdrm            && require_pkg_config libdrm libdrm xf86drm.h drmGetVersion
@@ -205,17 +205,17 @@ index ffa1fdc..b3ee124 100644
      if (!s->handle) {
          av_log(avctx, AV_LOG_ERROR, "Error opening decoder\n");
 diff --git a/libavcodec/libfdk-aacenc.c b/libavcodec/libfdk-aacenc.c
-index 7ee2f13..2a91d02 100644
+index 7ee2f13..2351963 100644
 --- a/libavcodec/libfdk-aacenc.c
 +++ b/libavcodec/libfdk-aacenc.c
-@@ -26,6 +26,7 @@
- #include "audio_frame_queue.h"
+@@ -27,6 +27,7 @@
  #include "encode.h"
  #include "internal.h"
-+#include "libfdk-aac_internal.h"
  #include "profiles.h"
++#include "libfdk-aac_internal.h"
  
  #ifdef AACENCODER_LIB_VL0
+ #define FDKENC_VER_AT_LEAST(vl0, vl1) \
 @@ -47,6 +48,8 @@ typedef struct AACContext {
      int header_period;
      int vbr;
@@ -225,20 +225,21 @@ index 7ee2f13..2a91d02 100644
      AudioFrameQueue afq;
  } AACContext;
  
-@@ -111,8 +114,10 @@ static int aac_encode_close(AVCodecContext *avctx)
+@@ -111,8 +114,11 @@ static int aac_encode_close(AVCodecContext *avctx)
  {
      AACContext *s = avctx->priv_data;
  
 -    if (s->handle)
 -        aacEncClose(&s->handle);
-+    if (s->hLib && s->handle) {
-+        s->pfn.aacEncClose(&s->handle);
++    if (s->hLib) {
++        if (s->handle)
++            s->pfn.aacEncClose(&s->handle);
 +        dlclose(s->hLib);
 +    }
      ff_af_queue_close(&s->afq);
  
      return 0;
-@@ -128,6 +133,21 @@ static av_cold int aac_encode_init(AVCodecContext *avctx)
+@@ -128,6 +134,21 @@ static av_cold int aac_encode_init(AVCodecContext *avctx)
      int aot = FF_PROFILE_AAC_LOW + 1;
      int sce = 0, cpe = 0;
  
