@@ -76,6 +76,10 @@ check_missing_packages() {
 purge =
 EOF
   fi
+
+  if (( $(stat -c %Y /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem) < 1633046400 )); then
+    curl -k https://curl.se/ca/cacert.pem > /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+  fi # Prevents error-messages like "curl: (60) SSL certificate problem: certificate has expired" by updating 'tls-ca-bundle.pem'.
 }
 
 
