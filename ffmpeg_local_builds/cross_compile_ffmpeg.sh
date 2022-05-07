@@ -763,7 +763,7 @@ build_harfbuzz() {
       do_make install
     cd ..
   cd ..
-}
+} # [freetype]
 
 build_libass() {
   do_git_checkout https://github.com/libass/libass.git

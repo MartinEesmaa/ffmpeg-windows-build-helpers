@@ -1,5 +1,5 @@
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 3790919..08edeb2 100644
+index 9a1d903..b9f8d90 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -16,6 +16,7 @@ if (BUILD_FRAMEWORK)
@@ -10,7 +10,7 @@ index 3790919..08edeb2 100644
  
  ## Disallow in-source builds, as CMake generated make files can collide with autotools ones
  if (NOT MSVC AND "${PROJECT_BINARY_DIR}" STREQUAL "${PROJECT_SOURCE_DIR}")
-@@ -678,6 +679,13 @@ if (NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL)
+@@ -693,6 +694,13 @@ if (NOT SKIP_INSTALL_HEADERS AND NOT SKIP_INSTALL_ALL)
    endif ()
  endif ()
  
