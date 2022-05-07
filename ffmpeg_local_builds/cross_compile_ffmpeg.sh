@@ -525,10 +525,7 @@ build_freetype() {
 build_libxml2() {
   download_and_unpack_file http://xmlsoft.org/sources/libxml2-2.9.12.tar.gz
   cd libxml2-2.9.12
-    if [[ ! -f Makefile.in.bak ]]; then
-      sed -i.bak "/^PROGRAMS/s/=.*/=/;/^SUBDIRS/s/ doc.*//;/^install-data-am/s/:.*/: install-pkgconfigDATA/;/\tinstall-m4dataDATA/d;/^install-exec-am/s/:.*/: install-libLTLIBRARIES/;/install-confexecDATA install-libLTLIBRARIES/d" Makefile.in # Library only.
-      sed -i.bak "/DOC_DISABLE/a\\\n#ifndef LIBXML_STATIC\\n#define LIBXML_STATIC\\n#endif" include/libxml/xmlexports.h # Static library.
-    fi
+    apply_patch file://$patch_dir/libxml2-2.9.12_lib-only_static_cve-2017-8872.diff # See https://github.com/sherpya/mplayer-be/blob/master/packages/libxml2/patches/01_sherpya_always-static.diff and https://github.com/sherpya/mplayer-be/blob/master/packages/libxml2/patches/03_debian_cve-2017-8872.diff.
     generic_configure --with-ftp=no --with-http=no --with-python=no
     do_make install
   cd ..
