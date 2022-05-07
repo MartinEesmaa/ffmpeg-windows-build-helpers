@@ -1,6 +1,6 @@
-From 46bea5d9202fc62b9b119f948940f571d39c6a39 Mon Sep 17 00:00:00 2001
+From 9fb6e7b55f34c34817653f7ea2a8948c3f82fcc9 Mon Sep 17 00:00:00 2001
 From: Reino17 <rwijnsma@xs4all.nl>
-Date: Sat, 1 Jan 2022 14:44:18 +0100
+Date: Sat, 7 May 2022 12:50:29 +0200
 Subject: [PATCH 2/4] avformat/udp: windows xp compatible CancelIoEx()
 
 Otherwise you'd get "The procedure entry point CancelIoEx could not be located in the dynamic link library KERNEL32.dll" while running ffmpeg.exe, ffplay.exe, or ffprobe.exe, because 'CancelIoEx()' is only available on Windows Vista and later. See https://github.com/FFmpeg/FFmpeg/commit/53aa76686e7ff4f1f6625502503d7923cec8c10e, https://trac.ffmpeg.org/ticket/5717 and https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0002-windows-xp-compatible-CancelIoEx.patch.
@@ -9,10 +9,10 @@ Otherwise you'd get "The procedure entry point CancelIoEx could not be located i
  1 file changed, 9 insertions(+), 1 deletion(-)
 
 diff --git a/libavformat/udp.c b/libavformat/udp.c
-index b8b0e19..a2b8dab 100644
+index 3b36a4a..f90c45c 100644
 --- a/libavformat/udp.c
 +++ b/libavformat/udp.c
-@@ -1064,6 +1064,14 @@ static int udp_write(URLContext *h, const uint8_t *buf, int size)
+@@ -1095,6 +1095,14 @@ static int udp_write(URLContext *h, const uint8_t *buf, int size)
      return ret < 0 ? ff_neterrno() : ret;
  }
  
@@ -27,7 +27,7 @@ index b8b0e19..a2b8dab 100644
  static int udp_close(URLContext *h)
  {
      UDPContext *s = h->priv_data;
-@@ -1090,7 +1098,7 @@ static int udp_close(URLContext *h)
+@@ -1122,7 +1130,7 @@ static int udp_close(URLContext *h)
               * the socket and abort pending IO, subsequent recvfrom() calls
               * will fail with WSAESHUTDOWN causing the thread to exit. */
              shutdown(s->udp_fd, SD_RECEIVE);
