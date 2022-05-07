@@ -657,17 +657,16 @@ build_libmpg123() {
 } # [dlfcn]
 
 build_libopenmpt() {
-  download_and_unpack_file https://lib.openmpt.org/files/libopenmpt/src/libopenmpt-0.4.27+release.autotools.tar.gz
-  # libopenmpt 0.5.0 (2020-05-24) - [Regression] Windows XP and Windows Vista are no longer supported (https://lib.openmpt.org/libopenmpt/2020/05/24/releases-0.5.0-0.4.13-0.3.22/).
-  cd libopenmpt-0.4.27+release.autotools
+  download_and_unpack_file https://lib.openmpt.org/files/libopenmpt/src/libopenmpt-0.6.3+release.autotools.tar.gz
+  cd libopenmpt-0.6.3+release.autotools
     if [[ ! -f Makefile.in.bak ]]; then # Library only
       sed -i.bak "/^all-am/s/DATA/pkgconfig_DATA/;/^install-data-am/s/:.*/: \\\/;s/\tinstall-nobase_dist_docDATA /\t/" Makefile.in
     fi
-    generic_configure --disable-openmpt123 --disable-examples --disable-tests
+    CFLAGS="$CFLAGS -D_WIN32_WINNT=_WIN32_WINNT_WINXP" CXXFLAGS="-D_WIN32_WINNT=_WIN32_WINNT_WINXP" generic_configure --disable-openmpt123 --disable-examples --disable-tests
     do_make install
   cd ..
 } # zlib, libmpg123, libogg, libvorbis, [dlfcn, mingw-std-threads]
-# Without mingw-std-threads you'd get "libopenmpt/libopenmpt_impl.cpp:85:2: warning: #warning "Warning: Building libopenmpt with MinGW-w64 without std::thread support is not recommended and is deprecated. Please use MinGW-w64 with posix threading model (as opposed to win32 threading model), or build with mingw-std-threads." [-Wcpp]".
+# GCC11's own std::thread implementation conflicts with mingw-std-threads resulting in "libopenmpt/libopenmpt_impl.cpp:85:2: warning: #warning "Warning: Building libopenmpt with MinGW-w64 without std::thread support is not recommended and is deprecated. Please use MinGW-w64 with posix threading model (as opposed to win32 threading model), or build with mingw-std-threads." [-Wcpp]". See https://forum.openmpt.org/index.php?topic=6822.0.
 
 build_libgme() {
   do_git_checkout https://bitbucket.org/mpyne/game-music-emu.git
