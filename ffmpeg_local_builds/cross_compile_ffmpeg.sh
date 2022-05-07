@@ -853,7 +853,7 @@ build_libvpx() {
 build_libaom() {
   do_git_checkout https://aomedia.googlesource.com/aom libaom_git
   cd libaom_git
-    apply_patch file://$patch_dir/libaom_restore-winxp-compatibility.patch -p1 # See https://aomedia.googlesource.com/aom/+/64545cb00a29ff872473db481a57cdc9bc4f1f82%5E!/#F1 and https://aomedia.googlesource.com/aom/+/e5eec6c5eb14e66e2733b135ef1c405c7e6424bf%5E!/#F0.
+    apply_patch file://$patch_dir/libaom_restore-winxp-compatibility_use-pthreads.patch -p1 # See https://aomedia.googlesource.com/aom/+/64545cb00a29ff872473db481a57cdc9bc4f1f82%5E!/#F1, https://aomedia.googlesource.com/aom/+/e5eec6c5eb14e66e2733b135ef1c405c7e6424bf%5E!/#F0 and https://github.com/sherpya/mplayer-be/blob/master/packages/aom/patches/00_sherpya_use-pthreads.diff.
     mkdir -p aom_build
     cd aom_build # Out-of-source build.
       do_cmake ${PWD%/*} -DCMAKE_TOOLCHAIN_FILE=build/cmake/toolchains/x86-mingw-gcc.cmake -DENABLE_DOCS=0 -DENABLE_EXAMPLES=0 -DENABLE_NASM=1 -DENABLE_TESTS=0 -DENABLE_TOOLS=0
