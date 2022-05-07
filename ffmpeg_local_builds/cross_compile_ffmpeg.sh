@@ -440,14 +440,12 @@ build_dlfcn() {
 build_bzip2() {
   download_and_unpack_file https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz
   cd bzip2-1.0.8
-    apply_patch file://$patch_dir/bzip2-1.0.8_mingw-cross.diff
-    if [[ ! -f $mingw_w64_x86_64_prefix/lib/libbz2.a ]]; then # Library only.
-      do_make $make_prefix_options libbz2.a
-      install -m644 libbz2.a $mingw_w64_x86_64_prefix/lib/libbz2.a
-      install -m644 bzlib.h $mingw_w64_x86_64_prefix/include/bzlib.h
-    else
-      echo -e "\e[1;33mAlready made and installed bzip2-1.0.8.\e[0m"
+    if [[ ! -f bzlib.h.bak ]]; then # See https://github.com/sherpya/mplayer-be/blob/master/packages/bzip2/patches/00_sherpya_mingw-cross.diff.
+      sed -i.bak "s/WINAPI func/func/" bzlib.h
     fi
+    cp -vu $patch_dir/bzip2_CMakeLists.txt CMakeLists.txt # See https://github.com/sherpya/mplayer-be/blob/master/packages/bzip2/install/CMakeLists.txt.
+    do_cmake $PWD
+    do_make install
   cd ..
 }
 
