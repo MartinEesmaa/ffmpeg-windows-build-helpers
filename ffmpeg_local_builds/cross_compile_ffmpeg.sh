@@ -382,7 +382,7 @@ gen_ld_script() {
   lib=$mingw_w64_x86_64_prefix/lib/$1
   lib_s="${1:3:-2}_s"
   if [ "$1" -nt "$mingw_w64_x86_64_prefix/lib/lib$lib_s.a" ]; then
-    rm $mingw_w64_x86_64_prefix/lib/lib$lib_s.a
+    rm -f $mingw_w64_x86_64_prefix/lib/lib$lib_s.a
   fi
   if [ ! -f "$mingw_w64_x86_64_prefix/lib/lib$lib_s.a" ]; then
     echo -e "\e[1;33mGenerating linker script for $1, adding $2.\e[0m"
@@ -791,11 +791,9 @@ build_libxvid() {
       sed -i.bak "/dll/i\disabled:" Makefile # Static library.
       sed -i.bak "s/\"xvidcore/\"libxvidcore/" configure # Compile 'libxvidcore.a'.
     fi
-    export ac_yasm=no # Force the use of NASM.
-    do_configure --host=$host_target --prefix=$mingw_w64_x86_64_prefix
+    ac_yasm=no do_configure --host=$host_target --prefix=$mingw_w64_x86_64_prefix # Force the use of NASM.
     do_make
     do_make_install
-    unset ac_yasm
   cd ../../..
 }
 
@@ -848,10 +846,8 @@ build_libvpx() {
     if [[ ! -f vp8/common/threading.h.bak ]]; then
       sed -i.bak "/<semaphore.h/i\#include <sys/types.h>" vp8/common/threading.h # With 'cross_compilers/mingw-w64-i686/include/semaphore.h' you'd otherwise get: "semaphore.h:152:8: error: unknown type name 'mode_t'".
     fi
-    export CROSS="$cross_prefix"
-    do_configure --target=x86-win32-gcc --prefix=$mingw_w64_x86_64_prefix --enable-static --disable-shared --disable-examples --disable-tools --disable-docs --disable-unit-tests --enable-vp9-highbitdepth
+    CROSS="$cross_prefix" do_configure --target=x86-win32-gcc --prefix=$mingw_w64_x86_64_prefix --enable-static --disable-shared --disable-examples --disable-tools --disable-docs --disable-unit-tests --enable-vp9-highbitdepth
     do_make install
-    unset CROSS
   cd ..
 }
 
@@ -969,17 +965,14 @@ build_openssl() {
     if [[ ! -f Configurations/10-main.conf.bak ]]; then # Change GCC optimization level.
       sed -i.bak "s/-O3/-O2/" Configurations/10-main.conf
     fi
-    export CC="${cross_prefix}gcc"
-    export AR="${cross_prefix}ar"
-    export RANLIB="${cross_prefix}ranlib"
     local config_options=(./Configure --prefix=$mingw_w64_x86_64_prefix mingw zlib no-async)
     # "Note: on older OSes, like CentOS 5, BSD 5, and Windows XP or Vista, you will need to configure with no-async when building OpenSSL 1.1.0 and above. The configuration system does not detect lack of the Posix feature on the platforms." (https://wiki.openssl.org/index.php/Compilation_and_Installation)
     if [ "$1" = "static" ]; then
       make distclean || exit 1
-      do_configure "${config_options[@]}" no-shared no-dso # No 'no-engine' because Curl needs it when built with Libssh2.
+      CC="${cross_prefix}gcc" AR="${cross_prefix}ar" RANLIB="${cross_prefix}ranlib" do_configure "${config_options[@]}" no-shared no-dso # No 'no-engine' because Curl needs it when built with Libssh2.
       do_make install_dev
     else
-      do_configure "${config_options[@]}" shared
+      CC="${cross_prefix}gcc" AR="${cross_prefix}ar" RANLIB="${cross_prefix}ranlib" do_configure "${config_options[@]}" shared
       do_make build_libs
 
       mkdir -p $redist_dir
@@ -993,9 +986,6 @@ build_openssl() {
         echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
       fi
     fi
-    unset CC
-    unset AR
-    unset RANLIB
   cd ..
 } # This is to compile 'libcrypto-1_1.dll' and 'libssl-1_1.dll' for Xidel, or a static library for hlsdl.
 
@@ -1004,14 +994,12 @@ build_curl() {
   if [ "$1" = "openssl" ]; then # Compile Curl with OpenSSL for hlsdl.
     build_openssl static
     cd curl-7.80.0
-    export PKG_CONFIG="pkg-config --static" # Automatically detect all of OpenSSL its dependencies.
-    generic_configure --without-ca-bundle --with-ca-fallback
-    unset PKG_CONFIG
+    PKG_CONFIG="pkg-config --static" generic_configure --without-ca-bundle --with-ca-fallback # Automatically detect all of OpenSSL its dependencies.
     do_make install-strip
   else # Compile Curl with MbedTLS and create archive.
     build_mbedtls
     cd curl-7.80.0
-    generic_configure --without-ssl --with-mbedtls --with-ca-bundle=cacert.pem LDFLAGS=-s # --with-ca-fallback only works with OpenSSL or GnuTLS.
+    LDFLAGS=-s generic_configure --without-ssl --with-mbedtls --with-ca-bundle=cacert.pem # --with-ca-fallback only works with OpenSSL or GnuTLS.
     do_make # 'curl.exe' only. No install.
     if [[ ! -f cacert.pem ]]; then # See https://curl.se/docs/sslcerts.html and https://superuser.com/a/442797 for more on the CA cert file.
       echo -e "\e[1;33mDownloading 'https://curl.se/ca/cacert.pem'.\e[0m"
@@ -1035,9 +1023,7 @@ build_hlsdl() {
   build_curl openssl
   do_git_checkout https://github.com/selsta/hlsdl.git
   cd hlsdl_git
-    export LDFLAGS=-s # Strip 'hlsdl.exe' during make.
-    do_make $make_prefix_options
-    unset LDFLAGS
+    LDFLAGS=-s do_make $make_prefix_options # Strip 'hlsdl.exe' during make.
 
     mkdir -p $redist_dir
     archive="$redist_dir/hlsdl-$(grep -Po "(?<=hlsdl v)([0-9]+\.?)+" src/misc.c)-$(git rev-parse --short HEAD)-win32-static-xpmod-sse"
@@ -1109,7 +1095,7 @@ fi
 
 # variables with their defaults
 build_ffmpeg_static=y
-original_cflags='-march=pentium3 -mtune=athlon-xp -O2 -mfpmath=sse -msse' # See https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html, https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html and https://stackoverflow.com/questions/19689014/gcc-difference-between-o3-and-os.
+original_cflags='-O2 -march=pentium3 -mtune=athlon-xp -mfpmath=sse -msse' # See https://gcc.gnu.org/onlinedocs/gcc/x86-Options.html, https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html and https://stackoverflow.com/questions/19689014/gcc-difference-between-o3-and-os.
 export ac_cv_func__mktemp_s=no   # _mktemp_s is not available on WinXP.
 export ac_cv_func_vsnprintf_s=no # Mark vsnprintf_s as unavailable, as windows xp mscrt doesn't have it.
 
