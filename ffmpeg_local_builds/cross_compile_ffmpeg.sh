@@ -595,7 +595,8 @@ build_libopus() {
   cd opus_git
     if [[ ! -f Makefile.am.bak ]]; then
       sed -i.bak "/m4data/,+2d;/install-data-local/,+2d" Makefile.am # Library only.
-      sed -i.bak "s/@LIBM@/& -lssp/" opus.pc.in # Otherwise you'd get "undefined reference to `__memcpy_chk'" while configuring FFmpeg.
+      sed -i.bak "/#ifndef OPUS_EXPORT/i\#define OPUS_EXPORT" include/opus_defines.h # Static library.
+      sed -i.bak "s/@LIBM@/& -lssp/" opus.pc.in # Otherwise you'd get "undefined reference to `__memcpy_chk'" while configuring FFmpeg. The alternative is to use '--disable-stack-protector'.
     fi
     generic_configure --disable-doc --disable-extra-programs
     do_make install
