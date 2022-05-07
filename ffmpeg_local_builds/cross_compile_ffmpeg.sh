@@ -471,7 +471,15 @@ build_zlib() {
 build_iconv() {
   download_and_unpack_file https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.16.tar.gz
   cd libiconv-1.16
-    generic_configure --disable-nls
+    if [[ ! -f llp64_patch.done ]]; then
+      echo -e "\e[1;33mApplying llp64 patch.\e[0m" # See https://github.com/sherpya/mplayer-be/blob/master/packages/libiconv/build.sh.
+      sed -i -e 's/(int)(long)\&/(int)(intptr_t)\&/g' lib/*.{c,h}
+      sed -i -e 's/(unsigned long)/(uintptr_t)/g' srclib/malloca.c
+      touch llp64_patch.done
+    else
+      echo -e "\e[1;33mllp64 patch already applied.\e[0m"
+    fi
+    CFLAGS="$CFLAGS -include stdint.h" generic_configure --disable-nls # See https://github.com/sherpya/mplayer-be/blob/master/packages/libiconv/build.sh.
     do_make install-lib # No need for 'do_make_install', because 'install-lib' already has install-instructions.
   cd ..
 } # [dlfcn]
