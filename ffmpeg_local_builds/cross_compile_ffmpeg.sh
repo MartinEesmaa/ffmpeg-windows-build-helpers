@@ -573,7 +573,7 @@ build_libogg() {
     if [[ ! -f Makefile.am.bak ]]; then # Library only.
       sed -i.bak "s/ doc//;/m4data/,+2d" Makefile.am
     fi
-    generic_configure
+    ac_cv_sizeof_u_int16_t=2 ac_cv_sizeof_u_int32_t=4 generic_configure # Both are set to 0 otherwise. See https://github.com/sherpya/mplayer-be/blob/master/packages/libogg/build.sh.
     do_make install
   cd ..
 } # [dlfcn]
