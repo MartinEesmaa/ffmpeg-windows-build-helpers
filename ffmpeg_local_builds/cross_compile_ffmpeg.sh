@@ -554,12 +554,14 @@ build_gmp() {
 } # [dlfcn]
 
 build_mbedtls() {
-  download_and_unpack_file https://github.com/ARMmbed/mbedtls/archive/refs/tags/v2.16.12.tar.gz mbedtls-2.16.12
-  # mbedtls-2.23.0 causes "The procedure entry point _vsnprintf_s could not be located in the dynamic link library msvcrt.dll" upon running ffmpeg.exe, ffplay.exe, or ffprobe.exe, because '_vsnprintf_s()' is only available on Windows Vista and later. See 'programs/psa/psa_constant_names.c'.
-  cd mbedtls-2.16.12
+  download_and_unpack_file https://github.com/Mbed-TLS/mbedtls/archive/refs/tags/v3.1.0.tar.gz mbedtls-3.1.0
+  cd mbedtls-3.1.0
+    if [[ ! -f include/mbedtls/platform.h.bak ]]; then
+      sed -i.bak "57,61d" include/mbedtls/platform.h # Windows XP compatibility. See https://github.com/sherpya/mplayer-be/blob/master/packages/mbedtls/patches/00_sherpya_mingw-stdio.diff.
+    fi
     mkdir -p build_dir
     cd build_dir # Out-of-source build.
-      do_cmake ${PWD%/*} -DENABLE_PROGRAMS=0 -DENABLE_TESTING=0 -DENABLE_ZLIB_SUPPORT=1
+      do_cmake ${PWD%/*} -DCMAKE_C_FLAGS="$CFLAGS -D__USE_MINGW_ANSI_STDIO=1" -DENABLE_PROGRAMS=0 -DENABLE_TESTING=0
       do_make install
     cd ..
   cd ..
