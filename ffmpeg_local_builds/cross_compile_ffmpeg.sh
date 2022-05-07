@@ -409,8 +409,8 @@ build_mingw_std_threads() {
 }
 
 build_cmake() {
-  download_and_unpack_file https://cmake.org/files/v3.22/cmake-3.22.1.tar.gz
-  cd cmake-3.22.1
+  download_and_unpack_file https://cmake.org/files/v3.23/cmake-3.23.1.tar.gz
+  cd cmake-3.23.1
     do_configure --prefix=/usr -- -DBUILD_CursesDialog=0 -DBUILD_TESTING=0 # Don't build 'ccmake' (ncurses), or './configure' will fail otherwise.
     # Options after "--" are passed to CMake (Usage: ./bootstrap [<options>...] [-- <cmake-options>...])
     do_make install/strip # This overwrites Cygwin's 'cmake.exe', 'cpack.exe' and 'ctest.exe'.
@@ -465,8 +465,8 @@ build_liblzma() {
 } # [dlfcn]
 
 build_zlib() {
-  download_and_unpack_file https://github.com/madler/zlib/archive/v1.2.11.tar.gz zlib-1.2.11
-  cd zlib-1.2.11
+  download_and_unpack_file http://zlib.net/zlib-1.2.12.tar.xz
+  cd zlib-1.2.12
     if [[ ! -f Makefile.in.bak ]]; then # Library only.
       sed -i.bak "/man3dir/d" Makefile.in
     fi
@@ -484,8 +484,8 @@ build_iconv() {
 } # [dlfcn]
 
 build_sdl2() {
-  download_and_unpack_file https://libsdl.org/release/SDL2-2.0.18.tar.gz
-  cd SDL2-2.0.18
+  download_and_unpack_file https://libsdl.org/release/SDL2-2.0.22.tar.gz
+  cd SDL2-2.0.22
     if [[ ! -f Makefile.in.bak ]]; then
       sed -i.bak "/aclocal/d" Makefile.in # Library only.
       sed -i.bak "s/ -mwindows//;s/iconv_open ()/libiconv_open ()/;s/\"iconv\"/\"libiconv\"/" configure # Allow ffmpeg to output anything to console and use libiconv instead of iconv.
@@ -511,8 +511,8 @@ build_libwebp() {
 } # [dlfcn]
 
 build_freetype() {
-  download_and_unpack_file https://download.savannah.gnu.org/releases/freetype/freetype-2.11.1.tar.xz
-  cd freetype-2.11.1
+  download_and_unpack_file https://download.savannah.gnu.org/releases/freetype/freetype-2.12.1.tar.xz
+  cd freetype-2.12.1
     if [[ ! -f builds/unix/install.mk.bak ]]; then
       sed -i.bak "/config \\\/s/\s*\\\//;/bindir) /s/\s*\\\//;/aclocal/d;/man1/d;/PLATFORM_DIR/d;/docs/d" builds/unix/install.mk # Library only.
     fi
@@ -534,10 +534,10 @@ build_libxml2() {
 } # [zlib, liblzma, iconv, dlfcn]
 
 build_fontconfig() {
-  download_and_unpack_file https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.13.94.tar.xz
-  cd fontconfig-2.13.94
+  download_and_unpack_file https://www.freedesktop.org/software/fontconfig/release/fontconfig-2.14.0.tar.xz
+  cd fontconfig-2.14.0
     if [[ ! -f Makefile.in.bak ]]; then
-      sed -i.bak "/^SUBDIRS/s/fc.*/src/;466,467d;/^install-data-am/s/:.*/: install-pkgconfigDATA/;/\tinstall-xmlDATA$/d" Makefile.in # Library only.
+      sed -i.bak "/^SUBDIRS/s/fc.*/src/;468,469d;/^install-data-am/s/:.*/: install-pkgconfigDATA/;/\tinstall-xmlDATA$/d" Makefile.in # Library only.
     fi
     generic_configure --enable-libxml2 --disable-docs # Use Libxml2 instead of Expat.
     do_make install
@@ -960,8 +960,8 @@ build_apps() {
 }
 
 build_openssl() {
-  download_and_unpack_file https://www.openssl.org/source/openssl-1.1.1m.tar.gz
-  cd openssl-1.1.1m
+  download_and_unpack_file https://www.openssl.org/source/openssl-1.1.1o.tar.gz
+  cd openssl-1.1.1o
     if [[ ! -f Configurations/10-main.conf.bak ]]; then # Change GCC optimization level.
       sed -i.bak "s/-O3/-O2/" Configurations/10-main.conf
     fi
@@ -976,7 +976,7 @@ build_openssl() {
       do_make build_libs
 
       mkdir -p $redist_dir
-      archive="$redist_dir/openssl-1.1.1m-win32-xpmod-sse"
+      archive="$redist_dir/openssl-1.1.1o-win32-xpmod-sse"
       if [[ ! -f $archive.7z ]]; then # Pack shared libraries.
         sed "s/$/\r/" LICENSE > LICENSE.txt
         ${cross_prefix}strip -ps libcrypto-1_1.dll libssl-1_1.dll
@@ -990,24 +990,24 @@ build_openssl() {
 } # This is to compile 'libcrypto-1_1.dll' and 'libssl-1_1.dll' for Xidel, or a static library for hlsdl.
 
 build_curl() {
-  download_and_unpack_file https://curl.se/download/curl-7.80.0.tar.xz
+  download_and_unpack_file https://curl.se/download/curl-7.83.0.tar.xz
   if [ "$1" = "openssl" ]; then # Compile Curl with OpenSSL for hlsdl.
     build_openssl static
-    cd curl-7.80.0
-    PKG_CONFIG="pkg-config --static" generic_configure --without-ca-bundle --with-ca-fallback # Automatically detect all of OpenSSL its dependencies.
+    cd curl-7.83.0
+    PKG_CONFIG="pkg-config --static" generic_configure --with-openssl --without-ca-bundle --with-ca-fallback # Automatically detect all of OpenSSL its dependencies.
     do_make install-strip
   else # Compile Curl with MbedTLS and create archive.
     build_mbedtls
-    cd curl-7.80.0
-    LDFLAGS=-s generic_configure --without-ssl --with-mbedtls --with-ca-bundle=cacert.pem # --with-ca-fallback only works with OpenSSL or GnuTLS.
-    do_make # 'curl.exe' only. No install.
+    cd curl-7.83.0
     if [[ ! -f cacert.pem ]]; then # See https://curl.se/docs/sslcerts.html and https://superuser.com/a/442797 for more on the CA cert file.
       echo -e "\e[1;33mDownloading 'https://curl.se/ca/cacert.pem'.\e[0m"
       curl -O https://curl.se/ca/cacert.pem
     fi
+    LDFLAGS=-s generic_configure --with-mbedtls --with-ca-bundle=cacert.pem # --with-ca-fallback only works with OpenSSL or GnuTLS.
+    do_make # 'curl.exe' only. No install.
 
     mkdir -p $redist_dir
-    archive="$redist_dir/curl-7.80.0-mbedtls-zlib-win32-static-xpmod-sse"
+    archive="$redist_dir/curl-7.83.0-mbedtls-zlib-win32-static-xpmod-sse"
     if [[ ! -f $archive.7z ]]; then # Pack static 'curl.exe'.
       sed "s/$/\r/" COPYING > COPYING.txt
       7z a -mx=9 -bb3 $archive.7z ./src/curl.exe cacert.pem COPYING.txt
