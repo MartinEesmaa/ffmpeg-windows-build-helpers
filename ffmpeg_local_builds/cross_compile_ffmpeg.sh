@@ -581,8 +581,9 @@ build_libogg() {
 build_libvorbis() {
   do_git_checkout https://github.com/xiph/vorbis.git
   cd vorbis_git
-    if [[ ! -f Makefile.am.bak ]]; then # Library only.
-      sed -i.bak "s/ test doc//;/m4data/,+2d" Makefile.am
+    if [[ ! -f Makefile.am.bak ]]; then
+      sed -i.bak "s/ test doc//;/m4data/,+2d" Makefile.am # Library only.
+      sed -i.bak "s|if(samples>length/bytespersample)|if(bytespersample \&\& samples>length/bytespersample)|" lib/vorbisfile.c # Avoid SIGFPE when bytespersample is zero. See https://github.com/sherpya/mplayer-be/blob/master/packages/libvorbis/patches/01_debian_avoid-sigfpe.diff
     fi
     generic_configure --disable-docs --disable-examples --disable-oggtest
     do_make install
