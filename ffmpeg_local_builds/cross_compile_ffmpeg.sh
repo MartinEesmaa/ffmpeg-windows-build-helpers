@@ -789,15 +789,11 @@ build_avisynth() {
 
 build_libxvid() {
   download_and_unpack_file https://downloads.xvid.com/downloads/xvidcore-1.3.7.tar.gz xvidcore
-  cd xvidcore/build/generic
-    if [[ ! -f Makefile.bak ]]; then
-      sed -i.bak "/dll/i\disabled:" Makefile # Static library.
-      sed -i.bak "s/\"xvidcore/\"libxvidcore/" configure # Compile 'libxvidcore.a'.
-    fi
-    ac_yasm=no do_configure --host=$host_target --prefix=$mingw_w64_x86_64_prefix # Force the use of NASM.
-    do_make
-    do_make_install
-  cd ../../..
+  cd xvidcore
+    cp -vu $patch_dir/libxvid_CMakeLists.txt CMakeLists.txt # See https://github.com/sherpya/mplayer-be/blob/master/packages/xvidcore/install/CMakeLists.txt.
+    do_cmake $PWD
+    do_make install
+  cd ..
 }
 
 build_libx264() {
