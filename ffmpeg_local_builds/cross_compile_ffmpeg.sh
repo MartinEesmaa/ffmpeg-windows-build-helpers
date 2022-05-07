@@ -780,9 +780,11 @@ build_libass() {
 
 build_avisynth() {
   do_git_checkout https://github.com/AviSynth/AviSynthPlus.git
-  cd AviSynthPlus_git
-    do_make_install "PREFIX=$mingw_w64_x86_64_prefix"
-  cd ..
+  mkdir -p AviSynthPlus_git/avisynth-build
+  cd AviSynthPlus_git/avisynth-build # Out-of-source build.
+    do_cmake ${PWD%/*} -DHEADERS_ONLY=1
+    do_make VersionGen install
+  cd ../..
 }
 
 build_libxvid() {
