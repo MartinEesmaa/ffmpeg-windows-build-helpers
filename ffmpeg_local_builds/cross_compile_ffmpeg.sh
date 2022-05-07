@@ -397,13 +397,8 @@ gen_ld_script() {
 build_mingw_std_threads() {
   do_git_checkout https://github.com/meganz/mingw-std-threads.git
   cd mingw-std-threads_git
-    for file in *.h; do
-      if [ ! -f "$mingw_w64_x86_64_prefix/include/$file" ] || [ "$file" -nt "$mingw_w64_x86_64_prefix/include/$file" ]; then
-        rm -v $mingw_w64_x86_64_prefix/include/$file
-        cp -v $file $mingw_w64_x86_64_prefix/include
-      else
-        echo -e "\e[1;33m$file is up-to-date.\e[0m"
-      fi
+    for header in *.h; do
+      install -m644 ${header} ${mingw_w64_x86_64_prefix}/include/${header}
     done
   cd ..
 }
