@@ -1,7 +1,7 @@
-From e94ce63fd9a0ecd1decf0016b0d21dca07b53b73 Mon Sep 17 00:00:00 2001
+From 7aeebb432bc0fd2ae083bf525ba8355a68b1512d Mon Sep 17 00:00:00 2001
 From: Reino17 <rwijnsma@xs4all.nl>
-Date: Sat, 7 May 2022 13:01:19 +0200
-Subject: [PATCH 4/4] libavfilter/vf_frei0r.c: load shared frei0r libraries dynamically
+Date: Sat, 3 Sep 2022 12:58:27 +0200
+Subject: [PATCH 2/2] libavfilter/vf_frei0r.c: load shared frei0r libraries dynamically
 
 See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0005-avfilters-better-behavior-of-frei0r-on-win32.patch.
 ---
@@ -9,10 +9,10 @@ See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0005-avfilters-
  1 file changed, 20 insertions(+)
 
 diff --git a/libavfilter/vf_frei0r.c b/libavfilter/vf_frei0r.c
-index f11ae6e..7789e4a 100644
+index 1e01114..4d036b8 100644
 --- a/libavfilter/vf_frei0r.c
 +++ b/libavfilter/vf_frei0r.c
-@@ -42,6 +42,10 @@
+@@ -43,6 +43,10 @@
  #include "internal.h"
  #include "video.h"
  
@@ -23,7 +23,7 @@ index f11ae6e..7789e4a 100644
  typedef f0r_instance_t (*f0r_construct_f)(unsigned int width, unsigned int height);
  typedef void (*f0r_destruct_f)(f0r_instance_t instance);
  typedef void (*f0r_deinit_f)(void);
-@@ -240,11 +244,27 @@ static av_cold int frei0r_init(AVFilterContext *ctx,
+@@ -246,11 +250,27 @@ static av_cold int frei0r_init(AVFilterContext *ctx,
          if (ret < 0)
              return ret;
      }
