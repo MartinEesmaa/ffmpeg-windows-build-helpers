@@ -12,30 +12,27 @@ ECHO.
 CD ffmpeg_local_builds
 SETLOCAL ENABLEDELAYEDEXPANSION
 IF NOT EXIST cygwin_local_install (
-	MKDIR cygwin_local_install
-	CD cygwin_local_install
-	ECHO Downloading Cygwin setup executable.
-	ECHO Keep an eye on this window for error warning messages from the Cygwin install. Some of them are expected.
-	powershell -command "$clnt = new-object System.Net.WebClient; $clnt.DownloadFile(\"http://cygwinxp.cathedral-networks.org/cathedral/setup-x86-2.874.exe\", \"setup-x86-2.874.exe\")"
-	START /wait setup-x86-2.874.exe ^
-	-X ^
-	--quiet-mode ^
-	--no-admin ^
-	--no-startmenu ^
-	--no-shortcuts ^
-	--no-desktop ^
-	--site "http://cygwinxp.cathedral-networks.org/" ^
-	--root !cd! ^
-	--packages autoconf,autogen,automake,bison,cmake,cvs,curl,ed,flex,gcc-core,gcc-g++,gettext-devel,git,gperf,libcurl4,libtool,make,mercurial,ncurses,p7zip,patch,pax,pkg-config,subversion,texinfo,unzip,wget,yasm,zlib1g-dev
-	REM wget for the initial script download as well as zeranoe's uses it
-	REM curl is used in our script all over
-	REM libcurl4 is apparently required so that updating curl doesn't bwork it, reported as a bug to cygwin :|
-	REM ncurses for the "clear" command yikes!
-	REM gettext-dev is for 64 bit cygwin which doesn't install it but binutils links against it and needs it...
-	ECHO Done installing Cygwin.
-	CD ..
+  MKDIR cygwin_local_install
+  CD cygwin_local_install
+  ECHO Downloading Cygwin setup executable.
+  ECHO Keep an eye on this window for error warning messages from the Cygwin install. Some of them are expected.
+  powershell -command "$clnt = new-object System.Net.WebClient; $clnt.DownloadFile(\"http://cygwinxp.cathedral-networks.org/cathedral/setup-x86-2.874.exe\", \"setup-x86-2.874.exe\")"
+  START /wait setup-x86-2.874.exe ^
+  -X ^
+  --quiet-mode ^
+  --no-admin ^
+  --no-startmenu ^
+  --no-shortcuts ^
+  --no-desktop ^
+  --site "http://cygwinxp.cathedral-networks.org/" ^
+  --root !cd! ^
+  --packages autoconf,autogen,automake,bison,cmake,cvs,ed,flex,gcc-core,gcc-g++,git,gperf,libtool,make,mercurial,ncurses,p7zip,patch,pax,pkg-config,subversion,texinfo,unzip,wget,yasm,zlib1g-dev
+  REM wget for the initial script download as well as zeranoe's uses it
+  REM ncurses for the "clear" command yikes!
+  ECHO Done installing Cygwin.
+  CD ..
 ) ELSE (
-	ECHO Cygwin already installed.
+  ECHO Cygwin already installed.
 )
 ENDLOCAL
 SET PATH=%cd%\cygwin_local_install\bin;%PATH%
@@ -44,9 +41,9 @@ ECHO.
 SET /P "static=Would you like to build static FFmpeg binaries [Y/n]?"
 ECHO.
 IF /I "%static%"=="n" (
-	bash.exe -c "./cross_compile_ffmpeg.sh --build-ffmpeg-static=n %2 %3 %4 %5 %6 %7 %8 %9"
+  bash.exe -c "./cross_compile_ffmpeg.sh --build-ffmpeg-static=n %2 %3 %4 %5 %6 %7 %8 %9"
 ) ELSE (
-	bash.exe -c "./cross_compile_ffmpeg.sh %1 %2 %3 %4 %5 %6 %7 %8 %9"
+  bash.exe -c "./cross_compile_ffmpeg.sh %1 %2 %3 %4 %5 %6 %7 %8 %9"
 )
 
 ECHO.

@@ -34,18 +34,14 @@ set_box_memory_size_bytes() {
 
 check_missing_packages() {
   # zeranoe's build scripts use wget, though we don't here...
-  local check_packages=('7z' 'autoconf' 'autogen' 'automake' 'bison' 'bzip2' 'cmake' 'curl' 'cvs' 'ed' 'flex' 'g++' 'gcc' 'git' 'gperf' 'hg' 'libtool' 'libtoolize' 'make' 'makeinfo' 'patch' 'pax' 'pkg-config' 'svn' 'unzip' 'wget' 'xz' 'yasm')
+  local check_packages=('7z' 'autoconf' 'autogen' 'automake' 'bison' 'bzip2' 'cmake' 'cvs' 'ed' 'flex' 'g++' 'gcc' 'git' 'gperf' 'hg' 'libtool' 'libtoolize' 'make' 'makeinfo' 'patch' 'pax' 'pkg-config' 'svn' 'unzip' 'wget' 'xz' 'yasm')
   for package in "${check_packages[@]}"; do
     type -P "$package" >/dev/null || missing_packages=("$package" "${missing_packages[@]}")
   done
   if [[ -n "${missing_packages[@]}" ]]; then
     clear
-    echo "Could not find the following execs (svn is actually package subversion, makeinfo is actually package texinfo, hg is actually package mercurial if you're missing them): ${missing_packages[@]}"
+    echo "Could not find the following execs (7z = p7zip, hg = mercurial, makeinfo = texinfo, svn = subversion): ${missing_packages[@]}"
     echo 'Install the missing packages before running this script.'
-    echo "for ubuntu: $ sudo apt-get install subversion curl texinfo g++ bison flex cvs yasm automake libtool autoconf gcc cmake git make pkg-config zlib1g-dev mercurial unzip pax nasm gperf autogen -y"
-    echo "for gentoo (a non ubuntu distro): same as above, but no g++, no gcc, git is dev-vcs/git, zlib1g-dev is zlib, pkg-config is dev-util/pkgconfig, add ed..."
-    echo "for OS X (homebrew): brew install wget cvs hg yasm autogen automake autoconf cmake hg libtool xz pkg-config nasm"
-    echo "for debian: same as ubuntu, but also add libtool-bin and ed"
     exit 1
   fi
 
@@ -77,9 +73,10 @@ purge =
 EOF
   fi
 
-  if (( $(stat -c %Y /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem) < 1633046400 )); then
-    curl -k https://curl.se/ca/cacert.pem > /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
-  fi # Prevents error-messages like "curl: (60) SSL certificate problem: certificate has expired" by updating 'tls-ca-bundle.pem'.
+  if [[ ! -f /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.done ]]; then # Update SSL certificates.
+    wget --no-check-certificate -O /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem https://curl.se/ca/cacert.pem
+    touch /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.done
+  fi # Prevents wget error-messages like "ERROR: The certificate of `<some website>' is not trusted" by updating 'tls-ca-bundle.pem'.
 }
 
 
@@ -102,13 +99,6 @@ EOL
   cd "$cur_dir"
 }
 
-# made into a method so I don't/don't have to download this script every time if only doing just 32 or just6 64 bit builds...
-download_gcc_build_script() {
-  rm -f $1 || exit 1
-  curl -4 file://$patch_dir/$1 -O --fail || exit 1
-  chmod u+x $1
-}
-
 install_cross_compiler() {
   local win32_gcc="cross_compilers/mingw-w64-i686/bin/i686-w64-mingw32-gcc"
   if [[ -f $win32_gcc ]]; then
@@ -121,14 +111,9 @@ install_cross_compiler() {
       echo -e "Starting to download and build cross compile version of gcc [requires working internet access] with thread count $gcc_cpu_count.\n"
 
       # --disable-shared allows c++ to be distributed at all...which seemed necessary for some random dependency which happens to use/require c++...
-      local zeranoe_script_name=mingw-w64-build-r32 # https://files.1f0.de/mingw/scripts/
-      local zeranoe_script_options="--default-configure --cpu-count=$gcc_cpu_count --pthreads-w32-ver=2-9-1 --disable-shared --clean-build --verbose"
       echo "Building win32 cross compiler."
-      download_gcc_build_script $zeranoe_script_name
-      if [[ `uname` =~ "5.1" ]]; then # Avoid using secure API functions for compatibility with msvcrt.dll on Windows XP.
-        sed -i "s/ --enable-secure-api//" $zeranoe_script_name
-      fi
-      ./$zeranoe_script_name $zeranoe_script_options --build-type=win32 || exit 1
+      cp -v $patch_dir/mingw-w64-build-r33 .   # https://files.1f0.de/mingw/scripts/
+      ./mingw-w64-build-r33 --build-type=win32 --default-configure --cpu-count=$gcc_cpu_count --pthreads-w32-ver=2-9-1 --disable-shared --clean-build --verbose || exit 1
       if [[ ! -f ../$win32_gcc ]]; then
         echo "Failure building 32 bit gcc? Recommend nuke sandbox (rm -fr sandbox) and start over."
         exit 1
@@ -199,7 +184,7 @@ do_git_checkout() {
         else
           echo -e "\e[1;33mHead of $dir is already at ${4:0:7}.\e[0m"
         fi
-      elif [[ $(git rev-parse HEAD) != $(git ls-remote -h $1 $branch | sed "s/\s.*//") ]]; then
+      elif [[ $(git rev-parse HEAD) != $(git ls-remote -h $1 $branch | head -c 40) ]]; then
         echo -e "\e[1;33mUpdating $dir to latest git head on 'origin/$branch'.\e[0m"
         git reset --hard # Return files to their original state.
         git clean -fdx # Clean the working tree; build- as well as untracked files.
@@ -248,16 +233,11 @@ download_and_unpack_file() {
     local dir="${name/.tar*/}" # remove .tar.xx
   fi
   if [ ! -f "$dir/unpacked.successfully" ]; then
-    echo -e "\e[1;33mDownloading (curl) $1.\e[0m"
+    echo -e "\e[1;33mDownloading (wget) $1.\e[0m"
     if [[ -f $name ]]; then
       rm $name || exit 1
     fi
-    #  From man curl
-    #  -4, --ipv4
-    #  If curl is capable of resolving an address to multiple IP versions (which it is if it is  IPv6-capable),
-    #  this option tells curl to resolve names to IPv4 addresses only.
-    #  avoid a "network unreachable" error in certain [broken Ubuntu] configurations a user ran into once
-    curl -4 "$1" --retry 50 -O -L --fail || exit 1 # -L means "allow redirection" or some odd :|
+    wget -t 5 "$1" || exit 1
     tar -xf "$name" || unzip "$name" || exit 1
     touch "$dir/unpacked.successfully" || exit 1
     rm "$name" || exit 1
@@ -368,7 +348,7 @@ apply_patch() {
     if [[ -f $name ]]; then
       rm $name || exit 1 # remove old version in case it has been since updated on the server...
     fi
-    curl -4 --retry 5 $1 -O --fail || exit 1
+    cp -v $1 . || exit 1
     echo -e "\e[1;33mApplying patch '$name'.\e[0m"
     patch $type -i "$name" || exit 1
     touch $name.done || exit 1
@@ -525,7 +505,7 @@ build_freetype() {
 build_libxml2() {
   download_and_unpack_file http://xmlsoft.org/sources/libxml2-2.9.12.tar.gz
   cd libxml2-2.9.12
-    apply_patch file://$patch_dir/libxml2-2.9.12_lib-only_static_cve-2017-8872.diff # See https://github.com/sherpya/mplayer-be/blob/master/packages/libxml2/patches/01_sherpya_always-static.diff and https://github.com/sherpya/mplayer-be/blob/master/packages/libxml2/patches/03_debian_cve-2017-8872.diff.
+    apply_patch $patch_dir/libxml2-2.9.12_lib-only_static_cve-2017-8872.diff # See https://github.com/sherpya/mplayer-be/blob/master/packages/libxml2/patches/01_sherpya_always-static.diff and https://github.com/sherpya/mplayer-be/blob/master/packages/libxml2/patches/03_debian_cve-2017-8872.diff.
     generic_configure --with-ftp=no --with-http=no --with-python=no
     do_make install
   cd ..
@@ -694,7 +674,7 @@ build_libsoxr() {
 build_libflite() {
   download_and_unpack_file http://www.festvox.org/flite/packed/flite-2.1/flite-2.1-release.tar.bz2
   cd flite-2.1-release
-    apply_patch file://$patch_dir/libflite-2.1.0_mingw-w64-fixes.diff # Fix MinGW-w64 stuff and library only. Without the patch it fails with "../build/i386-mingw32/lib/libflite.a(cst_val.o):cst_val.c:(.text+0xdcd): undefined reference to `c99_snprintf'".
+    apply_patch $patch_dir/libflite-2.1.0_mingw-w64-fixes.diff # Fix MinGW-w64 stuff and library only. Without the patch it fails with "../build/i386-mingw32/lib/libflite.a(cst_val.o):cst_val.c:(.text+0xdcd): undefined reference to `c99_snprintf'".
     do_configure --host=$host_target --prefix=$mingw_w64_x86_64_prefix --disable-shared
     do_make
     do_make_install
@@ -755,7 +735,7 @@ build_fribidi() {
 build_harfbuzz() {
   do_git_checkout https://github.com/harfbuzz/harfbuzz.git harfbuzz_git main
   cd harfbuzz_git
-    apply_patch file://$patch_dir/harfbuzz_cmake-pkgconfig.patch -p1 # Let cmake create a pkgconfig file. See https://github.com/sherpya/mplayer-be/blob/master/packages/harfbuzz/patches/00_sherpya_cmake-pkgconfig.diff and https://github.com/sherpya/mplayer-be/blob/master/packages/harfbuzz/install/harfbuzz.pc.cmakein.
+    apply_patch $patch_dir/harfbuzz_cmake-pkgconfig.patch -p1 # Let cmake create a pkgconfig file. See https://github.com/sherpya/mplayer-be/blob/master/packages/harfbuzz/patches/00_sherpya_cmake-pkgconfig.diff and https://github.com/sherpya/mplayer-be/blob/master/packages/harfbuzz/install/harfbuzz.pc.cmakein.
     sed -i.bak "s|setlocale|//setlocale|" util/options.hh # See https://github.com/sherpya/mplayer-be/blob/master/packages/harfbuzz/patches/01_sherpya_no-setlocale.diff.
     mkdir -p build_dir
     cd build_dir # Out-of-source build.
@@ -810,8 +790,8 @@ build_libx264() {
 build_libx265() {
   do_hg_checkout http://hg.videolan.org/x265
   cd x265_hg
-    apply_patch file://$patch_dir/x265_fix-nasm-warnings.patch -p1 # See https://github.com/sherpya/mplayer-be/blob/master/packages/x265/patches/01_sherpya_nasm-warnings.diff.
-    apply_patch file://$patch_dir/x265_static-multilib-api.patch -p1
+    apply_patch $patch_dir/x265_fix-nasm-warnings.patch -p1 # See https://github.com/sherpya/mplayer-be/blob/master/packages/x265/patches/01_sherpya_nasm-warnings.diff.
+    apply_patch $patch_dir/x265_static-multilib-api.patch -p1
     mkdir -p 8bit 10bit 12bit
     cd 12bit
       do_cmake ${PWD%/*}/source -DENABLE_SHARED=0 -DENABLE_CLI=0 -DHIGH_BIT_DEPTH=1 -DMAIN12=1 -DEXPORT_C_API=0 -DENABLE_ASSEMBLY=0
@@ -853,7 +833,7 @@ build_libvpx() {
 build_libaom() {
   do_git_checkout https://aomedia.googlesource.com/aom libaom_git
   cd libaom_git
-    apply_patch file://$patch_dir/libaom_restore-winxp-compatibility_use-pthreads.patch -p1 # See https://aomedia.googlesource.com/aom/+/64545cb00a29ff872473db481a57cdc9bc4f1f82%5E!/#F1, https://aomedia.googlesource.com/aom/+/e5eec6c5eb14e66e2733b135ef1c405c7e6424bf%5E!/#F0 and https://github.com/sherpya/mplayer-be/blob/master/packages/aom/patches/00_sherpya_use-pthreads.diff.
+    apply_patch $patch_dir/libaom_restore-winxp-compatibility_use-pthreads.patch -p1 # See https://aomedia.googlesource.com/aom/+/64545cb00a29ff872473db481a57cdc9bc4f1f82%5E!/#F1, https://aomedia.googlesource.com/aom/+/e5eec6c5eb14e66e2733b135ef1c405c7e6424bf%5E!/#F0 and https://github.com/sherpya/mplayer-be/blob/master/packages/aom/patches/00_sherpya_use-pthreads.diff.
     mkdir -p aom_build
     cd aom_build # Out-of-source build.
       do_cmake ${PWD%/*} -DCMAKE_TOOLCHAIN_FILE=build/cmake/toolchains/x86-mingw-gcc.cmake -DENABLE_DOCS=0 -DENABLE_EXAMPLES=0 -DENABLE_NASM=1 -DENABLE_TESTS=0 -DENABLE_TOOLS=0
@@ -865,10 +845,10 @@ build_libaom() {
 build_ffmpeg() {
   do_git_checkout https://github.com/FFmpeg/FFmpeg.git "" "" f3b7ba21ba49b32b4476a8c7c5a9bcdad15e3943
   cd FFmpeg_git
-    apply_patch file://$patch_dir/0001-make-bcrypt-optional.patch -p1 # WinXP doesn't have 'bcrypt'. See https://github.com/FFmpeg/FFmpeg/commit/aedbf1640ced8fc09dc980ead2a387a59d8f7f68 and https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0001-make-bcrypt-optional-on-win32.patch.
-    apply_patch file://$patch_dir/0002-windows-xp-compatible-CancelIoEx.patch -p1 # Otherwise you'd get "The procedure entry point CancelIoEx could not be located in the dynamic link library KERNEL32.dll" while running ffmpeg.exe, ffplay.exe, or ffprobe.exe, because 'CancelIoEx()' is only available on Windows Vista and later. See https://github.com/FFmpeg/FFmpeg/commit/53aa76686e7ff4f1f6625502503d7923cec8c10e, https://trac.ffmpeg.org/ticket/5717 and https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0002-windows-xp-compatible-CancelIoEx.patch.
-    apply_patch file://$patch_dir/0003-load-shared-libfdk-aac-library-dynamically.patch -p1 # See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0004-dynamic-loading-of-shared-fdk-aac-library.patch.
-    apply_patch file://$patch_dir/0004-load-shared-frei0r-libraries-dynamically.patch -p1 # See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0005-avfilters-better-behavior-of-frei0r-on-win32.patch.
+    apply_patch $patch_dir/0001-make-bcrypt-optional.patch -p1 # WinXP doesn't have 'bcrypt'. See https://github.com/FFmpeg/FFmpeg/commit/aedbf1640ced8fc09dc980ead2a387a59d8f7f68 and https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0001-make-bcrypt-optional-on-win32.patch.
+    apply_patch $patch_dir/0002-windows-xp-compatible-CancelIoEx.patch -p1 # Otherwise you'd get "The procedure entry point CancelIoEx could not be located in the dynamic link library KERNEL32.dll" while running ffmpeg.exe, ffplay.exe, or ffprobe.exe, because 'CancelIoEx()' is only available on Windows Vista and later. See https://github.com/FFmpeg/FFmpeg/commit/53aa76686e7ff4f1f6625502503d7923cec8c10e, https://trac.ffmpeg.org/ticket/5717 and https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0002-windows-xp-compatible-CancelIoEx.patch.
+    apply_patch $patch_dir/0003-load-shared-libfdk-aac-library-dynamically.patch -p1 # See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0004-dynamic-loading-of-shared-fdk-aac-library.patch.
+    apply_patch $patch_dir/0004-load-shared-frei0r-libraries-dynamically.patch -p1 # See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0005-avfilters-better-behavior-of-frei0r-on-win32.patch.
     init_options=(--arch=x86 --target-os=mingw32 --prefix=$mingw_w64_x86_64_prefix --cross-prefix=$cross_prefix --extra-cflags="$CFLAGS")
     if [[ $1 == "shared" ]]; then
       init_options+=(--enable-shared --disable-static) # Building a static FFmpeg is the default, so no need to specify '--enable-static --disable-shared'.
@@ -1000,7 +980,7 @@ build_curl() {
     cd curl-7.83.0
     if [[ ! -f cacert.pem ]]; then # See https://curl.se/docs/sslcerts.html and https://superuser.com/a/442797 for more on the CA cert file.
       echo -e "\e[1;33mDownloading 'https://curl.se/ca/cacert.pem'.\e[0m"
-      curl -O https://curl.se/ca/cacert.pem
+      wget https://curl.se/ca/cacert.pem
     fi
     LDFLAGS=-s generic_configure --with-mbedtls --with-ca-bundle=cacert.pem # --with-ca-fallback only works with OpenSSL or GnuTLS.
     do_make # 'curl.exe' only. No install.
@@ -1040,7 +1020,7 @@ build_ffms2_cplugin() {
   do_git_checkout https://github.com/FFmpeg/FFmpeg.git FFmpeg-ffms2_git "" 2c6f532e0a29527347418d2d8c4ccfe57a6ace0e
   cd FFmpeg-ffms2_git
     ff_rev=$(git describe --tags | tail -c +2 | sed 's/dev-//;s/g//')
-    apply_patch file://$patch_dir/0001-use-WinXP-s-wincrypt-API-again.patch -p1
+    apply_patch $patch_dir/0001-use-WinXP-s-wincrypt-API-again.patch -p1
     do_configure --arch=x86 --target-os=mingw32 --prefix=$mingw_w64_x86_64_prefix --cross-prefix=$cross_prefix --extra-cflags="$CFLAGS" --pkg-config=pkg-config --pkg-config-flags=--static --enable-gpl --enable-version3 --disable-debug --disable-doc --disable-htmlpages --disable-manpages --disable-podpages --disable-schannel --disable-txtpages --disable-w32threads --disable-avdevice --disable-avfilter --disable-devices --disable-encoders --disable-filters --disable-hwaccels --disable-mediafoundation --disable-muxers --disable-network --disable-programs --disable-sdl2 --enable-libaom
     do_make
     do_make_install
@@ -1048,7 +1028,7 @@ build_ffms2_cplugin() {
 
   do_git_checkout https://github.com/qyot27/ffms2_cplugin.git "" c_plugin
   cd ffms2_cplugin_git
-    apply_patch file://$patch_dir/ffms2_configure-fix-various.patch -p1 # Correctly detect MingW32, use Cygwin's pkg-config and don't set GCC optimization level twice if $CFLAGS already contains one.
+    apply_patch $patch_dir/ffms2_configure-fix-various.patch -p1 # Correctly detect MingW32, use Cygwin's pkg-config and don't set GCC optimization level twice if $CFLAGS already contains one.
     if [[ ! -f src/core/ffms.cpp.bak ]]; then
       sed -i.bak 's/<mutex>/"mingw.mutex.h"/' src/core/ffms.cpp # Use "mingw-std-threads" implementation of standard C++11 threading classes, which are currently still missing on MinGW GCC.
       sed -i.bak 's/<thread>/"mingw.thread.h"/' src/core/videosource.cpp # Otherwise you'd get errors like "'mutex' in namespace 'std' does not name a type".
