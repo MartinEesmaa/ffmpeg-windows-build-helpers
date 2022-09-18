@@ -360,8 +360,8 @@ build_mingw_std_threads() {
 }
 
 build_cmake() {
-  download_and_unpack_file https://cmake.org/files/v3.23/cmake-3.23.1.tar.gz
-  cd cmake-3.23.1
+  download_and_unpack_file https://cmake.org/files/v3.24/cmake-3.24.1.tar.gz
+  cd cmake-3.24.1
     do_configure --prefix=/usr -- -DBUILD_CursesDialog=0 -DBUILD_TESTING=0 # Don't build 'ccmake' (ncurses), or './configure' will fail otherwise.
     # Options after "--" are passed to CMake (Usage: ./bootstrap [<options>...] [-- <cmake-options>...])
     do_make install/strip # This overwrites Cygwin's 'cmake.exe', 'cpack.exe' and 'ctest.exe'.
@@ -406,8 +406,8 @@ build_bzip2() {
 }
 
 build_liblzma() {
-  download_and_unpack_file https://sourceforge.net/projects/lzmautils/files/xz-5.2.5.tar.xz
-  cd xz-5.2.5
+  download_and_unpack_file https://sourceforge.net/projects/lzmautils/files/xz-5.2.6.tar.xz
+  cd xz-5.2.6
     generic_configure --disable-xz --disable-xzdec --disable-lzmadec --disable-lzmainfo --disable-scripts --disable-doc --disable-nls
     do_make install
   cd ..
@@ -425,23 +425,16 @@ build_zlib() {
 }
 
 build_iconv() {
-  download_and_unpack_file https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.16.tar.gz
-  cd libiconv-1.16
-    if [[ ! -f llp64_patch.done ]]; then
-      echo -e "\e[1;33mApplying llp64 patch.\e[0m" # See https://github.com/sherpya/mplayer-be/blob/master/packages/libiconv/build.sh.
-      sed -i -e 's/(int)(long)\&/(int)(intptr_t)\&/g' lib/*.{c,h}
-      sed -i -e 's/(unsigned long)/(uintptr_t)/g' srclib/malloca.c
-      touch llp64_patch.done
-    else
-      echo -e "\e[1;33mllp64 patch already applied.\e[0m"
-    fi
-    CFLAGS="$CFLAGS -include stdint.h" generic_configure --disable-nls # See https://github.com/sherpya/mplayer-be/blob/master/packages/libiconv/build.sh.
+  download_and_unpack_file https://ftp.gnu.org/pub/gnu/libiconv/libiconv-1.17.tar.gz
+  cd libiconv-1.17
+    generic_configure --disable-nls
     do_make install-lib # No need for 'do_make_install', because 'install-lib' already has install-instructions.
   cd ..
 } # [dlfcn]
 
 build_sdl2() {
   download_and_unpack_file https://libsdl.org/release/SDL2-2.0.22.tar.gz
+#  download_and_unpack_file https://libsdl.org/release/SDL2-2.24.0.tar.gz # Causes "The procedure entry point CreateEvenExW could not be located in the dynamic link library KERNEL32.dll" upon running ffmpeg.exe, ffplay.exe, or ffprobe.exe, because 'CreateEvenExW()' is only available on Windows Vista and later.
   cd SDL2-2.0.22
     if [[ ! -f Makefile.in.bak ]]; then
       sed -i.bak "/aclocal/d" Makefile.in # Library only.
@@ -496,7 +489,7 @@ build_fontconfig() {
     generic_configure --enable-libxml2 --disable-docs # Use Libxml2 instead of Expat.
     do_make install
   cd ..
-} # freetype, libxml >= 2.6, [iconv, dlfcn]
+} # freetype, libxml >= 2.6, python >= 3, [iconv, dlfcn]
 
 build_gmp() {
   download_and_unpack_file https://gmplib.org/download/gmp/gmp-6.2.1.tar.xz
@@ -510,8 +503,8 @@ build_gmp() {
 } # [dlfcn]
 
 build_mbedtls() {
-  download_and_unpack_file https://github.com/Mbed-TLS/mbedtls/archive/refs/tags/v3.1.0.tar.gz mbedtls-3.1.0
-  cd mbedtls-3.1.0
+  download_and_unpack_file https://github.com/Mbed-TLS/mbedtls/archive/refs/tags/v3.2.1.tar.gz mbedtls-3.2.1
+  cd mbedtls-3.2.1
     if [[ ! -f include/mbedtls/platform.h.bak ]]; then
       sed -i.bak "57,61d" include/mbedtls/platform.h # Windows XP compatibility. See https://github.com/sherpya/mplayer-be/blob/master/packages/mbedtls/patches/00_sherpya_mingw-stdio.diff.
     fi
@@ -601,8 +594,8 @@ build_fdk-aac() {
 } # [dlfcn]
 
 build_libmpg123() {
-  download_and_unpack_file https://sourceforge.net/projects/mpg123/files/mpg123/1.29.3/mpg123-1.29.3.tar.bz2
-  cd mpg123-1.29.3
+  download_and_unpack_file https://sourceforge.net/projects/mpg123/files/mpg123/1.30.2/mpg123-1.30.2.tar.bz2
+  cd mpg123-1.30.2
     if [[ ! -f Makefile.in.bak ]]; then # Library only
       sed -i.bak "/^all-am/s/\$(PROG.*/\\\/;/^install-data-am/s/ install-man//;/^install-exec-am/s/ install-binPROGRAMS//" Makefile.in
     fi
@@ -613,8 +606,8 @@ build_libmpg123() {
 } # [dlfcn]
 
 build_libopenmpt() {
-  download_and_unpack_file https://lib.openmpt.org/files/libopenmpt/src/libopenmpt-0.6.3+release.autotools.tar.gz
-  cd libopenmpt-0.6.3+release.autotools
+  download_and_unpack_file https://lib.openmpt.org/files/libopenmpt/src/libopenmpt-0.6.5+release.autotools.tar.gz
+  cd libopenmpt-0.6.5+release.autotools
     if [[ ! -f Makefile.in.bak ]]; then # Library only
       sed -i.bak "/^all-am/s/DATA/pkgconfig_DATA/;/^install-data-am/s/:.*/: \\\/;s/\tinstall-nobase_dist_docDATA /\t/" Makefile.in
     fi
@@ -699,8 +692,8 @@ build_frei0r() {
 build_fribidi() {
   do_git_checkout https://github.com/behdad/fribidi.git
   cd fribidi_git
-    if [[ ! -f Makefile.am.bak ]]; then # Library only.
-      sed -i.bak "s/ bin.*//" Makefile.am
+    if [[ ! -f Makefile.am.bak ]]; then
+      sed -i.bak "s/ bin.*//" Makefile.am # Library only.
       sed -i.bak "s/ __declspec.*//" lib/fribidi-common.h # Otherwise you'd get "undefined reference to `_imp__fribidi_version_info'" while configuring FFmpeg.
     fi
     generic_configure --disable-deprecated
@@ -778,11 +771,11 @@ build_libx265() {
     cd ../8bit
       ln -sf ../10bit/libx265.a libx265_main10.a
       ln -sf ../12bit/libx265.a libx265_main12.a
-      do_cmake ${PWD%/*}/source -DENABLE_SHARED=0 -DENABLE_CLI=0 -DWINXP_SUPPORT=1 -DEXTRA_LIB="libx265_main10.a;libx265_main12.a" -DEXTRA_LINK_FLAGS=-L. -DLINKED_10BIT=ON -DLINKED_12BIT=ON
+      do_cmake ${PWD%/*}/source -DENABLE_SHARED=0 -DENABLE_CLI=0 -DWINXP_SUPPORT=1 -DEXTRA_LIB="libx265_main10.a;libx265_main12.a" -DEXTRA_LINK_FLAGS=-L. -DLINKED_10BIT=1 -DLINKED_12BIT=1
       do_make
       # rename the 8bit library, then combine all three into libx265.a
       mv libx265.a libx265_main.a
-      ar -M <<EOF
+      ${cross_prefix}ar -M <<EOF
 CREATE libx265.a
 ADDLIB libx265_main.a
 ADDLIB libx265_main10.a
@@ -915,8 +908,8 @@ build_apps() {
 }
 
 build_openssl() {
-  download_and_unpack_file https://www.openssl.org/source/openssl-1.1.1o.tar.gz
-  cd openssl-1.1.1o
+  download_and_unpack_file https://www.openssl.org/source/openssl-1.1.1q.tar.gz
+  cd openssl-1.1.1q
     if [[ ! -f Configurations/10-main.conf.bak ]]; then # Change GCC optimization level.
       sed -i.bak "s/-O3/-O2/" Configurations/10-main.conf
     fi
@@ -931,7 +924,7 @@ build_openssl() {
       do_make build_libs
 
       mkdir -p $redist_dir
-      archive="$redist_dir/openssl-1.1.1o-win32-xpmod-sse"
+      archive="$redist_dir/openssl-1.1.1q-win32-xpmod-sse"
       if [[ ! -f $archive.7z ]]; then # Pack shared libraries.
         sed "s/$/\r/" LICENSE > LICENSE.txt
         ${cross_prefix}strip -ps libcrypto-1_1.dll libssl-1_1.dll
@@ -945,15 +938,15 @@ build_openssl() {
 } # This is to compile 'libcrypto-1_1.dll' and 'libssl-1_1.dll' for Xidel, or a static library for hlsdl.
 
 build_curl() {
-  download_and_unpack_file https://curl.se/download/curl-7.83.0.tar.xz
+  download_and_unpack_file https://curl.se/download/curl-7.85.0.tar.xz
   if [ "$1" = "openssl" ]; then # Compile Curl with OpenSSL for hlsdl.
     build_openssl static
-    cd curl-7.83.0
+    cd curl-7.85.0
     PKG_CONFIG="pkg-config --static" generic_configure --with-openssl --without-ca-bundle --with-ca-fallback # Automatically detect all of OpenSSL its dependencies.
     do_make install-strip
   else # Compile Curl with MbedTLS and create archive.
     build_mbedtls
-    cd curl-7.83.0
+    cd curl-7.85.0
     if [[ ! -f cacert.pem ]]; then # See https://curl.se/docs/sslcerts.html and https://superuser.com/a/442797 for more on the CA cert file.
       echo -e "\e[1;33mDownloading 'https://curl.se/ca/cacert.pem'.\e[0m"
       wget https://curl.se/ca/cacert.pem
@@ -962,7 +955,7 @@ build_curl() {
     do_make # 'curl.exe' only. No install.
 
     mkdir -p $redist_dir
-    archive="$redist_dir/curl-7.83.0-mbedtls-zlib-win32-static-xpmod-sse"
+    archive="$redist_dir/curl-7.85.0-mbedtls-zlib-win32-static-xpmod-sse"
     if [[ ! -f $archive.7z ]]; then # Pack static 'curl.exe'.
       sed "s/$/\r/" COPYING > COPYING.txt
       7z a -mx=9 -bb3 $archive.7z ./src/curl.exe cacert.pem COPYING.txt
