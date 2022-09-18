@@ -160,7 +160,7 @@ do_git_checkout() {
         else
           echo -e "\e[1;33mHead of $dir is already at ${4:0:7}.\e[0m"
         fi
-      elif [[ $(git rev-parse HEAD) != $(git ls-remote -h $1 $branch | head -c 40) ]]; then
+      elif [[ $(git rev-parse HEAD) != $(git ls-remote -h $1 $branch | sed "s/\s.*//") ]]; then
         echo -e "\e[1;33mUpdating $dir to latest git head on 'origin/$branch'.\e[0m"
         git reset --hard # Return files to their original state.
         git clean -fdx # Clean the working tree; build- as well as untracked files.
@@ -653,6 +653,20 @@ build_libflite() {
 build_libzimg() {
   do_git_checkout https://github.com/sekrit-twc/zimg.git
   cd zimg_git
+    if [[ ! -d .git/modules ]]; then
+      echo -e "\e[1;33mDownloading submodule 'graphengine'.\e[0m"
+      git submodule update --init --remote graphengine # Without it results in: "make[1]: *** No rule to make target 'graphengine/graphengine/cpuinfo.cpp', needed by 'graphengine/graphengine/libzimg_internal_la-cpuinfo.lo'.  Stop.". This can also be done with 'git clone --recursive', but since this is the only dependency that actually requires a submodule, it's undesirable to have it in 'do_git_checkout()'.
+    else
+      if [[ $(git --git-dir=.git/modules/graphengine rev-parse HEAD) != $(git ls-remote -h https://github.com/sekrit-twc/graphengine.git | sed "s/\s.*//") ]]; then
+        git submodule foreach -q 'git reset --hard' # Return files to their original state.
+        git submodule foreach -q 'git clean -fdx' # Clean the working tree; build- as well as untracked files.
+        echo -e "\e[1;33mUpdating submodule 'graphengine' to latest git head on 'origin/master'.\e[0m"
+        git submodule update --remote graphengine
+        rm -f already_* # Force recompiling libzimg.
+      else
+        echo -e "\e[1;33mLocal submodule 'graphengine' is up-to-date.\e[0m"
+      fi
+    fi
     if [[ ! -f Makefile.am.bak ]]; then # Library only.
       sed -i.bak "/dist_doc_DATA/,+19d" Makefile.am
     fi
