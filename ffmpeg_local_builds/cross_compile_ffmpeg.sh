@@ -23,13 +23,9 @@ yes_no_sel() {
 }
 
 set_box_memory_size_bytes() {
-  if [[ $OSTYPE == darwin* ]]; then
-    box_memory_size_bytes=20000000000 # 20G fake it out for now :|
-  else
-    local ram_kilobytes=`grep MemTotal /proc/meminfo | awk '{print $2}'`
-    local swap_kilobytes=`grep SwapTotal /proc/meminfo | awk '{print $2}'`
-    box_memory_size_bytes=$[ram_kilobytes * 1024 + swap_kilobytes * 1024]
-  fi
+  local ram_kilobytes=`grep MemTotal /proc/meminfo | awk '{print $2}'`
+  local swap_kilobytes=`grep SwapTotal /proc/meminfo | awk '{print $2}'`
+  box_memory_size_bytes=$[ram_kilobytes * 1024 + swap_kilobytes * 1024]
 }
 
 check_missing_packages() {
@@ -42,26 +38,6 @@ check_missing_packages() {
     clear
     echo "Could not find the following execs (7z = p7zip, hg = mercurial, makeinfo = texinfo, svn = subversion): ${missing_packages[@]}"
     echo 'Install the missing packages before running this script.'
-    exit 1
-  fi
-
-  local out=`cmake --version` # like cmake version 2.8.7
-  local version_have=`echo "$out" | cut -d " " -f 3`
-  function version { echo "$@" | awk -F. '{ printf("%d%03d%03d%03d\n", $1,$2,$3,$4); }'; }
-  if [[ $(version $version_have)  < $(version '2.8.12') ]]; then
-    echo "your cmake version is too old $version_have wanted 2.8.12"
-    exit 1
-  fi
-
-  if [[ ! -f /usr/include/zlib.h ]]; then
-    echo "warning: you may need to install zlib development headers first if you want to build mp4-box [on ubuntu: $ apt-get install zlib1g-dev]" # XXX do like configure does and attempt to compile and include zlib.h instead?
-    sleep 1
-  fi
-
-  out=`yasm --version`
-  yasm_version=`echo "$out" | cut -d " " -f 2` # like 1.1.0.112
-  if [[ $(version $yasm_version)  < $(version '1.2.0') ]]; then
-    echo "your yasm version is too old $yasm_version wanted 1.2.0"
     exit 1
   fi
 
