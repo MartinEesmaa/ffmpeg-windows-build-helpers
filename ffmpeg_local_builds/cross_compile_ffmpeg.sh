@@ -450,7 +450,7 @@ build_sdl2() {
 } # [iconv, dlfcn]
 
 build_libwebp() {
-  do_git_checkout https://chromium.googlesource.com/webm/libwebp.git
+  do_git_checkout https://chromium.googlesource.com/webm/libwebp.git libwebp_git main
   cd libwebp_git
     if [[ ! -f Makefile.am.bak ]]; then # Library only.
       sed -i.bak "s/src.*/src/;4,\$d" Makefile.am
@@ -802,7 +802,7 @@ EOF
 } # nasm >= 2.13 (unless '-DENABLE_ASSEMBLY=0' is specified)
 
 build_libvpx() {
-  do_git_checkout https://chromium.googlesource.com/webm/libvpx.git
+  do_git_checkout https://chromium.googlesource.com/webm/libvpx.git libvpx_git main
   cd libvpx_git
     if [[ ! -f vp8/common/threading.h.bak ]]; then
       sed -i.bak "/<semaphore.h/i\#include <sys/types.h>" vp8/common/threading.h # With 'cross_compilers/mingw-w64-i686/include/semaphore.h' you'd otherwise get: "semaphore.h:152:8: error: unknown type name 'mode_t'".
