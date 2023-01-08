@@ -650,6 +650,37 @@ build_libflite() {
   cd ..
 }
 
+build_libsamplerate() {
+  do_git_checkout https://github.com/libsndfile/libsamplerate.git
+  cd libsamplerate_git
+    if [[ ! -f Makefile.am.bak ]]; then # Library only.
+      sed -i.bak "53,\$d" Makefile.am
+    fi
+    generic_configure --disable-fftw
+    do_make install
+  cd ..
+}
+
+build_fftw() {
+  download_and_unpack_file http://fftw.org/fftw-3.3.10.tar.gz
+  cd fftw-3.3.10
+    if [[ ! -f Makefile.in.bak ]]; then # Library only.
+      sed -i.bak "/^SUBDIRS/s/api.*/api/;/^libbench2/d" Makefile.in
+    fi
+    generic_configure --disable-doc
+    do_make install
+  cd ..
+}
+
+build_librubberband() {
+  do_git_checkout https://github.com/breakfastquay/rubberband.git "" "" 18c06ab8c431854056407c467f4755f761e36a8e
+  cd rubberband_git
+    apply_patch $patch_dir/rubberband_git_static-lib.patch -p1 # Create install-static target and add missing libraries in the pkg-config file.
+    do_configure --host=$host_target --prefix=$mingw_w64_x86_64_prefix --disable-programs --disable-vamp --disable-ladspa
+    do_make install-static # No need for 'do_make_install', because 'install-static' already has install-instructions.
+  cd ..
+} # libsamplerate, fftw
+
 build_libzimg() {
   do_git_checkout https://github.com/sekrit-twc/zimg.git
   cd zimg_git
@@ -836,7 +867,7 @@ build_ffmpeg() {
       init_options+=(--enable-shared --disable-static) # Building a static FFmpeg is the default, so no need to specify '--enable-static --disable-shared'.
     fi
     init_options+=(--pkg-config=pkg-config --pkg-config-flags=--static --extra-version=Reino --enable-gpl --enable-gray --enable-version3 --disable-bcrypt --disable-debug --disable-doc --disable-htmlpages --disable-manpages --disable-mediafoundation --disable-podpages --disable-txtpages --disable-w32threads)
-    do_configure "${init_options[@]}" --enable-avisynth --enable-frei0r --enable-filter=frei0r --enable-gmp --enable-libaom --enable-libass --enable-libfdk-aac --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libgme --enable-libmp3lame --enable-libopenmpt --enable-libopus --enable-libsoxr --enable-libtwolame --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxml2 --enable-libxvid --enable-libzimg --enable-mbedtls
+    do_configure "${init_options[@]}" --enable-avisynth --enable-frei0r --enable-filter=frei0r --enable-gmp --enable-libaom --enable-libass --enable-libfdk-aac --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libgme --enable-libmp3lame --enable-libopenmpt --enable-libopus --enable-librubberband --enable-libsoxr --enable-libtwolame --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxml2 --enable-libxvid --enable-libzimg --enable-mbedtls
     do_make # Build 'ffmpeg.exe', 'ffplay.exe' and 'ffprobe.exe' (+ '*.dll' for shared build). No install.
 
     mkdir -p $redist_dir
@@ -898,6 +929,9 @@ build_dependencies() {
   build_libgme
   build_libsoxr
   build_libflite
+  build_libsamplerate
+  build_fftw
+  build_librubberband
   build_libzimg
   build_vidstab
   build_frei0r
