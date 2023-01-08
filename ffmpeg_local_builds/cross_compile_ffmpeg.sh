@@ -984,10 +984,40 @@ build_openssl() {
   cd ..
 } # This is to compile 'libcrypto-1_1.dll' and 'libssl-1_1.dll' for Xidel, or a static library for hlsdl.
 
+build_openssl3() {
+  download_and_unpack_file https://www.openssl.org/source/openssl-3.1.0-beta1.tar.gz
+  cd openssl-3.1.0-beta1
+    if [[ ! -f Configurations/10-main.conf.bak ]]; then # Change GCC optimization level.
+      sed -i.bak "s/-O3/-O2/" Configurations/10-main.conf
+    fi
+    local config_options=(./Configure --prefix=$mingw_w64_x86_64_prefix mingw zlib no-async)
+    # "Note: on older OSes, like CentOS 5, BSD 5, and Windows XP or Vista, you will need to configure with no-async when building OpenSSL 1.1.0 and above. The configuration system does not detect lack of the Posix feature on the platforms." (https://wiki.openssl.org/index.php/Compilation_and_Installation)
+    if [ "$1" = "static" ]; then
+      #if [[ -f Makefile ]]; then
+      #  make distclean
+      #fi
+      CC="${cross_prefix}gcc" AR="${cross_prefix}ar" RANLIB="${cross_prefix}ranlib" do_configure "${config_options[@]}" no-shared no-dso # No 'no-engine' because Curl needs it when built with Libssh2.
+      do_make install_dev
+    else
+      CC="${cross_prefix}gcc" AR="${cross_prefix}ar" RANLIB="${cross_prefix}ranlib" do_configure "${config_options[@]}" shared
+      do_make build_libs
+
+      mkdir -p $redist_dir
+      archive="$redist_dir/openssl-3.1.0b1-win32-xpmod-sse"
+      if [[ ! -f $archive.7z ]]; then # Pack shared libraries.
+        ${cross_prefix}strip -ps libcrypto-3.dll libssl-3.dll
+        7z a -mx=9 -bb3 $archive.7z libcrypto-3.dll libssl-3.dll LICENSE.txt
+      else
+        echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
+      fi
+    fi
+  cd ..
+} # This is to compile 'libcrypto-3.dll' and 'libssl-3.dll' for Xidel, or a static library for hlsdl.
+
 build_curl() {
   download_and_unpack_file https://curl.se/download/curl-7.87.0.tar.xz
   if [ "$1" = "openssl" ]; then # Compile Curl with OpenSSL for hlsdl.
-    build_openssl static
+    build_openssl3 static
     cd curl-7.87.0
     PKG_CONFIG="pkg-config --static" generic_configure --with-openssl --without-ca-bundle --with-ca-fallback # Automatically detect all of OpenSSL its dependencies.
     do_make install-strip
