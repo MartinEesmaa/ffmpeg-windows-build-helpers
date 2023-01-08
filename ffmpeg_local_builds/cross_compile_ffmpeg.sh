@@ -856,7 +856,7 @@ build_libaom() {
 } # cmake >= 3.5
 
 build_ffmpeg() {
-  do_git_checkout https://github.com/FFmpeg/FFmpeg.git "" "" e4ac156b7c47725327dff78bb83f5eecbaee3add
+  do_git_checkout https://github.com/FFmpeg/FFmpeg.git "" "" fcd557a2c2174d89cb85630ef06c160027d52fa3
   cd FFmpeg_git
     apply_patch $patch_dir/0001-make-bcrypt-optional.patch -p1 # WinXP doesn't have 'bcrypt'. See https://github.com/FFmpeg/FFmpeg/commit/aedbf1640ced8fc09dc980ead2a387a59d8f7f68 and https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0001-make-bcrypt-optional-on-win32.patch.
     apply_patch $patch_dir/0002-windows-xp-compatible-CancelIoEx.patch -p1 # Otherwise you'd get "The procedure entry point CancelIoEx could not be located in the dynamic link library KERNEL32.dll" while running ffmpeg.exe, ffplay.exe, or ffprobe.exe, because 'CancelIoEx()' is only available on Windows Vista and later. See https://github.com/FFmpeg/FFmpeg/commit/53aa76686e7ff4f1f6625502503d7923cec8c10e, https://trac.ffmpeg.org/ticket/5717 and https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0002-windows-xp-compatible-CancelIoEx.patch.
@@ -1063,10 +1063,10 @@ build_hlsdl() {
 } # curl(openssl)
 
 build_ffms2_cplugin() {
-  do_git_checkout https://github.com/FFmpeg/FFmpeg.git FFmpeg-ffms2_git "" 2c6f532e0a29527347418d2d8c4ccfe57a6ace0e
+  do_git_checkout https://github.com/FFmpeg/FFmpeg.git FFmpeg-ffms2_git "" fcd557a2c2174d89cb85630ef06c160027d52fa3
   cd FFmpeg-ffms2_git
     ff_rev=$(git describe --tags | tail -c +2 | sed 's/dev-//;s/g//')
-    apply_patch $patch_dir/0001-use-WinXP-s-wincrypt-API-again.patch -p1
+    apply_patch $patch_dir/0001-make-bcrypt-optional.patch -p1
     do_configure --arch=x86 --target-os=mingw32 --prefix=$mingw_w64_x86_64_prefix --cross-prefix=$cross_prefix --extra-cflags="$CFLAGS" --pkg-config=pkg-config --pkg-config-flags=--static --enable-gpl --enable-version3 --disable-debug --disable-doc --disable-htmlpages --disable-manpages --disable-podpages --disable-schannel --disable-txtpages --disable-w32threads --disable-avdevice --disable-avfilter --disable-devices --disable-encoders --disable-filters --disable-hwaccels --disable-mediafoundation --disable-muxers --disable-network --disable-programs --disable-sdl2 --enable-libaom
     do_make
     do_make_install
