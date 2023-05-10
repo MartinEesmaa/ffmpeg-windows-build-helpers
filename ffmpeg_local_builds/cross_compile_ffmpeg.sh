@@ -845,7 +845,7 @@ build_libvpx() {
 }
 
 build_libaom() {
-  do_git_checkout https://aomedia.googlesource.com/aom libaom_git
+  do_git_checkout https://aomedia.googlesource.com/aom libaom_git main
   cd libaom_git
     apply_patch $patch_dir/libaom_restore-winxp-compatibility_use-pthreads.patch -p1 # See https://aomedia.googlesource.com/aom/+/64545cb00a29ff872473db481a57cdc9bc4f1f82%5E!/#F1, https://aomedia.googlesource.com/aom/+/e5eec6c5eb14e66e2733b135ef1c405c7e6424bf%5E!/#F0 and https://github.com/sherpya/mplayer-be/blob/master/packages/aom/patches/00_sherpya_use-pthreads.diff.
     mkdir -p aom_build

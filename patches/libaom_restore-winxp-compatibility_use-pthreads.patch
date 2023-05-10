@@ -1,5 +1,5 @@
 diff --git a/aom_ports/aom_once.h b/aom_ports/aom_once.h
-index 37057e6..5698e4d 100644
+index 354ed9d..d246a50 100644
 --- a/aom_ports/aom_once.h
 +++ b/aom_ports/aom_once.h
 @@ -38,7 +38,14 @@
@@ -18,8 +18,8 @@ index 37057e6..5698e4d 100644
  #include <windows.h>
  /* Declare a per-compilation-unit state variable to track the progress
   * of calling func() only once. This must be at global scope because
-@@ -81,13 +88,6 @@ static void aom_once(void (*func)(void)) {
-   DosExitCritSec();
+@@ -58,13 +65,6 @@ static void aom_once(void (*func)(void)) {
+   InitOnceComplete(&aom_init_once, 0, NULL);
  }
  
 -#elif CONFIG_MULTITHREAD && HAVE_PTHREAD_H
@@ -33,19 +33,15 @@ index 37057e6..5698e4d 100644
  /* Default version that performs no synchronization. */
  
 diff --git a/build/cmake/aom_configure.cmake b/build/cmake/aom_configure.cmake
-index d79cb90..51aaebf 100644
+index 39e5c53..a3b156f 100644
 --- a/build/cmake/aom_configure.cmake
 +++ b/build/cmake/aom_configure.cmake
-@@ -199,12 +199,6 @@ if(AOM_TARGET_SYSTEM MATCHES "Darwin\|Linux\|Windows\|Android")
-   set(CONFIG_OS_SUPPORT 1)
- endif()
- 
--# The default _WIN32_WINNT value in MinGW is 0x0502 (Windows XP with SP2). Set
--# it to 0x0601 (Windows 7).
--if(AOM_TARGET_SYSTEM STREQUAL "Windows")
+@@ -241,7 +241,7 @@ endif()
+ if(AOM_TARGET_SYSTEM STREQUAL "Windows")
+   # The default _WIN32_WINNT value in MinGW is 0x0502 (Windows XP with SP2). Set
+   # it to 0x0601 (Windows 7).
 -  add_compiler_flag_if_supported("-D_WIN32_WINNT=0x0601")
--endif()
--
- #
- # Fix CONFIG_* dependencies. This must be done before including cpu.cmake to
- # ensure RTCD_CONFIG_* are properly set.
++  #add_compiler_flag_if_supported("-D_WIN32_WINNT=0x0601")
+   # Prevent windows.h from defining the min and max macros. This allows us to
+   # use std::min and std::max.
+   add_compiler_flag_if_supported("-DNOMINMAX")
