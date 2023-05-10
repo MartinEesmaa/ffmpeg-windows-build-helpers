@@ -160,7 +160,7 @@ do_git_checkout() {
         else
           echo -e "\e[1;33mHead of $dir is already at ${4:0:7}.\e[0m"
         fi
-      elif [[ $(git rev-parse HEAD) != $(git ls-remote -h $1 $branch | sed "s/\s.*//") ]]; then
+      elif [[ $(git rev-parse HEAD) != $(git ls-remote -h $1 $branch | head -c +40) ]]; then
         echo -e "\e[1;33mUpdating $dir to latest git head on 'origin/$branch'.\e[0m"
         git reset --hard # Return files to their original state.
         git clean -fdx # Clean the working tree; build- as well as untracked files.
@@ -188,7 +188,7 @@ do_hg_checkout() {
     mv $dir.tmp $dir
   else
     cd $dir
-      if [[ $(hg id -i) != $(hg id -r default $1) ]]; then # 'hg id http://hg.videolan.org/x265' defaults to the "stable" branch!
+      if [[ $(hg id -i | head -c +12) != $(hg id -r default -i $1) ]]; then # 'hg id http://hg.videolan.org/x265' defaults to the "stable" branch!
         echo -e "\e[1;33mUpdating $dir to latest hg head.\e[0m"
         hg revert -a --no-backup # Return files to their original state.
         hg purge # Clean the working tree; build- as well as untracked files.
