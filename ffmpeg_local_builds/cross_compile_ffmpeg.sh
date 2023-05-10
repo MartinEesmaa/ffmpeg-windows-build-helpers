@@ -613,6 +613,7 @@ build_libopenmpt() {
     fi
     CFLAGS="$CFLAGS -D_WIN32_WINNT=_WIN32_WINNT_WINXP" CXXFLAGS="-D_WIN32_WINNT=_WIN32_WINNT_WINXP" generic_configure --disable-openmpt123 --disable-examples --disable-tests
     do_make install
+    do_make install-includelibopenmptHEADERS
   cd ..
 } # zlib, libmpg123, libogg, libvorbis, [dlfcn, mingw-std-threads]
 # GCC11's own std::thread implementation conflicts with mingw-std-threads resulting in "libopenmpt/libopenmpt_impl.cpp:85:2: warning: #warning "Warning: Building libopenmpt with MinGW-w64 without std::thread support is not recommended and is deprecated. Please use MinGW-w64 with posix threading model (as opposed to win32 threading model), or build with mingw-std-threads." [-Wcpp]". See https://forum.openmpt.org/index.php?topic=6822.0.
