@@ -1064,15 +1064,7 @@ build_hlsdl() {
 } # curl(openssl)
 
 build_ffms2_cplugin() {
-  do_git_checkout https://github.com/FFmpeg/FFmpeg.git FFmpeg-ffms2_git "" fcd557a2c2174d89cb85630ef06c160027d52fa3
-  cd FFmpeg-ffms2_git
-    ff_rev=$(git describe --tags | tail -c +2 | sed 's/dev-//;s/g//')
-    apply_patch $patch_dir/0001-make-bcrypt-optional.patch -p1
-    do_configure --arch=x86 --target-os=mingw32 --prefix=$mingw_w64_x86_64_prefix --cross-prefix=$cross_prefix --extra-cflags="$CFLAGS" --pkg-config=pkg-config --pkg-config-flags=--static --enable-gpl --enable-version3 --disable-bcrypt --disable-debug --disable-doc --disable-htmlpages --disable-manpages --disable-podpages --disable-schannel --disable-txtpages --disable-w32threads --disable-avdevice --disable-avfilter --disable-devices --disable-encoders --disable-filters --disable-hwaccels --disable-mediafoundation --disable-muxers --disable-network --disable-programs --disable-sdl2 --enable-libaom
-    do_make
-    do_make_install
-  cd ..
-
+  build_ffmpeg shared
   do_git_checkout https://github.com/qyot27/ffms2_cplugin.git "" c_plugin
   cd ffms2_cplugin_git
     apply_patch $patch_dir/ffms2_configure-fix-various.patch -p1 # Correctly detect MingW32, use Cygwin's pkg-config and don't set GCC optimization level twice if $CFLAGS already contains one.
@@ -1085,7 +1077,7 @@ build_ffms2_cplugin() {
     rm -f NUL # Somehow this "file" is created and Windows Explorer can't delete it.
 
     mkdir -p $redist_dir
-    archive="$redist_dir/ffms2-$(git describe --tags | sed 's/g//')-avs-vsp_ffmpeg-$ff_rev-win32-xpmod-sse"
+    archive="$redist_dir/ffms2-$(git describe --tags | sed 's/g//')-avs-vsp-win32-shared-xpmod-sse"
     if [[ ! -f $archive.7z ]]; then
       sed "s/$/\r/" etc/COPYING.GPLv3 > COPYING.GPLv3.txt
       7z a -mx=9 -bb3 $archive.7z ffms2.dll ffmsindex.exe ./etc/FFMS2-cplugin.avsi doc COPYING.GPLv3.txt
