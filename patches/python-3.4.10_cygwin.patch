@@ -1,0 +1,409 @@
+--- configure.ac.orig	2019-03-18 17:51:26.000000000 +0100
++++ configure.ac	2023-05-19 17:59:11.359375000 +0200
+@@ -947,6 +947,7 @@
+   case $ac_sys_system in
+     CYGWIN*)
+           LDLIBRARY='libpython$(LDVERSION).dll.a'
++          BLDLIBRARY='-L. -lpython$(LDVERSION)'
+           DLLLIBRARY='libpython$(LDVERSION).dll'
+           ;;
+     SunOS*)
+@@ -4103,7 +4104,7 @@
+ 
+ AC_SUBST(EXT_SUFFIX)
+ case $ac_sys_system in
+-    Linux*|GNU*)
++    Linux*|GNU*|CYGWIN*)
+ 	EXT_SUFFIX=.${SOABI}${SHLIB_SUFFIX};;
+     *)
+ 	EXT_SUFFIX=${SHLIB_SUFFIX};;
+--- Makefile.pre.in.orig	2019-03-18 17:51:26.000000000 +0100
++++ Makefile.pre.in	2023-05-19 17:58:11.640625000 +0200
+@@ -638,7 +638,7 @@
+ 
+ # This rule builds the Cygwin Python DLL and import library if configured
+ # for a shared core library; otherwise, this rule is a noop.
+-$(DLLLIBRARY) libpython$(VERSION).dll.a: $(LIBRARY_OBJS)
++$(DLLLIBRARY) libpython$(LDVERSION).dll.a: $(LIBRARY_OBJS)
+ 	if test -n "$(DLLLIBRARY)"; then \
+ 		$(LDSHARED) -Wl,--out-implib=$@ -o $(DLLLIBRARY) $^ \
+ 			$(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST); \
+--- setup.py.orig	2019-03-18 17:51:26.000000000 +0100
++++ setup.py	2023-05-19 17:53:08.718750000 +0200
+@@ -1165,7 +1165,7 @@
+         dbm_setup_debug = False   # verbose debug prints from this script?
+         dbm_order = ['gdbm']
+         # The standard Unix dbm module:
+-        if host_platform not in ['cygwin']:
++        if host_platform not in ['win32']:
+             config_args = [arg.strip("'")
+                            for arg in sysconfig.get_config_var("CONFIG_ARGS").split()]
+             dbm_args = [arg for arg in config_args
+@@ -1220,6 +1220,15 @@
+                                     ],
+                                 libraries = gdbm_libs)
+                             break
++                        if find_file("ndbm.h", inc_dirs, []) is not None:
++                            if dbm_setup_debug: print("building dbm using gdbm")
++                            dbmext = Extension(
++                                '_dbm', ['_dbmmodule.c'],
++                                define_macros=[
++                                    ('HAVE_NDBM_H', None),
++                                    ],
++                                libraries = gdbm_libs)
++                            break
+                 elif cand == "bdb":
+                     if dblibs:
+                         if dbm_setup_debug: print("building dbm using bdb")
+@@ -1766,12 +1775,6 @@
+             include_dirs.append('/usr/X11/include')
+             added_lib_dirs.append('/usr/X11/lib')
+ 
+-        # If Cygwin, then verify that X is installed before proceeding
+-        if host_platform == 'cygwin':
+-            x11_inc = find_file('X11/Xlib.h', [], include_dirs)
+-            if x11_inc is None:
+-                return
+-
+         # Check for BLT extension
+         if self.compiler.find_library_file(lib_dirs + added_lib_dirs,
+                                                'BLT8.0'):
+@@ -1789,9 +1792,8 @@
+         if host_platform in ['aix3', 'aix4']:
+             libs.append('ld')
+ 
+-        # Finally, link with the X11 libraries (not appropriate on cygwin)
+-        if host_platform != "cygwin":
+-            libs.append('X11')
++        # Finally, link with the X11 libraries
++        libs.append('X11')
+ 
+         ext = Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
+                         define_macros=[('WITH_APPINIT', 1)] + defs,
+--- Include/py_curses.h.orig	2019-03-18 17:51:26.000000000 +0100
++++ Include/py_curses.h	2023-05-19 17:34:30.578125000 +0200
+@@ -17,6 +17,13 @@
+ #define NCURSES_OPAQUE 0
+ #endif /* __APPLE__ */
+ 
++#ifdef __CYGWIN__
++/* the following define is necessary for Cygwin; without it, the
++   Cygwin-supplied ncurses.h sets NCURSES_OPAQUE to 1, and then Python
++   can't get at the WINDOW flags field. */
++#define NCURSES_INTERNALS
++#endif /* __CYGWIN__ */
++
+ #ifdef __FreeBSD__
+ /*
+ ** On FreeBSD, [n]curses.h and stdlib.h/wchar.h use different guards
+--- Include/pyerrors.h.orig	2019-03-18 17:51:26.000000000 +0100
++++ Include/pyerrors.h	2023-05-19 17:42:09.343750000 +0200
+@@ -319,7 +319,7 @@
+ 
+ /* In signalmodule.c */
+ #ifndef Py_LIMITED_API
+-int PySignal_SetWakeupFd(int fd);
++PyAPI_FUNC(int) PySignal_SetWakeupFd(int fd);
+ #endif
+ 
+ /* Support for adding program text to SyntaxErrors */
+--- Include/pythread.h.orig	2019-03-18 17:51:26.000000000 +0100
++++ Include/pythread.h	2023-05-19 17:59:30.296875000 +0200
+@@ -77,11 +77,11 @@
+ PyAPI_FUNC(PyObject*) PyThread_GetInfo(void);
+ 
+ /* Thread Local Storage (TLS) API */
+-PyAPI_FUNC(int) PyThread_create_key(void);
+-PyAPI_FUNC(void) PyThread_delete_key(int);
+-PyAPI_FUNC(int) PyThread_set_key_value(int, void *);
+-PyAPI_FUNC(void *) PyThread_get_key_value(int);
+-PyAPI_FUNC(void) PyThread_delete_key_value(int key);
++PyAPI_FUNC(long) PyThread_create_key(void);
++PyAPI_FUNC(void) PyThread_delete_key(long);
++PyAPI_FUNC(int) PyThread_set_key_value(long, void *);
++PyAPI_FUNC(void *) PyThread_get_key_value(long);
++PyAPI_FUNC(void) PyThread_delete_key_value(long key);
+ 
+ /* Cleanup after a fork */
+ PyAPI_FUNC(void) PyThread_ReInitTLS(void);
+--- Modules/_struct.c.orig	2019-03-18 17:51:26.000000000 +0100
++++ Modules/_struct.c	2023-05-19 17:11:10.578125000 +0200
+@@ -1627,7 +1627,7 @@
+ }
+ 
+ static PyTypeObject unpackiter_type = {
+-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
++    PyVarObject_HEAD_INIT(NULL, 0)
+     "unpack_iterator",                          /* tp_name */
+     sizeof(unpackiterobject),                   /* tp_basicsize */
+     0,                                          /* tp_itemsize */
+--- Modules/getpath.c.orig	2019-03-18 17:51:26.000000000 +0100
++++ Modules/getpath.c	2023-05-19 17:11:10.593750000 +0200
+@@ -551,6 +551,28 @@
+             if (isxfile(progpath))
+                 break;
+ 
++#ifdef __CYGWIN__
++            /*
++             * Cygwin automatically removes the ".exe" extension from argv[0]
++             * to make programs feel like they are in a more Unix-like
++             * environment.  Unfortunately, this can make it problemmatic for
++             * Cygwin to distinguish between a directory and an executable with
++             * the same name excluding the ".exe" extension.  For example, the
++             * Cygwin Python build directory has a "Python" directory and a
++             * "python.exe" executable.  This causes isxfile() to erroneously
++             * return false.  If isdir() returns true and there is enough space
++             * to append the ".exe" extension, then we try again with the
++             * extension appended.
++             */
++#define EXE L".exe"
++            if (isdir(progpath) && wcslen(progpath) + wcslen(EXE) <= MAXPATHLEN)
++            {
++                wcscat(progpath, EXE);
++                if (isxfile(progpath))
++                    break;
++            }
++#endif /* __CYGWIN__ */
++
+             if (!delim) {
+                 progpath[0] = L'\0';
+                 break;
+--- Modules/main.c.orig	2019-03-18 17:51:26.000000000 +0100
++++ Modules/main.c	2023-05-19 17:34:21.890625000 +0200
+@@ -9,9 +9,11 @@
+ #include <windows.h>
+ #ifdef HAVE_FCNTL_H
+ #include <fcntl.h>
++#ifndef PATH_MAX
+ #define PATH_MAX MAXPATHLEN
+ #endif
+ #endif
++#endif
+ 
+ #ifdef _MSC_VER
+ #include <crtdbg.h>
+--- Modules/makesetup.orig	2019-03-18 17:51:26.000000000 +0100
++++ Modules/makesetup	2023-05-19 17:58:11.656250000 +0200
+@@ -91,7 +91,7 @@
+ 	 else
+ 	 	ExtraLibDir='$(LIBPL)'
+ 	 fi
+-	 ExtraLibs="-L$ExtraLibDir -lpython\$(VERSION)";;
++	 ExtraLibs="-L$ExtraLibDir -lpython\$(LDVERSION)";;
+ esac
+ 
+ # Main loop
+--- Modules/selectmodule.c.orig	2019-03-18 17:51:26.000000000 +0100
++++ Modules/selectmodule.c	2023-05-19 17:11:10.593750000 +0200
+@@ -4,6 +4,16 @@
+    have any value except INVALID_SOCKET.
+ */
+ 
++/* Windows #defines FD_SETSIZE to 64 if FD_SETSIZE isn't already defined.
++   64 is too small (too many people have bumped into that limit).
++   Here we boost it.
++   Users who want even more than the boosted limit should #define
++   FD_SETSIZE higher before this; e.g., via compiler /D switch.
++*/
++#if (defined(MS_WINDOWS) || defined(__CYGWIN__)) && !defined(FD_SETSIZE)
++#define FD_SETSIZE 512
++#endif
++
+ #include "Python.h"
+ #include <structmember.h>
+ 
+@@ -22,16 +32,6 @@
+ #undef HAVE_BROKEN_POLL
+ #endif
+ 
+-/* Windows #defines FD_SETSIZE to 64 if FD_SETSIZE isn't already defined.
+-   64 is too small (too many people have bumped into that limit).
+-   Here we boost it.
+-   Users who want even more than the boosted limit should #define
+-   FD_SETSIZE higher before this; e.g., via compiler /D switch.
+-*/
+-#if defined(MS_WINDOWS) && !defined(FD_SETSIZE)
+-#define FD_SETSIZE 512
+-#endif
+-
+ #if defined(HAVE_POLL_H)
+ #include <poll.h>
+ #elif defined(HAVE_SYS_POLL_H)
+--- Modules/signalmodule.c.orig	2019-03-18 17:51:26.000000000 +0100
++++ Modules/signalmodule.c	2023-05-19 17:11:10.609375000 +0200
+@@ -743,7 +743,11 @@
+     PyStructSequence_SET_ITEM(result, 4, _PyLong_FromUid(si->si_uid));
+     PyStructSequence_SET_ITEM(result, 5,
+                                 PyLong_FromLong((long)(si->si_status)));
++#ifdef __CYGWIN__
++    PyStructSequence_SET_ITEM(result, 6, PyLong_FromLong(0L));
++#else
+     PyStructSequence_SET_ITEM(result, 6, PyLong_FromLong(si->si_band));
++#endif
+     if (PyErr_Occurred()) {
+         Py_DECREF(result);
+         return NULL;
+--- Python/dynload_shlib.c.orig	2019-03-18 17:51:26.000000000 +0100
++++ Python/dynload_shlib.c	2023-05-19 17:59:11.343750000 +0200
+@@ -34,6 +34,8 @@
+ 
+ const char *_PyImport_DynLoadFiletab[] = {
+ #ifdef __CYGWIN__
++    "." SOABI ".dll",
++    ".abi" PYTHON_ABI_STRING ".dll",
+     ".dll",
+ #else  /* !__CYGWIN__ */
+     "." SOABI ".so",
+--- Python/pystate.c.orig	2019-03-18 17:51:26.000000000 +0100
++++ Python/pystate.c	2023-05-19 17:59:30.312500000 +0200
+@@ -37,7 +37,7 @@
+    GILState implementation
+ */
+ static PyInterpreterState *autoInterpreterState = NULL;
+-static int autoTLSkey = 0;
++static long autoTLSkey = 0L;
+ #else
+ #define HEAD_INIT() /* Nothing */
+ #define HEAD_LOCK() /* Nothing */
+--- Python/thread_pthread.h.orig	2019-03-18 17:51:26.000000000 +0100
++++ Python/thread_pthread.h	2023-05-19 17:59:30.328125000 +0200
+@@ -603,28 +603,28 @@
+ 
+ #define Py_HAVE_NATIVE_TLS
+ 
+-int
++long
+ PyThread_create_key(void)
+ {
+     pthread_key_t key;
+     int fail = pthread_key_create(&key, NULL);
+-    return fail ? -1 : key;
++    return fail ? -1L : (long) key;
+ }
+ 
+ void
+-PyThread_delete_key(int key)
++PyThread_delete_key(long key)
+ {
+     pthread_key_delete(key);
+ }
+ 
+ void
+-PyThread_delete_key_value(int key)
++PyThread_delete_key_value(long key)
+ {
+     pthread_setspecific(key, NULL);
+ }
+ 
+ int
+-PyThread_set_key_value(int key, void *value)
++PyThread_set_key_value(long key, void *value)
+ {
+     int fail;
+     fail = pthread_setspecific(key, value);
+@@ -632,7 +632,7 @@
+ }
+ 
+ void *
+-PyThread_get_key_value(int key)
++PyThread_get_key_value(long key)
+ {
+     return pthread_getspecific(key);
+ }
+--- Lib/ctypes/__init__.py.orig	2019-03-18 17:51:26.000000000 +0100
++++ Lib/ctypes/__init__.py	2023-05-19 17:34:11.562500000 +0200
+@@ -434,7 +434,8 @@
+ if _os.name in ("nt", "ce"):
+     pythonapi = PyDLL("python dll", None, _sys.dllhandle)
+ elif _sys.platform == "cygwin":
+-    pythonapi = PyDLL("libpython%d.%d.dll" % _sys.version_info[:2])
++    pythonapi = PyDLL("libpython%d.%d%s.dll" % \
++                      (_sys.version_info[:2] + tuple(_sys.abiflags)))
+ else:
+     pythonapi = PyDLL(None)
+ 
+--- Lib/ctypes/util.py.orig	2019-03-18 17:51:26.000000000 +0100
++++ Lib/ctypes/util.py	2023-05-19 17:34:11.593750000 +0200
+@@ -83,6 +83,25 @@
+                 continue
+         return None
+ 
++elif sys.platform == "cygwin":
++    def find_library(name):
++        for libdir in ['/usr/lib', '/usr/local/lib']:
++            for libext in ['lib%s.dll.a' % name, 'lib%s.a' % name]:
++                implib = os.path.join(libdir, libext)
++                if not os.path.exists(implib):
++                    continue
++                cmd = "dlltool -I " + implib + " 2>/dev/null"
++                f = os.popen(cmd)
++                try:
++                    data = f.read()
++                finally:
++                    f.close()
++                res = data.replace("\n","")
++                if not res:
++                    continue
++                return res
++        return None
++
+ elif os.name == "posix":
+     # Andreas Degert's find functions, using gcc, /sbin/ldconfig, objdump
+     import re, tempfile
+@@ -258,6 +277,10 @@
+             print(cdll.LoadLibrary("libcrypto.dylib"))
+             print(cdll.LoadLibrary("libSystem.dylib"))
+             print(cdll.LoadLibrary("System.framework/System"))
++        elif sys.platform == "cygwin":
++            print(cdll.LoadLibrary("cygbz2-1.dll"))
++            print(cdll.LoadLibrary("cygcrypt-0.dll"))
++            print(find_library("crypt"))
+         else:
+             print(cdll.LoadLibrary("libm.so"))
+             print(cdll.LoadLibrary("libcrypt.so"))
+--- Lib/distutils/cygwinccompiler.py.orig	2019-03-18 17:51:26.000000000 +0100
++++ Lib/distutils/cygwinccompiler.py	2023-05-19 17:43:10.640625000 +0200
+@@ -92,9 +92,7 @@
+     compiler_type = 'cygwin'
+     obj_extension = ".o"
+     static_lib_extension = ".a"
+-    shared_lib_extension = ".dll"
+-    static_lib_format = "lib%s%s"
+-    shared_lib_format = "%s%s"
++    shared_lib_extension = ".dll.a"
+     exe_extension = ".exe"
+ 
+     def __init__(self, verbose=0, dry_run=0, force=0):
+--- Lib/distutils/unixccompiler.py.orig	2019-03-18 17:51:26.000000000 +0100
++++ Lib/distutils/unixccompiler.py	2023-05-19 17:43:10.640625000 +0200
+@@ -79,6 +79,7 @@
+     static_lib_format = shared_lib_format = dylib_lib_format = "lib%s%s"
+     if sys.platform == "cygwin":
+         exe_extension = ".exe"
++        dylib_lib_extension = ".dll.a"
+ 
+     def preprocess(self, source, output_file=None, macros=None,
+                    include_dirs=None, extra_preargs=None, extra_postargs=None):
+@@ -222,7 +223,7 @@
+         # the configuration data stored in the Python installation, so
+         # we use this hack.
+         compiler = os.path.basename(sysconfig.get_config_var("CC"))
+-        if sys.platform[:6] == "darwin":
++        if sys.platform[:6] == "darwin" or sys.platform[:6] == "cygwin":
+             # MacOSX's linker doesn't understand the -R flag at all
+             return "-L" + dir
+         elif sys.platform[:5] == "hp-ux":
+--- Lib/distutils/command/build_ext.py.orig	2019-03-18 17:51:26.000000000 +0100
++++ Lib/distutils/command/build_ext.py	2023-05-19 17:58:11.640625000 +0200
+@@ -696,9 +696,9 @@
+             else:
+                 return ext.libraries
+         elif sys.platform[:6] == "cygwin":
+-            template = "python%d.%d"
++            template = "python%d.%d%s"
+             pythonlib = (template %
+-                   (sys.hexversion >> 24, (sys.hexversion >> 16) & 0xff))
++                   (sys.hexversion >> 24, (sys.hexversion >> 16) & 0xff, sys.abiflags))
+             # don't extend ext.libraries, it may be shared with other
+             # extensions, it is a reference to the original list
+             return ext.libraries + [pythonlib]

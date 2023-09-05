@@ -359,6 +359,15 @@ build_mingw_std_threads() {
   cd ..
 }
 
+build_python() {
+  download_and_unpack_file https://www.python.org/ftp/python/3.4.10/Python-3.4.10.tar.xz
+  cd Python-3.4.10
+    apply_patch $patch_dir/python-3.4.10_cygwin.patch # Patches from http://cygwinxp.cathedral-networks.org/x86/release/python3/python3-3.4.3-1-src.tar.xz.
+    ac_cv_func_bind_textdomain_codeset=yes do_configure --prefix=/usr --with-dbmliborder=gdbm --with-libm= --without-ensurepip # 'configure'-options from 'python3.cygport' from within http://cygwinxp.cathedral-networks.org/x86/release/python3/python3-3.4.3-1-src.tar.xz.
+    do_make install
+  cd ..
+}
+
 build_cmake() {
   download_and_unpack_file https://cmake.org/files/v3.25/cmake-3.25.1.tar.gz
   cd cmake-3.25.1
@@ -905,6 +914,7 @@ build_ffmpeg() {
 
 build_dependencies() {
   build_mingw_std_threads
+  build_python
   build_cmake
   build_nasm
   build_dlfcn
