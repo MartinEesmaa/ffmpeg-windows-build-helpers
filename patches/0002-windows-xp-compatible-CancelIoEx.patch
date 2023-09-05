@@ -1,6 +1,6 @@
-From b3472db7904efe9e1360b78b860ccacd84c36436 Mon Sep 17 00:00:00 2001
+From 06a669d482fce510c5d992cc4cbe36c7358a5ad0 Mon Sep 17 00:00:00 2001
 From: Reino17 <rwijnsma@xs4all.nl>
-Date: Wed, 3 May 2023 20:31:04 +0200
+Date: Sun, 3 Sep 2023 21:19:40 +0200
 Subject: [PATCH 2/3] avformat/udp: windows xp compatible CancelIoEx()
 
 Otherwise you'd get "The procedure entry point CancelIoEx could not be located in the dynamic link library KERNEL32.dll" while running ffmpeg.exe, ffplay.exe, or ffprobe.exe, because 'CancelIoEx()' is only available on Windows Vista and later. See https://github.com/FFmpeg/FFmpeg/commit/53aa76686e7ff4f1f6625502503d7923cec8c10e, https://trac.ffmpeg.org/ticket/5717 and https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0002-windows-xp-compatible-CancelIoEx.patch.
