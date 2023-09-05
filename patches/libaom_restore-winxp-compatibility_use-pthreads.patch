@@ -1,5 +1,5 @@
 diff --git a/aom_ports/aom_once.h b/aom_ports/aom_once.h
-index 354ed9d..d246a50 100644
+index 680120f..4cc2be7 100644
 --- a/aom_ports/aom_once.h
 +++ b/aom_ports/aom_once.h
 @@ -38,7 +38,14 @@
@@ -15,10 +15,10 @@ index 354ed9d..d246a50 100644
 +}
 +
 +#elif CONFIG_MULTITHREAD && defined(_WIN32)
+ #undef WIN32_LEAN_AND_MEAN
+ #define WIN32_LEAN_AND_MEAN
  #include <windows.h>
- /* Declare a per-compilation-unit state variable to track the progress
-  * of calling func() only once. This must be at global scope because
-@@ -58,13 +65,6 @@ static void aom_once(void (*func)(void)) {
+@@ -60,13 +67,6 @@ static void aom_once(void (*func)(void)) {
    InitOnceComplete(&aom_init_once, 0, NULL);
  }
  
@@ -33,15 +33,15 @@ index 354ed9d..d246a50 100644
  /* Default version that performs no synchronization. */
  
 diff --git a/build/cmake/aom_configure.cmake b/build/cmake/aom_configure.cmake
-index 39e5c53..a3b156f 100644
+index 6c932e8..de82095 100644
 --- a/build/cmake/aom_configure.cmake
 +++ b/build/cmake/aom_configure.cmake
-@@ -241,7 +241,7 @@ endif()
+@@ -238,7 +238,7 @@ endif()
  if(AOM_TARGET_SYSTEM STREQUAL "Windows")
    # The default _WIN32_WINNT value in MinGW is 0x0502 (Windows XP with SP2). Set
    # it to 0x0601 (Windows 7).
 -  add_compiler_flag_if_supported("-D_WIN32_WINNT=0x0601")
 +  #add_compiler_flag_if_supported("-D_WIN32_WINNT=0x0601")
-   # Prevent windows.h from defining the min and max macros. This allows us to
-   # use std::min and std::max.
-   add_compiler_flag_if_supported("-DNOMINMAX")
+   # Quiet warnings related to fopen, printf, etc.
+   add_compiler_flag_if_supported("-D_CRT_SECURE_NO_WARNINGS")
+ endif()
