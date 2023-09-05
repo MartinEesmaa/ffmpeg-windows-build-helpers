@@ -1085,7 +1085,7 @@ build_ffms2_cplugin() {
       sed -i.bak 's/<mutex>/"mingw.mutex.h"/' src/core/ffms.cpp # Use "mingw-std-threads" implementation of standard C++11 threading classes, which are currently still missing on MinGW GCC.
       sed -i.bak 's/<thread>/"mingw.thread.h"/' src/core/videosource.cpp # Otherwise you'd get errors like "'mutex' in namespace 'std' does not name a type".
     fi
-    do_configure --host=$host_target --prefix=$mingw_w64_x86_64_prefix --cross-prefix=$cross_prefix --enable-shared --enable-avisynth --enable-vapoursynth
+    do_configure --host=$host_target --prefix=$mingw_w64_x86_64_prefix --cross-prefix=$cross_prefix --enable-shared --enable-avisynth-c --enable-vapoursynth
     do_make
     rm -f NUL # Somehow this "file" is created and Windows Explorer can't delete it.
 
@@ -1093,7 +1093,7 @@ build_ffms2_cplugin() {
     archive="$redist_dir/ffms2-$(git describe --tags | sed 's/g//')-avs-vsp-win32-shared-xpmod-sse"
     if [[ ! -f $archive.7z ]]; then
       sed "s/$/\r/" etc/COPYING.GPLv3 > COPYING.GPLv3.txt
-      7z a -mx=9 -bb3 $archive.7z ffms2.dll ffmsindex.exe ./etc/FFMS2-cplugin.avsi doc COPYING.GPLv3.txt
+      7z a -mx=9 -bb3 $archive.7z ffms3.dll ffmsindex.exe ./etc/FFMS2.avsi doc COPYING.GPLv3.txt
       rm -v COPYING.GPLv3.txt
     else
       echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
