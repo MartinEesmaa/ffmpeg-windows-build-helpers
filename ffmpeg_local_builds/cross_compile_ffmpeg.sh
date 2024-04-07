@@ -917,7 +917,7 @@ build_libaom() {
 } # cmake >= 3.5
 
 build_ffmpeg() {
-  do_git_checkout https://github.com/FFmpeg/FFmpeg.git "" "" bef151d1cee95f741d1a258bfb3c57c2cd8368eb
+  do_git_checkout https://github.com/FFmpeg/FFmpeg.git "" "" 238f9de876c4298606ce41992e16b959d108b633
   cd FFmpeg_git
     apply_patch $patch_dir/0001-make-bcrypt-optional.patch -p1 # WinXP doesn't have 'bcrypt'. See https://github.com/FFmpeg/FFmpeg/commit/aedbf1640ced8fc09dc980ead2a387a59d8f7f68 and https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0001-make-bcrypt-optional-on-win32.patch.
     apply_patch $patch_dir/0002-windows-xp-compatible-CancelIoEx.patch -p1 # Otherwise you'd get "The procedure entry point CancelIoEx could not be located in the dynamic link library KERNEL32.dll" while running ffmpeg.exe, ffplay.exe, or ffprobe.exe, because 'CancelIoEx()' is only available on Windows Vista and later. See https://github.com/FFmpeg/FFmpeg/commit/53aa76686e7ff4f1f6625502503d7923cec8c10e, https://trac.ffmpeg.org/ticket/5717 and https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0002-windows-xp-compatible-CancelIoEx.patch.
@@ -955,6 +955,7 @@ build_ffmpeg() {
       if [[ ! -f $archive.7z ]]; then # Pack static build.
         sed "s/$/\r/" COPYING.GPLv3 > COPYING.GPLv3.txt
         7z a -mx=9 -bb3 $archive.7z ffmpeg.exe ffplay.exe ffprobe.exe COPYING.GPLv3.txt
+        #7z a -bb3 -mx=9 -ms=on -m0=LZMA2:d96m:fb64 $archive.7z ffmpeg.exe ffplay.exe ffprobe.exe COPYING.GPLv3.txt # "ERROR: Can't allocate required memory!" with Cygwin version of 7-Zip.
         rm -v COPYING.GPLv3.txt
       else
         echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
