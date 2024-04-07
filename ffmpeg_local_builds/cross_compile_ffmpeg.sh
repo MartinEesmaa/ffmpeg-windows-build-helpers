@@ -775,7 +775,8 @@ build_frei0r() {
   do_git_checkout https://github.com/dyne/frei0r.git
   cd frei0r_git
     if [[ ! -f src/filter/kaleid0sc0pe/kaleid0sc0pe.cpp.bak ]]; then
-      sed -i.bak 's/<future>/"mingw.future.h"/' src/filter/kaleid0sc0pe/kaleid0sc0pe.cpp # Use "mingw-std-threads" implementation of standard C++11 threading classes, which are currently still missing on MinGW GCC. Otherwise you'd get errors like "'std::thread' has not been declared" and "invalid use of incomplete type 'class std::future<void>'".
+      sed -i.bak 's/<future>/"mingw.future.h"/' src/filter/kaleid0sc0pe/kaleid0sc0pe.cpp # Use "mingw-std-threads" implementation of standard C++11 threading classes, which are currently still missing on MinGW GCC.
+      sed -i.bak 's/<future>/\\"mingw.future.h\\"/' src/filter/kaleid0sc0pe/CMakeLists.txt # Otherwise you'd get errors like "'std::thread' has not been declared" and "invalid use of incomplete type 'class std::future<void>'".
     fi
     do_cmake $PWD -DCMAKE_BUILD_TYPE=Release
     do_make install/strip
