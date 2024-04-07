@@ -469,6 +469,43 @@ build_libwebp() {
   cd ..
 } # [dlfcn]
 
+build_libjxl() {
+  do_git_checkout https://github.com/libjxl/libjxl.git libjxl_git main
+  cd libjxl_git
+    if [[ ! -d .git/modules ]]; then
+      echo -e "\e[1;33mDownloading submodules.\e[0m" # 'Brotli' and 'skcms' are the main focus.
+       git submodule update --init --recursive
+    else
+      if [[ $(git --git-dir=.git/modules/third_party/brotli rev-parse HEAD) != $(git ls-remote -h https://github.com/google/brotli.git | sed "s/\s.*//") ]]; then
+        git submodule foreach -q 'git reset --hard' # Return files to their original state.
+        git submodule foreach -q 'git clean -fdx' # Clean the working tree; build- as well as untracked files.
+        echo -e "\e[1;33mUpdating submodules to latest git head on 'main'.\e[0m"
+        git submodule foreach git fetch
+        git submodule update --init
+        rm -f already_* # Force recompiling.
+      else
+        echo -e "\e[1;33mLocal submodules are up-to-date.\e[0m"
+      fi
+    fi
+    if [[ ! -f lib/threads/resizable_parallel_runner.cc.bak ]]; then
+      sed -i.bak 's/<condition_variable>/"mingw.condition_variable.h"/;s/<mutex>/"mingw.mutex.h"/;s/<thread>/"mingw.thread.h"/' lib/threads/resizable_parallel_runner.cc # Use "mingw-std-threads" implementation of standard C++11 threading classes, which are currently still missing on MinGW GCC.
+      sed -i.bak 's/<condition_variable>/"mingw.condition_variable.h"/;s/<mutex>/"mingw.mutex.h"/;s/<thread>/"mingw.thread.h"/' lib/threads/thread_parallel_runner_internal.h # Otherwise you'd get errors like "'std::thread' has not been declared" and "invalid use of incomplete type 'class std::future<void>'".
+    fi
+    if [[ ! -f lib/jxl/libjxl.pc.in.bak ]]; then
+      sed -i.bak "s/-lm/& -lstdc++/" lib/jxl/libjxl.pc.in # Otherwise you'd get for example "undefined reference to `operator new(unsigned int)'", amongst MANY other variants, while configuring FFmpeg.
+      sed -i.bak "s/-lm/& -lstdc++/" lib/threads/libjxl_threads.pc.in # See https://github.com/libjxl/libjxl/pull/1444.
+    fi
+    mkdir -p build_dir
+    cd build_dir # Out-of-source build.
+      do_cmake ${PWD%/*} -DBUILD_SHARED_LIBS=0 -DBUILD_TESTING=0 -DCMAKE_BUILD_TYPE=Release -DJPEGXL_ENABLE_BENCHMARK=0 -DJPEGXL_ENABLE_DOXYGEN=0 -DJPEGXL_ENABLE_EXAMPLES=0 -DJPEGXL_ENABLE_JNI=0 -DJPEGXL_ENABLE_JPEGLI=0 -DJPEGXL_ENABLE_JPEGLI_LIBJPEG=0 -DJPEGXL_ENABLE_MANPAGES=0 -DJPEGXL_ENABLE_OPENEXR=0 -DJPEGXL_ENABLE_SJPEG=0 -DJPEGXL_ENABLE_TOOLS=0
+      if [[ ! -f lib/include/jxl/jxl_export.h.bak ]]; then
+        sed -i.bak "s/ __declspec(dll.*//" lib/include/jxl/jxl_export.h # Otherwise you'd get "undefined reference to `_imp__JxlDecoderVersion'" while configuring FFmpeg.
+      fi
+      do_make install
+    cd ..
+  cd ..
+} # python 3
+
 build_freetype() {
   download_and_unpack_file https://download.savannah.gnu.org/releases/freetype/freetype-2.13.2.tar.xz
   cd freetype-2.13.2
@@ -880,7 +917,7 @@ build_ffmpeg() {
       init_options+=(--enable-shared --disable-static) # Building a static FFmpeg is the default, so no need to specify '--enable-static --disable-shared'.
     fi
     init_options+=(--pkg-config=pkg-config --pkg-config-flags=--static --extra-version=Reino --enable-gpl --enable-gray --enable-version3 --disable-bcrypt --disable-debug --disable-doc --disable-htmlpages --disable-manpages --disable-mediafoundation --disable-podpages --disable-txtpages --disable-w32threads)
-    do_configure "${init_options[@]}" --enable-avisynth --enable-frei0r --enable-filter=frei0r --enable-gmp --enable-libaom --enable-libass --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libgme --enable-libmp3lame --enable-libopenmpt --enable-libopus --enable-librubberband --enable-libsoxr --enable-libtwolame --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxml2 --enable-libxvid --enable-libzimg --enable-mbedtls
+    do_configure "${init_options[@]}" --enable-avisynth --enable-frei0r --enable-filter=frei0r --enable-gmp --enable-libaom --enable-libass --enable-libflite --enable-libfontconfig --enable-libfreetype --enable-libfribidi --enable-libgme --enable-libjxl --enable-libmp3lame --enable-libopenmpt --enable-libopus --enable-librubberband --enable-libsoxr --enable-libtwolame --enable-libvidstab --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libx264 --enable-libx265 --enable-libxml2 --enable-libxvid --enable-libzimg --enable-mbedtls
     do_make # Build 'ffmpeg.exe', 'ffplay.exe' and 'ffprobe.exe' (+ '*.dll' for shared build). No install.
 
     mkdir -p $redist_dir
