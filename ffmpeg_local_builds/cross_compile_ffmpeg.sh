@@ -512,7 +512,7 @@ build_freetype() {
     if [[ ! -f builds/unix/install.mk.bak ]]; then
       sed -i.bak "/config \\\/s/\s*\\\//;/bindir) /s/\s*\\\//;/aclocal/d;/man1/d;/PLATFORM_DIR/d;/docs/d" builds/unix/install.mk # Library only.
     fi
-    generic_configure --build=i686-pc-cygwin # Without '--build=i686-pc-cygwin' you'd get: "could not open '/cygdrive/[...]/include/freetype/ttnameid.h' for writing".
+    generic_configure --build=i686-pc-cygwin --with-brotli=no # Without '--build=i686-pc-cygwin' you'd get: "could not open '/cygdrive/[...]/include/freetype/ttnameid.h' for writing".
     do_make install
   cd ..
 } # [zlib, bzip2, libpng]
@@ -1070,7 +1070,7 @@ build_curl() {
   if [ "$1" = "openssl" ]; then # Compile Curl with OpenSSL for hlsdl.
     build_openssl3 static
     cd curl-8.5.0
-    PKG_CONFIG="pkg-config --static" generic_configure --with-openssl --without-ca-bundle --with-ca-fallback # Automatically detect all of OpenSSL its dependencies.
+    PKG_CONFIG="pkg-config --static" generic_configure --with-openssl --without-brotli --without-ca-bundle --with-ca-fallback # Automatically detect all of OpenSSL its dependencies.
     do_make install-strip
   else # Compile Curl with MbedTLS and create archive.
     build_mbedtls
@@ -1079,7 +1079,7 @@ build_curl() {
       echo -e "\e[1;33mDownloading 'https://curl.se/ca/cacert.pem'.\e[0m"
       wget https://curl.se/ca/cacert.pem
     fi
-    LDFLAGS=-s generic_configure --with-mbedtls --with-ca-bundle=cacert.pem # --with-ca-fallback only works with OpenSSL or GnuTLS.
+    LDFLAGS=-s generic_configure --with-mbedtls --without-brotli --with-ca-bundle=cacert.pem # --with-ca-fallback only works with OpenSSL or GnuTLS.
     do_make # 'curl.exe' only. No install.
 
     mkdir -p $redist_dir
