@@ -665,7 +665,7 @@ build_libopenmpt() {
 # GCC11's own std::thread implementation conflicts with mingw-std-threads resulting in "libopenmpt/libopenmpt_impl.cpp:85:2: warning: #warning "Warning: Building libopenmpt with MinGW-w64 without std::thread support is not recommended and is deprecated. Please use MinGW-w64 with posix threading model (as opposed to win32 threading model), or build with mingw-std-threads." [-Wcpp]". See https://forum.openmpt.org/index.php?topic=6822.0.
 
 build_libgme() {
-  do_git_checkout https://bitbucket.org/mpyne/game-music-emu.git
+  do_git_checkout https://github.com/libgme/game-music-emu.git "" "" 1f651e0361c04a3b87dc51b7de1127002b96c4eb
   cd game-music-emu_git
     if [[ ! -f CMakeLists.txt.bak ]]; then
       sed -i.bak "/EXCLUDE_FROM_ALL/d" CMakeLists.txt # Library only.
@@ -675,6 +675,16 @@ build_libgme() {
     do_make install
   cd ..
 } # zlib
+#Latest commit (2023-12-31 atm) yields:
+#[  1%] Building CXX object gme/CMakeFiles/gme.dir/Blip_Buffer.cpp.obj
+#[  3%] Building CXX object gme/CMakeFiles/gme.dir/Classic_Emu.cpp.obj
+#/cygdrive/s/ffmpeg-windows-build-helpers-master/ffmpeg_local_builds/sandbox/win32/game-music-emu_git/gme/Classic_Emu.cpp: In member function 'void Rom_Data_::set_addr_(long int, int)':
+#/cygdrive/s/ffmpeg-windows-build-helpers-master/ffmpeg_local_builds/sandbox/win32/game-music-emu_git/gme/Classic_Emu.cpp:185:3: error: 'debug_printf' was not declared in this scope
+#  185 |   debug_printf( "addr: %X\n", addr );
+#      |   ^~~~~~~~~~~~
+#make[2]: *** [gme/CMakeFiles/gme.dir/build.make:92: gme/CMakeFiles/gme.dir/Classic_Emu.cpp.obj] Error 1
+#make[1]: *** [CMakeFiles/Makefile2:854: gme/CMakeFiles/gme.dir/all] Error 2
+#make: *** [Makefile:146: all] Error 2
 
 build_libsoxr() {
   do_git_checkout https://git.code.sf.net/p/soxr/code soxr_git
