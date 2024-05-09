@@ -783,8 +783,8 @@ build_fribidi() {
   do_git_checkout https://github.com/behdad/fribidi.git
   cd fribidi_git
     if [[ ! -f Makefile.am.bak ]]; then
-      sed -i.bak "s/ bin.*//" Makefile.am # Library only.
-      sed -i.bak "s/ __declspec.*//" lib/fribidi-common.h # Otherwise you'd get "undefined reference to `_imp__fribidi_version_info'" while configuring FFmpeg.
+      sed -i.bak "s/ bin doc test//" Makefile.am # Library only.
+      sed -i.bak "/#define _FRIBIDI_COMMON_H/a\\\n#ifndef FRIBIDI_LIB_STATIC\n#define FRIBIDI_LIB_STATIC 1\n#endif" lib/fribidi-common.h # Static library. See https://github.com/sherpya/mplayer-be/blob/master/packages/fribidi/patches/01_sherpya_static-lib.diff.
     fi
     generic_configure --disable-deprecated
     do_make install
