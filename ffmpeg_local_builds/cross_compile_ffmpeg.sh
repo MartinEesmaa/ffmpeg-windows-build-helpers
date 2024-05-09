@@ -509,7 +509,7 @@ build_freetype() {
     if [[ ! -f builds/unix/install.mk.bak ]]; then
       sed -i.bak "/config \\\/s/\s*\\\//;/bindir) /s/\s*\\\//;/aclocal/d;/man1/d;/PLATFORM_DIR/d;/docs/d" builds/unix/install.mk # Library only.
     fi
-    generic_configure --build=i686-pc-cygwin --with-brotli=no # Without '--build=i686-pc-cygwin' you'd get: "could not open '/cygdrive/[...]/include/freetype/ttnameid.h' for writing".
+    generic_configure --build=i686-pc-cygwin --with-harfbuzz=no --with-brotli=no # Without '--build=i686-pc-cygwin' you'd get: "could not open '/cygdrive/[...]/include/freetype/ttnameid.h' for writing".
     do_make install
   cd ..
 } # [zlib, bzip2, libpng]
