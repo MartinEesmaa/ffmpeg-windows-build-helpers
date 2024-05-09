@@ -474,7 +474,7 @@ build_libjxl() {
       echo -e "\e[1;33mDownloading submodules.\e[0m" # 'Brotli' and 'skcms' are the main focus.
        git submodule update --init --recursive
     else
-      if [[ $(git --git-dir=.git/modules/third_party/brotli rev-parse HEAD) != $(git ls-remote -h https://github.com/google/brotli.git | sed "s/\s.*//") ]]; then
+      if [[ $(git --git-dir=.git/modules/third_party/testdata rev-parse HEAD) != $(git ls-remote -h https://github.com/libjxl/testdata.git | head -c +40) ]]; then
         git submodule foreach -q 'git reset --hard' # Return files to their original state.
         git submodule foreach -q 'git clean -fdx' # Clean the working tree; build- as well as untracked files.
         echo -e "\e[1;33mUpdating submodules to latest git head on 'main'.\e[0m"
@@ -489,9 +489,8 @@ build_libjxl() {
       sed -i.bak 's/<condition_variable>/"mingw.condition_variable.h"/;s/<mutex>/"mingw.mutex.h"/;s/<thread>/"mingw.thread.h"/' lib/threads/resizable_parallel_runner.cc # Use "mingw-std-threads" implementation of standard C++11 threading classes, which are currently still missing on MinGW GCC.
       sed -i.bak 's/<condition_variable>/"mingw.condition_variable.h"/;s/<mutex>/"mingw.mutex.h"/;s/<thread>/"mingw.thread.h"/' lib/threads/thread_parallel_runner_internal.h # Otherwise you'd get errors like "'std::thread' has not been declared" and "invalid use of incomplete type 'class std::future<void>'".
     fi
-    if [[ ! -f lib/jxl/libjxl.pc.in.bak ]]; then
-      sed -i.bak "s/-lm/& -lstdc++/" lib/jxl/libjxl.pc.in # Otherwise you'd get for example "undefined reference to `operator new(unsigned int)'", amongst MANY other variants, while configuring FFmpeg.
-      sed -i.bak "s/-lm/& -lstdc++/" lib/threads/libjxl_threads.pc.in # See https://github.com/libjxl/libjxl/pull/1444.
+    if [[ ! -f lib/threads/libjxl_threads.pc.in.bak ]]; then
+      sed -i.bak "s/-lm/& -lstdc++/" lib/threads/libjxl_threads.pc.in # Otherwise you'd get for example "undefined reference to `operator new(unsigned int)'", amongst MANY other variants, while configuring FFmpeg. See https://github.com/libjxl/libjxl/pull/1444.
     fi
     mkdir -p build_dir
     cd build_dir # Out-of-source build.
@@ -974,6 +973,7 @@ build_dependencies() {
   build_iconv # Iconv in FFmpeg is autodetected, so no need for --enable-iconv.
   build_sdl2 # Sdl2 in FFmpeg is autodetected, so no need for --enable-sdl2.
   build_libwebp
+  build_libjxl
   build_freetype
   build_libxml2 # For DASH support configure FFmpeg with --enable-libxml2.
   build_fontconfig
