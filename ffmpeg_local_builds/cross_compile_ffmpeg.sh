@@ -714,7 +714,7 @@ build_fftw() {
 }
 
 build_librubberband() {
-  do_git_checkout https://github.com/breakfastquay/rubberband.git "" "" 18c06ab8c431854056407c467f4755f761e36a8e
+  do_git_checkout https://github.com/breakfastquay/rubberband.git rubberband_git default 18c06ab8c431854056407c467f4755f761e36a8e
   cd rubberband_git
     apply_patch $patch_dir/rubberband_git_static-lib.patch -p1 # Create install-static target and add missing libraries in the pkg-config file.
     do_configure --host=$host_target --prefix=$mingw_w64_x86_64_prefix --disable-programs --disable-vamp --disable-ladspa
