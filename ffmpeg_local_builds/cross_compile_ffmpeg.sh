@@ -442,15 +442,13 @@ build_iconv() {
 } # [dlfcn]
 
 build_sdl2() {
-  download_and_unpack_file https://libsdl.org/release/SDL2-2.0.22.tar.gz
-#  download_and_unpack_file https://libsdl.org/release/SDL2-2.24.0.tar.gz # Causes "The procedure entry point CreateEvenExW could not be located in the dynamic link library KERNEL32.dll" upon running ffmpeg.exe, ffplay.exe, or ffprobe.exe, because 'CreateEvenExW()' is only available on Windows Vista and later.
-  cd SDL2-2.0.22
+  download_and_unpack_file https://libsdl.org/release/SDL2-2.30.3.tar.gz
+  cd SDL2-2.30.3
     if [[ ! -f Makefile.in.bak ]]; then
       sed -i.bak "/aclocal/d" Makefile.in # Library only.
-      sed -i.bak "s/ -mwindows//;s/iconv_open ()/libiconv_open ()/;s/\"iconv\"/\"libiconv\"/" configure # Allow ffmpeg to output anything to console and use libiconv instead of iconv.
       sed -i.bak "/#ifndef DECLSPEC/i\#define DECLSPEC" include/begin_code.h # Needed for building shared FFmpeg libraries.
     fi
-    generic_configure --bindir=$mingw_bin_path
+    generic_configure --bindir=$mingw_bin_path --enable-libiconv
     do_make install
     if [[ ! -f $mingw_bin_path/${host_target}-sdl2-config ]]; then
       mv -v "$mingw_bin_path/sdl2-config" "$mingw_bin_path/${host_target}-sdl2-config" # At the moment FFmpeg's 'configure' doesn't use 'sdl2-config', because it gives priority to 'sdl2.pc', but when it does, it expects 'i686-w64-mingw32-sdl2-config' in 'cross_compilers/mingw-w64-i686/bin'.
