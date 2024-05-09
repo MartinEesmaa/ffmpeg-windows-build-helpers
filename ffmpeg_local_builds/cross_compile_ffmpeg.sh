@@ -581,7 +581,7 @@ build_libvorbis() {
 } # libogg >= 1.0, [dlfcn]
 
 build_libopus() {
-  do_git_checkout https://github.com/xiph/opus.git
+  do_git_checkout https://github.com/xiph/opus.git opus_git main
   cd opus_git
     if [[ ! -f Makefile.am.bak ]]; then
       sed -i.bak "/m4data/,+2d;/install-data-local/,+2d" Makefile.am # Library only.
