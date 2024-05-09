@@ -369,8 +369,8 @@ build_python() {
 }
 
 build_cmake() {
-  download_and_unpack_file https://cmake.org/files/v3.28/cmake-3.28.1.tar.gz
-  cd cmake-3.28.1
+  download_and_unpack_file https://cmake.org/files/v3.29/cmake-3.29.2.tar.gz
+  cd cmake-3.29.2
     do_configure --prefix=/usr -- -DBUILD_CursesDialog=0 -DBUILD_TESTING=0 # Don't build 'ccmake' (ncurses), or './configure' will fail otherwise.
     # Options after "--" are passed to CMake (Usage: ./bootstrap [<options>...] [-- <cmake-options>...])
     do_make install/strip # This overwrites Cygwin's 'cmake.exe', 'cpack.exe' and 'ctest.exe'.
@@ -378,8 +378,8 @@ build_cmake() {
 }
 
 build_nasm() {
-  download_and_unpack_file https://www.nasm.us/pub/nasm/releasebuilds/2.16.01/nasm-2.16.01.tar.xz
-  cd nasm-2.16.01
+  download_and_unpack_file https://www.nasm.us/pub/nasm/releasebuilds/2.16.03/nasm-2.16.03.tar.xz
+  cd nasm-2.16.03
     if [[ ! -f Makefile.in.bak ]]; then # Library only and install nasm stripped.
       sed -i.bak '/man1/d;/install:/a\\t$(STRIP) --strip-unneeded nasm$(X) ndisasm$(X)' Makefile.in
     fi
@@ -415,16 +415,16 @@ build_bzip2() {
 }
 
 build_liblzma() {
-  download_and_unpack_file https://sourceforge.net/projects/lzmautils/files/xz-5.4.5.tar.xz
-  cd xz-5.4.5
+  download_and_unpack_file https://sourceforge.net/projects/lzmautils/files/xz-5.4.6.tar.xz
+  cd xz-5.4.6
     generic_configure --disable-xz --disable-xzdec --disable-lzmadec --disable-lzmainfo --disable-scripts --disable-doc --disable-nls
     do_make install
   cd ..
 } # [dlfcn]
 
 build_zlib() {
-  download_and_unpack_file http://zlib.net/zlib-1.3.tar.xz
-  cd zlib-1.3
+  download_and_unpack_file http://zlib.net/zlib-1.3.1.tar.xz
+  cd zlib-1.3.1
     if [[ ! -f Makefile.in.bak ]]; then # Library only.
       sed -i.bak "/man3dir/d" Makefile.in
     fi
@@ -640,8 +640,8 @@ build_fdk-aac() {
 } # [dlfcn]
 
 build_libmpg123() {
-  download_and_unpack_file https://sourceforge.net/projects/mpg123/files/mpg123/1.32.3/mpg123-1.32.3.tar.bz2
-  cd mpg123-1.32.3
+  download_and_unpack_file https://sourceforge.net/projects/mpg123/files/mpg123/1.32.6/mpg123-1.32.6.tar.bz2
+  cd mpg123-1.32.6
     if [[ ! -f Makefile.in.bak ]]; then # Library only
       sed -i.bak "/^all-am/s/\$(PROG.*/\\\/;/^install-data-am/s/ install-man//;/^install-exec-am/s/ install-binPROGRAMS//" Makefile.in
     fi
@@ -808,8 +808,8 @@ build_fribidi() {
 } # [dlfcn]
 
 build_harfbuzz() {
-  download_and_unpack_file https://github.com/harfbuzz/harfbuzz/archive/refs/tags/8.3.0.tar.gz harfbuzz-8.3.0
-  cd harfbuzz-8.3.0
+  download_and_unpack_file https://github.com/harfbuzz/harfbuzz/archive/refs/tags/8.4.0.tar.gz harfbuzz-8.4.0
+  cd harfbuzz-8.4.0
     sed -i.bak "s|setlocale|//setlocale|" util/options.hh # See https://github.com/sherpya/mplayer-be/blob/master/packages/harfbuzz/patches/01_sherpya_no-setlocale.diff.
     mkdir -p build_dir
     cd build_dir # Out-of-source build.
@@ -1048,8 +1048,8 @@ build_openssl() {
 } # This is to compile 'libcrypto-1_1.dll' and 'libssl-1_1.dll' for Xidel, or a static library for hlsdl.
 
 build_openssl3() {
-  download_and_unpack_file https://www.openssl.org/source/openssl-3.2.0.tar.gz
-  cd openssl-3.2.0
+  download_and_unpack_file https://www.openssl.org/source/openssl-3.3.0.tar.gz
+  cd openssl-3.3.0
     if [[ ! -f Configurations/10-main.conf.bak ]]; then # Change GCC optimization level.
       sed -i.bak "s/-O3/-O2/" Configurations/10-main.conf
     fi
@@ -1066,7 +1066,7 @@ build_openssl3() {
       do_make build_libs
 
       mkdir -p $redist_dir
-      archive="$redist_dir/openssl-3.2.0-win32-xpmod-sse"
+      archive="$redist_dir/openssl-3.3.0-win32-xpmod-sse"
       if [[ ! -f $archive.7z ]]; then # Pack shared libraries.
         ${cross_prefix}strip -ps libcrypto-3.dll libssl-3.dll
         7z a -mx=9 -bb3 $archive.7z libcrypto-3.dll libssl-3.dll LICENSE.txt
