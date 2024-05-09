@@ -1,15 +1,15 @@
-From 6712b40121342d9ea89c99db4e05330283502244 Mon Sep 17 00:00:00 2001
+From a0d3961dce1342a3fb84b3a346dcafa9ab1a75ba Mon Sep 17 00:00:00 2001
 From: Reino17 <rwijnsma@xs4all.nl>
-Date: Sun, 31 Dec 2023 19:58:18 +0100
-Subject: [PATCH 3/3] libavfilter/vf_frei0r.c: load shared frei0r libraries dynamically
+Date: Fri, 3 May 2024 19:03:01 +0200
+Subject: [PATCH 4/4] libavfilter/vf_frei0r.c: load shared frei0r libraries dynamically
 
 See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0005-avfilters-better-behavior-of-frei0r-on-win32.patch.
 ---
- libavfilter/vf_frei0r.c | 20 ++++++++++++++++++++
- 1 file changed, 20 insertions(+)
+ libavfilter/vf_frei0r.c | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
 
 diff --git a/libavfilter/vf_frei0r.c b/libavfilter/vf_frei0r.c
-index 7dccd59..2872c79 100644
+index 7dccd59..ab6410c 100644
 --- a/libavfilter/vf_frei0r.c
 +++ b/libavfilter/vf_frei0r.c
 @@ -43,6 +43,10 @@
@@ -23,7 +23,23 @@ index 7dccd59..2872c79 100644
  typedef f0r_instance_t (*f0r_construct_f)(unsigned int width, unsigned int height);
  typedef void (*f0r_destruct_f)(f0r_instance_t instance);
  typedef void (*f0r_deinit_f)(void);
-@@ -246,11 +250,27 @@ static av_cold int frei0r_init(AVFilterContext *ctx,
+@@ -191,6 +195,7 @@ static av_cold int frei0r_init(AVFilterContext *ctx,
+     f0r_plugin_info_t *pi;
+     char *path;
+     int ret = 0;
++#ifndef _WIN32
+     int i;
+     static const char* const frei0r_pathlist[] = {
+         "/usr/local/lib/frei0r-1/",
+@@ -198,6 +203,7 @@ static av_cold int frei0r_init(AVFilterContext *ctx,
+         "/usr/local/lib64/frei0r-1/",
+         "/usr/lib64/frei0r-1/"
+     };
++#endif
+ 
+     if (!dl_name) {
+         av_log(ctx, AV_LOG_ERROR, "No filter name provided.\n");
+@@ -246,11 +252,27 @@ static av_cold int frei0r_init(AVFilterContext *ctx,
          if (ret < 0)
              return ret;
      }
