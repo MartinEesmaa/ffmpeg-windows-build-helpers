@@ -546,18 +546,16 @@ build_gmp() {
 } # [dlfcn]
 
 build_mbedtls() {
-  download_and_unpack_file https://github.com/Mbed-TLS/mbedtls/archive/refs/tags/v3.4.1.tar.gz mbedtls-3.4.1
-  cd mbedtls-3.4.1
-    if [[ ! -f include/mbedtls/platform.h.bak ]]; then
-      sed -i.bak "64,68d" include/mbedtls/platform.h # Windows XP compatibility. See https://github.com/sherpya/mplayer-be/blob/master/packages/mbedtls/patches/00_sherpya_mingw-stdio.diff.
-    fi
+  download_and_unpack_file https://github.com/Mbed-TLS/mbedtls/archive/refs/tags/v2.28.8.tar.gz mbedtls-2.28.8
+  cd mbedtls-2.28.8
+    apply_patch $patch_dir/mbedtls-2.28.8_mingw-stdio.diff # Windows XP compatibility. See https://github.com/sherpya/mplayer-be/blob/master/packages/mbedtls/patches/00_sherpya_mingw-stdio.diff.
     mkdir -p build_dir
     cd build_dir # Out-of-source build.
-      do_cmake ${PWD%/*} -DCMAKE_C_FLAGS="$CFLAGS -D__USE_MINGW_ANSI_STDIO=1" -DENABLE_PROGRAMS=0 -DENABLE_TESTING=0
+      do_cmake ${PWD%/*} -DCMAKE_C_FLAGS="$CFLAGS -D__USE_MINGW_ANSI_STDIO=1" -DENABLE_PROGRAMS=0 -DENABLE_TESTING=0 -DENABLE_ZLIB_SUPPORT=1
       do_make install
     cd ..
   cd ..
-} # python 3
+}
 
 build_libogg() {
   do_git_checkout https://github.com/xiph/ogg.git
