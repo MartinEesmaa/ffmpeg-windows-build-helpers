@@ -174,33 +174,6 @@ do_git_checkout() {
   fi
 }
 
-do_hg_checkout() {
-  if [[ $2 ]]; then
-    local dir="$2"
-  else
-    local dir="${1##*/}_hg" # http://y/abc -> abc_hg
-  fi
-  if [ ! -d $dir ]; then
-    rm -fr $dir.tmp # just in case it was interrupted previously...
-    echo -e "\e[1;33mDownloading (hg clone) $1 to $dir.\e[0m"
-    hg clone $1 $dir.tmp || exit 1
-    # prevent partial checkouts by renaming it only after success
-    mv $dir.tmp $dir
-  else
-    cd $dir
-      if [[ $(hg id -i | head -c +12) != $(hg id -r default -i $1) ]]; then # 'hg id http://hg.videolan.org/x265' defaults to the "stable" branch!
-        echo -e "\e[1;33mUpdating $dir to latest hg head.\e[0m"
-        hg revert -a --no-backup # Return files to their original state.
-        hg purge # Clean the working tree; build- as well as untracked files.
-        hg pull -u || exit 1
-        hg update || exit 1
-      else
-        echo -e "\e[1;33mLocal $dir repo is up-to-date.\e[0m"
-      fi
-    cd ..
-  fi
-}
-
 download_and_unpack_file() {
   local name="${1##*/}"
   if [[ $2 ]]; then
@@ -846,16 +819,17 @@ build_libx264() {
 } # nasm >= 2.13 (unless '--disable-asm' is specified)
 
 build_libx265() {
-  do_hg_checkout http://hg.videolan.org/x265
-  cd x265_hg
-    apply_patch $patch_dir/x265_fix-nasm-warnings.patch -p1 # See https://github.com/sherpya/mplayer-be/blob/master/packages/x265/patches/01_sherpya_nasm-warnings.diff.
-    apply_patch $patch_dir/x265_static-multilib-api.patch -p1
+  do_git_checkout https://bitbucket.org/multicoreware/x265_git.git x265_git
+  cd x265_git
+    if [[ ! -f source/CMakeLists.txt.bak ]]; then # Fix "noasm". See https://github.com/rdp/ffmpeg-windows-build-helpers/pull/738.
+      sed -i.bak "s/if(X86MATCH GREATER \"-1\")/if(\"\${SYSPROC}\" STREQUAL \"\" OR X86MATCH GREATER \"-1\")/" source/CMakeLists.txt
+    fi
     mkdir -p 8bit 10bit 12bit
     cd 12bit
-      do_cmake ${PWD%/*}/source -DENABLE_SHARED=0 -DENABLE_CLI=0 -DHIGH_BIT_DEPTH=1 -DMAIN12=1 -DEXPORT_C_API=0 -DENABLE_ASSEMBLY=0
+      do_cmake ${PWD%/*}/source -DENABLE_SHARED=0 -DENABLE_CLI=0 -DWINXP_SUPPORT=1 -DHIGH_BIT_DEPTH=1 -DMAIN12=1 -DEXPORT_C_API=0 -DENABLE_ASSEMBLY=0
       do_make
     cd ../10bit
-      do_cmake ${PWD%/*}/source -DENABLE_SHARED=0 -DENABLE_CLI=0 -DHIGH_BIT_DEPTH=1 -DEXPORT_C_API=0 -DENABLE_ASSEMBLY=0
+      do_cmake ${PWD%/*}/source -DENABLE_SHARED=0 -DENABLE_CLI=0 -DWINXP_SUPPORT=1 -DHIGH_BIT_DEPTH=1 -DEXPORT_C_API=0 -DENABLE_ASSEMBLY=0
       do_make
     cd ../8bit
       ln -sf ../10bit/libx265.a libx265_main10.a
