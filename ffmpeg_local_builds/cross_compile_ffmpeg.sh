@@ -1098,37 +1098,40 @@ build_hlsdl() {
 
 build_ffms2_cplugin() {
   if [ "$1" = "static_ffmpeg" ]; then
-    do_git_checkout https://github.com/FFmpeg/FFmpeg.git "" "" 238f9de876c4298606ce41992e16b959d108b633
-    cd FFmpeg_git
+    do_git_checkout https://github.com/FFmpeg/FFmpeg.git FFmpeg-6.2_git "" 238f9de876c4298606ce41992e16b959d108b633
+    cd FFmpeg-6.2_git
       ff_rev=$(git describe --tags | tail -c +2 | sed 's/dev-//;s/g//')
-      apply_patch $patch_dir/0001-make-bcrypt-optional.patch -p1
+      apply_patch $patch_dir/0001-make-bcrypt-optional_ffmpeg6.2.patch -p1
       do_configure --arch=x86 --target-os=mingw32 --prefix=$mingw_w64_x86_64_prefix --cross-prefix=$cross_prefix --extra-cflags="$CFLAGS" --pkg-config=pkg-config --pkg-config-flags=--static --enable-gpl --enable-version3 --disable-bcrypt --disable-debug --disable-doc --disable-htmlpages --disable-manpages --disable-podpages --disable-schannel --disable-txtpages --disable-w32threads --disable-avdevice --disable-avfilter --disable-devices --disable-encoders --disable-filters --disable-hwaccels --disable-mediafoundation --disable-muxers --disable-network --disable-programs --disable-sdl2 --enable-libaom
       do_make
       do_make_install
     cd ..
   else
     build_ffmpeg shared
+    cd FFmpeg_git; ff_rev=$(git describe --tags | tail -c +2 | sed 's/dev-//;s/g//'); cd ..
   fi
 
-  do_git_checkout https://github.com/qyot27/ffms2_cplugin.git "" c_plugin 34a4379c211b166da50bf3a6bfb249166634547d
+  do_git_checkout https://github.com/qyot27/ffms2_cplugin.git "" c_plugin
   cd ffms2_cplugin_git
     apply_patch $patch_dir/ffms2_configure-fix-various.patch -p1 # Correctly detect MingW32, use Cygwin's pkg-config and don't set GCC optimization level twice if $CFLAGS already contains one.
     if [[ ! -f src/core/ffms.cpp.bak ]]; then
       sed -i.bak 's/<mutex>/"mingw.mutex.h"/' src/core/ffms.cpp # Use "mingw-std-threads" implementation of standard C++11 threading classes, which are currently still missing on MinGW GCC.
       sed -i.bak 's/<thread>/"mingw.thread.h"/' src/core/videosource.cpp # Otherwise you'd get errors like "'mutex' in namespace 'std' does not name a type".
     fi
-    do_configure --host=$host_target --prefix=$mingw_w64_x86_64_prefix --cross-prefix=$cross_prefix --enable-shared --enable-avisynth-c --enable-vapoursynth
+    do_configure --host=$host_target --prefix=$mingw_w64_x86_64_prefix --cross-prefix=$cross_prefix --enable-shared --enable-avisynth --enable-vapoursynth
     do_make
     rm -f NUL # Somehow this "file" is created and Windows Explorer can't delete it.
 
     mkdir -p $redist_dir
-    archive="$redist_dir/ffms2-$(git describe --tags | sed 's/g//')-avs-vsp-win32-shared-xpmod-sse"
+    archive="$redist_dir/ffms2-$(git describe --tags | sed 's/g//')-avs-vsp_ffmpeg-$ff_rev-win32"
     if [ "$1" = "static_ffmpeg" ]; then
-      archive="${archive}_ffmpeg-$ff_rev"
+      archive="${archive}-static-xpmod-sse"
+    else
+      archive="${archive}-shared-xpmod-sse"
     fi
     if [[ ! -f $archive.7z ]]; then
       sed "s/$/\r/" etc/COPYING.GPLv3 > COPYING.GPLv3.txt
-      7z a -mx=9 -bb3 $archive.7z ffms3.dll ffmsindex.exe ./etc/FFMS2-cplugin.avsi doc COPYING.GPLv3.txt
+      7z a -mx=9 -bb3 $archive.7z ffms3.dll ffmsindex.exe ./etc/FFMS2.avsi doc COPYING.GPLv3.txt
       rm -v COPYING.GPLv3.txt
     else
       echo -e "\e[1;33mAlready made '${archive##*/}.7z'.\e[0m"
