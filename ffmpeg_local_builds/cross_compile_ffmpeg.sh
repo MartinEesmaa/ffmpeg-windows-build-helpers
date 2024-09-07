@@ -808,7 +808,7 @@ build_libxvid() {
 }
 
 build_libx264() {
-  do_git_checkout http://git.videolan.org/git/x264.git
+  do_git_checkout https://code.videolan.org/videolan/x264.git
   cd x264_git
     if [[ ! -f configure.bak ]]; then # Change GCC optimization level.
       sed -i.bak "s/O3 -/O2 -/" configure
