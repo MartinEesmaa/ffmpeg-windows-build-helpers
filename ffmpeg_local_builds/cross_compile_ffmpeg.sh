@@ -388,8 +388,8 @@ build_bzip2() {
 }
 
 build_liblzma() {
-  download_and_unpack_file https://sourceforge.net/projects/lzmautils/files/xz-5.4.6.tar.xz
-  cd xz-5.4.6
+  download_and_unpack_file https://sourceforge.net/projects/lzmautils/files/xz-5.6.2.tar.xz
+  cd xz-5.6.2
     generic_configure --disable-xz --disable-xzdec --disable-lzmadec --disable-lzmainfo --disable-scripts --disable-doc --disable-nls
     do_make install
   cd ..
@@ -415,8 +415,8 @@ build_iconv() {
 } # [dlfcn]
 
 build_sdl2() {
-  download_and_unpack_file https://libsdl.org/release/SDL2-2.30.3.tar.gz
-  cd SDL2-2.30.3
+  download_and_unpack_file https://libsdl.org/release/SDL2-2.30.6.tar.gz
+  cd SDL2-2.30.6
     if [[ ! -f Makefile.in.bak ]]; then
       sed -i.bak "/aclocal/d" Makefile.in # Library only.
       sed -i.bak "/#ifndef DECLSPEC/i\#define DECLSPEC" include/begin_code.h # Needed for building shared FFmpeg libraries.
@@ -477,8 +477,8 @@ build_libjxl() {
 } # python 3
 
 build_freetype() {
-  download_and_unpack_file https://download.savannah.gnu.org/releases/freetype/freetype-2.13.2.tar.xz
-  cd freetype-2.13.2
+  download_and_unpack_file https://download.savannah.gnu.org/releases/freetype/freetype-2.13.3.tar.xz
+  cd freetype-2.13.3
     if [[ ! -f builds/unix/install.mk.bak ]]; then
       sed -i.bak "/config \\\/s/\s*\\\//;/bindir) /s/\s*\\\//;/aclocal/d;/man1/d;/PLATFORM_DIR/d;/docs/d" builds/unix/install.mk # Library only.
     fi
@@ -519,9 +519,9 @@ build_gmp() {
 } # [dlfcn]
 
 build_mbedtls() {
-  download_and_unpack_file https://github.com/Mbed-TLS/mbedtls/archive/refs/tags/v2.28.8.tar.gz mbedtls-2.28.8
-  cd mbedtls-2.28.8
-    apply_patch $patch_dir/mbedtls-2.28.8_mingw-stdio.diff # Windows XP compatibility. See https://github.com/sherpya/mplayer-be/blob/master/packages/mbedtls/patches/00_sherpya_mingw-stdio.diff.
+  download_and_unpack_file https://github.com/Mbed-TLS/mbedtls/archive/refs/tags/v2.28.9.tar.gz mbedtls-2.28.9
+  cd mbedtls-2.28.9
+    apply_patch $patch_dir/mbedtls-2.28.9_mingw-stdio.diff # Windows XP compatibility. See https://github.com/sherpya/mplayer-be/blob/master/packages/mbedtls/patches/00_sherpya_mingw-stdio.diff.
     mkdir -p build_dir
     cd build_dir # Out-of-source build.
       do_cmake ${PWD%/*} -DCMAKE_C_FLAGS="$CFLAGS -D__USE_MINGW_ANSI_STDIO=1" -DENABLE_PROGRAMS=0 -DENABLE_TESTING=0 -DENABLE_ZLIB_SUPPORT=1
@@ -608,8 +608,8 @@ build_fdk-aac() {
 } # [dlfcn]
 
 build_libmpg123() {
-  download_and_unpack_file https://sourceforge.net/projects/mpg123/files/mpg123/1.32.6/mpg123-1.32.6.tar.bz2
-  cd mpg123-1.32.6
+  download_and_unpack_file https://sourceforge.net/projects/mpg123/files/mpg123/1.32.7/mpg123-1.32.7.tar.bz2
+  cd mpg123-1.32.7
     if [[ ! -f Makefile.in.bak ]]; then # Library only
       sed -i.bak "/^all-am/s/\$(PROG.*/\\\/;/^install-data-am/s/ install-man//;/^install-exec-am/s/ install-binPROGRAMS//" Makefile.in
     fi
@@ -620,8 +620,8 @@ build_libmpg123() {
 } # [dlfcn]
 
 build_libopenmpt() {
-  download_and_unpack_file https://lib.openmpt.org/files/libopenmpt/src/libopenmpt-0.7.6+release.autotools.tar.gz
-  cd libopenmpt-0.7.6+release.autotools
+  download_and_unpack_file https://lib.openmpt.org/files/libopenmpt/src/libopenmpt-0.7.9+release.autotools.tar.gz
+  cd libopenmpt-0.7.9+release.autotools
     if [[ ! -f Makefile.in.bak ]]; then # Library only
       sed -i.bak "/^install-data-am/s/:.*/: install-includelibopenmptHEADERS install-pkgconfigDATA/;/\tinstall-man /d" Makefile.in
     fi
@@ -765,8 +765,8 @@ build_fribidi() {
 } # [dlfcn]
 
 build_harfbuzz() {
-  download_and_unpack_file https://github.com/harfbuzz/harfbuzz/archive/refs/tags/8.4.0.tar.gz harfbuzz-8.4.0
-  cd harfbuzz-8.4.0
+  download_and_unpack_file https://github.com/harfbuzz/harfbuzz/archive/refs/tags/9.0.0.tar.gz harfbuzz-9.0.0
+  cd harfbuzz-9.0.0
     sed -i.bak "s|setlocale|//setlocale|" util/options.hh # See https://github.com/sherpya/mplayer-be/blob/master/packages/harfbuzz/patches/01_sherpya_no-setlocale.diff.
     mkdir -p build_dir
     cd build_dir # Out-of-source build.
@@ -1007,8 +1007,8 @@ build_openssl() {
 } # This is to compile 'libcrypto-1_1.dll' and 'libssl-1_1.dll' for Xidel, or a static library for hlsdl.
 
 build_openssl3() {
-  download_and_unpack_file https://www.openssl.org/source/openssl-3.3.0.tar.gz
-  cd openssl-3.3.0
+  download_and_unpack_file https://www.openssl.org/source/openssl-3.3.1.tar.gz
+  cd openssl-3.3.1
     if [[ ! -f Configurations/10-main.conf.bak ]]; then # Change GCC optimization level.
       sed -i.bak "s/-O3/-O2/" Configurations/10-main.conf
     fi
@@ -1025,7 +1025,7 @@ build_openssl3() {
       do_make build_libs
 
       mkdir -p $redist_dir
-      archive="$redist_dir/openssl-3.3.0-win32-xpmod-sse"
+      archive="$redist_dir/openssl-3.3.1-win32-xpmod-sse"
       if [[ ! -f $archive.7z ]]; then # Pack shared libraries.
         ${cross_prefix}strip -ps libcrypto-3.dll libssl-3.dll
         7z a -mx=9 -bb3 $archive.7z libcrypto-3.dll libssl-3.dll LICENSE.txt
@@ -1048,16 +1048,16 @@ build_libssh2() {
 } # openssl, [zlib, dlfcn]
 
 build_curl() {
-  download_and_unpack_file https://curl.se/download/curl-8.7.1.tar.xz
+  download_and_unpack_file https://curl.se/download/curl-8.9.1.tar.xz
   if [ "$1" = "openssl" ]; then # Compile Curl with OpenSSL for hlsdl.
     build_openssl3 static
-    cd curl-8.7.1
+    cd curl-8.9.1
     PKG_CONFIG="pkg-config --static" generic_configure --with-openssl --without-brotli --without-ca-bundle --with-ca-fallback # Automatically detect all of OpenSSL its dependencies.
     do_make install-strip
   else # Compile Curl with MbedTLS and create archive.
     build_mbedtls
     build_libssh2
-    cd curl-8.7.1
+    cd curl-8.9.1
     if [[ ! -f cacert.pem ]]; then # See https://curl.se/docs/sslcerts.html and https://superuser.com/a/442797 for more on the CA cert file.
       echo -e "\e[1;33mDownloading 'https://curl.se/ca/cacert.pem'.\e[0m"
       wget https://curl.se/ca/cacert.pem
@@ -1066,7 +1066,7 @@ build_curl() {
     do_make # 'curl.exe' only. No install.
 
     mkdir -p $redist_dir
-    archive="$redist_dir/curl-8.7.1-mbedtls-zlib-ssh2-win32-static-xpmod-sse"
+    archive="$redist_dir/curl-8.9.1-mbedtls-zlib-ssh2-win32-static-xpmod-sse"
     if [[ ! -f $archive.7z ]]; then # Pack static 'curl.exe'.
       sed "s/$/\r/" COPYING > COPYING.txt
       7z a -mx=9 -bb3 $archive.7z ./src/curl.exe cacert.pem COPYING.txt
