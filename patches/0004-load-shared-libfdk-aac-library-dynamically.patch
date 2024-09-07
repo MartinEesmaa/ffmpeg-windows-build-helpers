@@ -1,7 +1,7 @@
-From a3c68dffd5ec61017382d7738048364dd0997677 Mon Sep 17 00:00:00 2001
+From 7e4452efdc36fb17cbc0731cb06789f3a4833ad2 Mon Sep 17 00:00:00 2001
 From: Reino17 <rwijnsma@xs4all.nl>
-Date: Fri, 3 May 2024 18:56:41 +0200
-Subject: [PATCH 3/4] libavcodec/libfdk-aac*: load shared libfdk-aac library dynamically
+Date: Sun, 1 Sep 2024 15:52:43 +0200
+Subject: [PATCH 4/5] libavcodec/libfdk-aac*: load shared libfdk-aac library dynamically
 
 See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0004-dynamic-loading-of-shared-fdk-aac-library.patch.
 ---
@@ -13,10 +13,10 @@ See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0004-dynamic-lo
  create mode 100644 libavcodec/libfdk-aac_internal.h
 
 diff --git a/configure b/configure
-index 77568a3..ad6c343 100755
+index b950024..d999570 100755
 --- a/configure
 +++ b/configure
-@@ -1876,7 +1876,6 @@ EXTERNAL_LIBRARY_GPL_LIST="
+@@ -1877,7 +1877,6 @@ EXTERNAL_LIBRARY_GPL_LIST="
  
  EXTERNAL_LIBRARY_NONFREE_LIST="
      decklink
@@ -24,7 +24,7 @@ index 77568a3..ad6c343 100755
      libtls
  "
  
-@@ -1916,6 +1915,7 @@ EXTERNAL_LIBRARY_LIST="
+@@ -1917,6 +1916,7 @@ EXTERNAL_LIBRARY_LIST="
      libcodec2
      libdav1d
      libdc1394
@@ -32,7 +32,7 @@ index 77568a3..ad6c343 100755
      libflite
      libfontconfig
      libfreetype
-@@ -6865,9 +6865,7 @@ enabled libdc1394         && require_pkg_config libdc1394 libdc1394-2 dc1394/dc1
+@@ -6874,9 +6874,7 @@ enabled libdc1394         && require_pkg_config libdc1394 libdc1394-2 dc1394/dc1
  enabled libdrm            && check_pkg_config libdrm libdrm xf86drm.h drmGetVersion
  enabled libdvdnav         && require_pkg_config libdvdnav "dvdnav >= 6.1.1" dvdnav/dvdnav.h dvdnav_open2
  enabled libdvdread        && require_pkg_config libdvdread "dvdread >= 6.1.2" dvdread/dvd_reader.h DVDOpen2

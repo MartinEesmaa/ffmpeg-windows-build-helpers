@@ -875,12 +875,13 @@ build_libaom() {
 } # cmake >= 3.5
 
 build_ffmpeg() {
-  do_git_checkout https://github.com/FFmpeg/FFmpeg.git "" "" 5bc3b7f51308b8027e5468ef60d8336a960193e2
+  do_git_checkout https://github.com/FFmpeg/FFmpeg.git "" "" 6aafe61285404022b1e8e882b8a875bc33a93aec
   cd FFmpeg_git
     apply_patch $patch_dir/0001-make-bcrypt-optional.patch -p1 # WinXP doesn't have 'bcrypt'. See https://github.com/FFmpeg/FFmpeg/commit/aedbf1640ced8fc09dc980ead2a387a59d8f7f68 and https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0001-make-bcrypt-optional-on-win32.patch.
     apply_patch $patch_dir/0002-windows-xp-compatible-CancelIoEx.patch -p1 # Otherwise you'd get "The procedure entry point CancelIoEx could not be located in the dynamic link library KERNEL32.dll" while running ffmpeg.exe, ffplay.exe, or ffprobe.exe, because 'CancelIoEx()' is only available on Windows Vista and later. See https://github.com/FFmpeg/FFmpeg/commit/53aa76686e7ff4f1f6625502503d7923cec8c10e, https://trac.ffmpeg.org/ticket/5717 and https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0002-windows-xp-compatible-CancelIoEx.patch.
-    apply_patch $patch_dir/0003-load-shared-libfdk-aac-library-dynamically.patch -p1 # See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0004-dynamic-loading-of-shared-fdk-aac-library.patch.
-    apply_patch $patch_dir/0004-load-shared-frei0r-libraries-dynamically.patch -p1 # See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0005-avfilters-better-behavior-of-frei0r-on-win32.patch.
+    apply_patch $patch_dir/0003-windows-xp-compatible-wcscp.patch -p1 # Otherwise you'd get "The procedure entry point wcscpy_s could not be located in the dynamic link library msvcrt.dll" while running ffmpeg.exe, ffplay.exe, or ffprobe.exe, because 'wcscpy()' is only available on Windows Vista and later. See https://github.com/FFmpeg/FFmpeg/commit/daf61dddc8e27424c320d5c3abe3e0c5182cd5c0.
+    apply_patch $patch_dir/0004-load-shared-libfdk-aac-library-dynamically.patch -p1 # See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0004-dynamic-loading-of-shared-fdk-aac-library.patch.
+    apply_patch $patch_dir/0005-load-shared-frei0r-libraries-dynamically.patch -p1 # See https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0005-avfilters-better-behavior-of-frei0r-on-win32.patch.
     init_options=(--arch=x86 --target-os=mingw32 --prefix=$mingw_w64_x86_64_prefix --cross-prefix=$cross_prefix --extra-cflags="$CFLAGS")
     if [[ $1 == "shared" ]]; then
       init_options+=(--enable-shared --disable-static) # Building a static FFmpeg is the default, so no need to specify '--enable-static --disable-shared'.

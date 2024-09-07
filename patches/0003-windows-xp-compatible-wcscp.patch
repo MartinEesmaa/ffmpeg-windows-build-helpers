@@ -1,0 +1,26 @@
+From 94a527b2d91b1182a992c15f375078e4d9d766e9 Mon Sep 17 00:00:00 2001
+From: Reino17 <rwijnsma@xs4all.nl>
+Date: Sun, 1 Sep 2024 15:52:12 +0200
+Subject: [PATCH 3/5] libavdevice/dshow_filter: windows xp compatible wcscpy()
+
+Otherwise you'd get "The procedure entry point wcscpy_s could not be located in the dynamic link library msvcrt.dll" while running ffmpeg.exe, ffplay.exe, or ffprobe.exe, because 'wcscpy()' is only available on Windows Vista and later. See https://github.com/FFmpeg/FFmpeg/commit/daf61dddc8e27424c320d5c3abe3e0c5182cd5c0.
+---
+ libavdevice/dshow_filter.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libavdevice/dshow_filter.c b/libavdevice/dshow_filter.c
+index 2122c84..4642ac0 100644
+--- a/libavdevice/dshow_filter.c
++++ b/libavdevice/dshow_filter.c
+@@ -135,7 +135,7 @@ long WINAPI ff_dshow_filter_JoinFilterGraph(DShowFilter *this, IFilterGraph *gra
+ 
+     this->info.pGraph = graph;
+     if (name)
+-        wcscpy_s(this->info.achName, sizeof(this->info.achName) / sizeof(wchar_t), name);
++        wcscpy(this->info.achName, name);
+ 
+     return S_OK;
+ }
+-- 
+2.8.3
+

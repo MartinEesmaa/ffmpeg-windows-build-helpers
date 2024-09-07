@@ -1,7 +1,7 @@
-From 4caa831baa34544a920fc49173f07ec0cfa0b13c Mon Sep 17 00:00:00 2001
+From 8835814afdf7dcc6517e48a66acfdf47f963f0cf Mon Sep 17 00:00:00 2001
 From: Reino17 <rwijnsma@xs4all.nl>
-Date: Fri, 3 May 2024 18:30:51 +0200
-Subject: [PATCH 1/4] libavutil/random_seed.c: make bcrypt optional
+Date: Sun, 1 Sep 2024 15:51:14 +0200
+Subject: [PATCH 1/5] libavutil/random_seed.c: make bcrypt optional
 
 WinXP doesn't have 'bcrypt'. See https://github.com/FFmpeg/FFmpeg/commit/aedbf1640ced8fc09dc980ead2a387a59d8f7f68 and https://github.com/sherpya/mplayer-be/blob/master/patches/ff/0001-make-bcrypt-optional-on-win32.patch.
 ---
@@ -10,10 +10,10 @@ WinXP doesn't have 'bcrypt'. See https://github.com/FFmpeg/FFmpeg/commit/aedbf16
  2 files changed, 20 insertions(+), 2 deletions(-)
 
 diff --git a/configure b/configure
-index ed74583..77568a3 100755
+index 44cfaeb..b950024 100755
 --- a/configure
 +++ b/configure
-@@ -335,6 +335,7 @@ External library support:
+@@ -336,6 +336,7 @@ External library support:
    --enable-vapoursynth     enable VapourSynth demuxer [no]
    --disable-xlib           disable xlib [autodetect]
    --disable-zlib           disable zlib [autodetect]
@@ -21,7 +21,7 @@ index ed74583..77568a3 100755
  
    The following libraries provide various hardware acceleration features:
    --disable-amf            disable AMF video encoding code [autodetect]
-@@ -1854,6 +1855,7 @@ EXTERNAL_AUTODETECT_LIBRARY_LIST="
+@@ -1855,6 +1856,7 @@ EXTERNAL_AUTODETECT_LIBRARY_LIST="
      sndio
      xlib
      zlib
@@ -29,7 +29,7 @@ index ed74583..77568a3 100755
  "
  
  EXTERNAL_LIBRARY_GPL_LIST="
-@@ -6645,7 +6647,7 @@ for LATOMIC in "-latomic" ""; do
+@@ -6651,7 +6653,7 @@ for LATOMIC in "-latomic" ""; do
  done
  
  check_lib advapi32 "windows.h"            RegCloseKey          -ladvapi32
@@ -39,7 +39,7 @@ index ed74583..77568a3 100755
  check_lib ole32    "windows.h objbase.h"  CoTaskMemFree        -lole32
  check_lib shell32  "windows.h shellapi.h" CommandLineToArgvW   -lshell32
 diff --git a/libavutil/random_seed.c b/libavutil/random_seed.c
-index 6d399ce..b49f3db 100644
+index 8a4e4f1..787770f 100644
 --- a/libavutil/random_seed.c
 +++ b/libavutil/random_seed.c
 @@ -26,9 +26,13 @@
